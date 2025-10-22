@@ -19,8 +19,19 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Invoices> Invoices => Set<Invoices>();
     public DbSet<Customers> Customers => Set<Customers>();
     public DbSet<Users> Users => Set<Users>();
+    public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<UserRefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany()
+            .HasForeignKey(rt => rt.UserId);
     }
 }
