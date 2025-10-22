@@ -21,7 +21,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             if (tokenEntity == null) return Unit.Value; // Already logged out or invalid
 
             _context.UserRefreshTokens.Remove(tokenEntity);
-            await _context.SaveChangeAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }
     }

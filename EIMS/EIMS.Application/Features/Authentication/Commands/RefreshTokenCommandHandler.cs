@@ -41,7 +41,7 @@ namespace EIMS.Application.Features.Authentication.Commands
                 CreatedByIp = request.IpAdress
             };
             _context.UserRefreshTokens.Add(newRefreshTokenEntity);
-            await _context.SaveChangeAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             return new AuthResponse
             {
                 AccessToken = newAccessToken,

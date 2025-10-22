@@ -31,7 +31,7 @@ namespace EIMS.Application.Features.Authentication.Commands
                 Status = Status.Active
             };
             _context.Users.Add(user);
-            await _context.SaveChangeAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             return user.UserId;
         }
     }

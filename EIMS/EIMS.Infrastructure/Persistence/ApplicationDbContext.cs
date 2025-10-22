@@ -19,9 +19,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Invoices> Invoices => Set<Invoices>();
     public DbSet<Customers> Customers => Set<Customers>();
     public DbSet<Users> Users => Set<Users>();
-    public DbSet<UserRefreshToken> UserRefreshTokens => throw new NotImplementedException();
+    public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 
-    public Task<int> SaveChangeAsync(CancellationToken cancellationToken)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         return base.SaveChangesAsync(cancellationToken);
     }
