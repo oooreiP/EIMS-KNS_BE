@@ -36,10 +36,10 @@ namespace EIMS.Application.Features.Authentication.Commands
                 Token = refreshToken,
                 Expires = DateTime.UtcNow.AddDays(7),
                 Created = DateTime.UtcNow,
-                CreatedByIp = request.IpAdress
+                CreatedByIp = request.IpAddress
             };
             _context.UserRefreshTokens.Add(refreshTokenEntity);
-            await _context.SaveChangeAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             var authResponse = _mapper.Map<AuthResponse>(user);
             authResponse.AccessToken = accessToken;
             authResponse.RefreshToken = refreshToken;

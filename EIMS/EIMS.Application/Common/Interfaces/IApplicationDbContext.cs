@@ -9,5 +9,5 @@ public interface IApplicationDbContext
     DbSet<Customers> Customers { get; }
     DbSet<Users> Users { get; }
     DbSet<UserRefreshToken> UserRefreshTokens { get; }
-    Task<int> SaveChangeAsync(CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

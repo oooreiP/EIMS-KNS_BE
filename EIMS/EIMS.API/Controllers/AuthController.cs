@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using EIMS.API.Common;
 using EIMS.Application.Features.Authentication.Commands;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace EIMS.API.Controllers
 {
@@ -33,12 +28,13 @@ namespace EIMS.API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginCommand command)
         {
             try
             {
-                command.IpAdress = GetIpAddress(); // get ip for auditing
+                command.IpAddress = GetIpAddress(); // get ip for auditing
                 var response = await _mediator.Send(command);
                 //send refresh token by HttpOnly cookie
                 SetRefreshTokenCookie(response.RefreshToken);
