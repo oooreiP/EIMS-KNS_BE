@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using EIMS.Application.Common.Interfaces;
 using EIMS.Infrastructure.Persistence;
+using EIMS.Infrastructure.Services;
 
 namespace EIMS.Infrastructure;
 
@@ -23,6 +20,8 @@ public static class DependencyInjection
     services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
     //register other infra services(email, file storage, etc,..)
+    services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+    services.AddScoped<IPasswordHasher, PasswordHasher>();
     //services.AddScoped<IEmailService, EmailService>();
     return services;
   }
