@@ -1,6 +1,0 @@
-@EIMS.API_HostAddress = http://localhost:5155
-
-GET {{EIMS.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
