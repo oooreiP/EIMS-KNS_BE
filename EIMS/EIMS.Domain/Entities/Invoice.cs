@@ -1,0 +1,91 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace EIMS.Domain.Entities
+{
+    public class Invoice
+    {
+
+        [Key]
+        public int InvoiceID { get; set; }
+
+        public int TemplateID { get; set; }
+        [ForeignKey("TemplateID")]
+
+        public long InvoiceNumber { get; set; }
+
+        public int InvoiceStatusID { get; set; }
+        [ForeignKey("InvoiceStatusID")]
+
+        public int CompanyId { get; set; }
+        [ForeignKey("CompanyId")]
+
+        public int CustomerID { get; set; }
+        [ForeignKey("CustomerID")]
+
+        public int IssuerID { get; set; }
+        [ForeignKey("IssuerID")]
+
+        public DateTime SignDate { get; set; }
+        public DateTime? PaymentDueDate { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal SubtotalAmount { get; set; }
+
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal VATRate { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal VATAmount { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TotalAmount { get; set; }
+
+        [Required]
+        [StringLength(1000)]
+        public string TotalAmountInWords { get; set; } = string.Empty;
+
+        public string? DigitalSignature { get; set; }
+
+        [StringLength(100)]
+        public string? TaxAuthorityCode { get; set; }
+
+        [StringLength(500)]
+        public string? QRCodeData { get; set; }
+
+        [StringLength(2000)]
+        public string? Notes { get; set; }
+
+        public int? SalesID { get; set; }
+        [ForeignKey("SalesID")]
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // --- Navigation Properties ---
+        [InverseProperty("Template")]
+        public virtual InvoiceTemplate Template { get; set; }
+        [InverseProperty("InvoiceStatus")]
+        public virtual InvoiceStatus InvoiceStatus { get; set; }
+        [InverseProperty("Company")]
+        public virtual Company Company { get; set; }
+        [InverseProperty("Sales")]
+        public virtual User? Sales { get; set; }
+        [InverseProperty("Customer")]
+        public virtual Customer Customer { get; set; }
+        [InverseProperty("Issuer")]
+        public virtual User Issuer { get; set; }
+        [InverseProperty("InvoiceItems")]
+        public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+        [InverseProperty("TaxApiLog")]
+        public virtual ICollection<TaxApiLog> TaxApiLogs { get; set; } = new List<TaxApiLog>();
+        [InverseProperty("Invoice")]
+        public virtual ICollection<InvoiceHistory> HistoryEntries { get; set; } = new List<InvoiceHistory>();
+
+        [InverseProperty("ReferenceInvoice")]
+        public virtual ICollection<InvoiceHistory> ReferencedByHistory { get; set; } = new List<InvoiceHistory>();
+    }
+}
