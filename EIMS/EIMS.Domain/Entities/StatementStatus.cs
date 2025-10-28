@@ -15,7 +15,7 @@ namespace EIMS.Domain.Entities
         [StringLength(20)]
         public string StatusName { get; set; } = string.Empty;
         // --- Navigation Properties ---
-        [InverseProperty("InvoiceStatements")]
+        [InverseProperty("StatementStatus")]
         public virtual ICollection<InvoiceStatement> InvoiceStatements { get; set; } = new List<InvoiceStatement>();
     }
 }

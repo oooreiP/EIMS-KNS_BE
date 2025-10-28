@@ -16,7 +16,7 @@ namespace EIMS.Domain.Entities
         public string RoleName { get; set; } = string.Empty;
 
         // --- Navigation Properties ---
-        [InverseProperty("Users")]
+        [InverseProperty("Role")]
         public virtual ICollection<User> Users { get; set; } = new List<User>();
     }
 }

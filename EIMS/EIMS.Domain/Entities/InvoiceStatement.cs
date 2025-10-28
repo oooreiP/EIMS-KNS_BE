@@ -13,10 +13,10 @@ namespace EIMS.Domain.Entities
         public int StatementID { get; set; }
         public string? StatementCode { get; set; }
         public DateTime? StatementDate { get; set; }
-        public int CreatedBy { get; set; }
         [ForeignKey("CreatedBy")]
-        public int? CustomerID { get; set; }
+        public int CreatedBy { get; set; }
         [ForeignKey("CustomerID")]
+        public int? CustomerID { get; set; }
         public int? TotalInvoices { get; set; }
         [Column(TypeName = "decimal(18, 2)")] // Assuming precision
         public decimal? TotalAmount { get; set; }
@@ -25,11 +25,11 @@ namespace EIMS.Domain.Entities
 
         public string? Notes { get; set; }
         //navigations
-        [InverseProperty("Customer")]
+        [InverseProperty("Statements")]
         public virtual Customer? Customer { get; set; }
-        [InverseProperty("Creator")]
+        [InverseProperty("CreatedStatements")]
         public virtual User Creator { get; set; }
-        [InverseProperty("StatementStatus")]
+        [InverseProperty("InvoiceStatements")]
         public virtual StatementStatus StatementStatus { get; set; }
 
 

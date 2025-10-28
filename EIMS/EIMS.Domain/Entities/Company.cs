@@ -23,7 +23,7 @@ namespace EIMS.Domain.Entities
         [StringLength(255)]
         public string? BankName { get; set; }
         // --- Navigation Properties ---
-        [InverseProperty("Invoices")]
+        [InverseProperty("Company")]
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     }

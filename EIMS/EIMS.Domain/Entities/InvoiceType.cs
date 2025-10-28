@@ -19,7 +19,7 @@ namespace EIMS.Domain.Entities
         public string? TypeName { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("Serials")]
+        [InverseProperty("InvoiceType")]
         public virtual ICollection<Serial> Serials { get; set; } = new List<Serial>();
     }
 }

@@ -16,7 +16,7 @@ namespace EIMS.Domain.Entities
         public string PrefixName { get; set; } = string.Empty;
 
         // --- Navigation Properties ---
-        [InverseProperty("Serials")]
+        [InverseProperty("Prefix")]
         public virtual ICollection<Serial> Serials { get; set; } = new List<Serial>();
     }
 }

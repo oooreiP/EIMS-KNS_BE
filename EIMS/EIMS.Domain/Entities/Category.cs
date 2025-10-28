@@ -23,7 +23,7 @@ namespace EIMS.Domain.Entities
         public DateTime? CreatedDate { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("InvoiceItems")]
+        [InverseProperty("Category")]
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
     }
 }

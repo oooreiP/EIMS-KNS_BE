@@ -15,18 +15,17 @@ namespace EIMS.Domain.Entities
         [ForeignKey("UserID")]
         [StringLength(255)]
         public string? Content { get; set; }
-        public int NotificationStatusID { get; set; }
         [ForeignKey("NotificationStatusID")]
-        public int NotificationTypeID { get; set; }
+        public int NotificationStatusID { get; set; }
         [ForeignKey("NotificationTypeID")]
-
+        public int NotificationTypeID { get; set; }
         public DateTime Time { get; set; }
         //Navigation
-        [InverseProperty("NotificationStatus")]
+        [InverseProperty("Notifications")]
         public virtual NotificationStatus NotificationStatus { get; set; }
-        [InverseProperty("User")]
+        [InverseProperty("Notifications")]
         public virtual User User { get; set; }
-        [InverseProperty("NotificationType")]
+        [InverseProperty("Notifications")]
         public virtual NotificationType NotificationType { get; set; }
 
     }

@@ -43,7 +43,7 @@ namespace EIMS.Domain.Entities
         [InverseProperty("Sales")]
         public virtual ICollection<Invoice> SalesInvoices { get; set; } = new List<Invoice>();
 
-        [InverseProperty("AuditLogs")]
+        [InverseProperty("User")]
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
         [InverseProperty("Creator")]
@@ -54,6 +54,7 @@ namespace EIMS.Domain.Entities
 
         [InverseProperty("User")]
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        [InverseProperty("Users")]
         public virtual Role Role { get; set; }
 
     }

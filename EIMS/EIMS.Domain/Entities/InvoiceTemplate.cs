@@ -10,24 +10,24 @@ namespace EIMS.Domain.Entities
         [Required]
         [StringLength(255)]
         public string TemplateName { get; set; } = string.Empty;
-        public int InvoiceTypeID { get; set; }
         [ForeignKey("InvoiceTypeID")]
-        public int SerialID { get; set; }
+        public int InvoiceTypeID { get; set; }
         [ForeignKey("SerialID")]
+        public int SerialID { get; set; }
         public long CurrentInvoiceNumber { get; set; } = 0;
         public string? LayoutDefinition { get; set; }
         public bool IsActive { get; set; } = true;
-        public int CreatedByID { get; set; }
-        [ForeignKey("CreatedByID")]
+        [ForeignKey("CreatedByUserID")]
+        public int CreatedByUserID { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("TemplateType")]
+        [InverseProperty("InvoiceTemplates")]
         public virtual TemplateType TemplateType { get; set; }
-        [InverseProperty("Invoices")]
+        [InverseProperty("Template")]
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-        [InverseProperty("CreatedBy")]
+        [InverseProperty("CreatedTemplates")]
         public virtual User CreatedBy { get; set; }
-        [InverseProperty("Serial")]
+        [InverseProperty("InvoiceTemplates")]
         public virtual Serial Serial { get; set; }
     }
 }

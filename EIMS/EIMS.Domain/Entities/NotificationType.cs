@@ -15,7 +15,7 @@ namespace EIMS.Domain.Entities
         public string? TypeName { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("Notifications")]
+        [InverseProperty("NotificationType")]
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

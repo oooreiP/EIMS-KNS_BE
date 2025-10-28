@@ -11,8 +11,8 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int TaxLogID { get; set; }
-        public int InvoiceID { get; set; }
         [ForeignKey("InvoiceID")]
+        public int InvoiceID { get; set; }
         [Required]
         public string RequestPayload { get; set; } = string.Empty;
         public string? ResponsePayload { get; set; }
@@ -21,9 +21,9 @@ namespace EIMS.Domain.Entities
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         //Navigation
-        [InverseProperty("Invoice")]
+        [InverseProperty("TaxApiLogs")]
         public virtual Invoice Invoice { get; set; }
-        [InverseProperty("TaxApiStatus")]
+        [InverseProperty("TaxApiLogs")]
         public virtual TaxApiStatus TaxApiStatus { get; set; }
 
     }

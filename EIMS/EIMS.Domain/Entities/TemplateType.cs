@@ -15,7 +15,7 @@ namespace EIMS.Domain.Entities
         public string TypeCategory { get; set; } = string.Empty;
 
         // --- Navigation Properties ---
-        [InverseProperty("InvoiceTemplate")]
+        [InverseProperty("TemplateType")]
         public virtual ICollection<InvoiceTemplate> InvoiceTemplates { get; set; } = new List<InvoiceTemplate>();
     }
 }

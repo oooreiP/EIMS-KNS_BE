@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EIMS.Domain.Entities
 {
@@ -15,7 +11,7 @@ namespace EIMS.Domain.Entities
         public string? StatusName { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("Notifications")]
+        [InverseProperty("NotificationStatus")]
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }
