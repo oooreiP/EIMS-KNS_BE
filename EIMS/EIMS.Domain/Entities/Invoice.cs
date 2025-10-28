@@ -12,23 +12,23 @@ namespace EIMS.Domain.Entities
 
         [Key]
         public int InvoiceID { get; set; }
-
-        public int TemplateID { get; set; }
         [ForeignKey("TemplateID")]
 
-        public long InvoiceNumber { get; set; }
+        public int TemplateID { get; set; }
 
-        public int InvoiceStatusID { get; set; }
+        public long InvoiceNumber { get; set; }
         [ForeignKey("InvoiceStatusID")]
 
-        public int CompanyId { get; set; }
+        public int InvoiceStatusID { get; set; }
         [ForeignKey("CompanyId")]
 
-        public int CustomerID { get; set; }
+        public int CompanyId { get; set; }
         [ForeignKey("CustomerID")]
 
-        public int IssuerID { get; set; }
+        public int CustomerID { get; set; }
         [ForeignKey("IssuerID")]
+
+        public int IssuerID { get; set; }
 
         public DateTime SignDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
@@ -66,21 +66,21 @@ namespace EIMS.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---
-        [InverseProperty("Template")]
+        [InverseProperty("Invoices")]
         public virtual InvoiceTemplate Template { get; set; }
-        [InverseProperty("InvoiceStatus")]
+        [InverseProperty("Invoices")]
         public virtual InvoiceStatus InvoiceStatus { get; set; }
-        [InverseProperty("Company")]
+        [InverseProperty("Invoices")]
         public virtual Company Company { get; set; }
-        [InverseProperty("Sales")]
+        [InverseProperty("SalesInvoices")]
         public virtual User? Sales { get; set; }
-        [InverseProperty("Customer")]
+        [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }
-        [InverseProperty("Issuer")]
+        [InverseProperty("IssuedInvoices")]
         public virtual User Issuer { get; set; }
-        [InverseProperty("InvoiceItems")]
+        [InverseProperty("Invoice")]
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
-        [InverseProperty("TaxApiLog")]
+        [InverseProperty("Invoice")]
         public virtual ICollection<TaxApiLog> TaxApiLogs { get; set; } = new List<TaxApiLog>();
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoiceHistory> HistoryEntries { get; set; } = new List<InvoiceHistory>();

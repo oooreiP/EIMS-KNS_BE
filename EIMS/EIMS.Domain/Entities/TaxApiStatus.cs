@@ -15,7 +15,7 @@ namespace EIMS.Domain.Entities
         public string? StatusName { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("TaxApiLog")]
+        [InverseProperty("TaxApiStatus")]
         public virtual ICollection<TaxApiLog> TaxApiLogs { get; set; } = new List<TaxApiLog>();
     }
 }

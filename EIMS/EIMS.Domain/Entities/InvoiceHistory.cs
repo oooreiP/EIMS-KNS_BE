@@ -11,9 +11,9 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int HistoryID { get; set; }
+        [ForeignKey("InvoiceID")]
 
         public int InvoiceID { get; set; }
-        [ForeignKey("InvoiceID")]
 
         public string? ActionType { get; set; } // Adjustment, Replacement, Cancellation
 
@@ -26,11 +26,11 @@ namespace EIMS.Domain.Entities
         [ForeignKey("PerformedBy")]
 
         //Navigations
-        [InverseProperty("Performer")]
+        [InverseProperty("HistoryActions")]
         public virtual User Performer { get; set; }
-        [InverseProperty("ReferenceInvoice")]
+        [InverseProperty("ReferencedByHistory")]
         public virtual Invoice? ReferenceInvoice { get; set; }
-        [InverseProperty("Invoice")]
+        [InverseProperty("HistoryEntries")]
         public virtual Invoice Invoice { get; set; }
 
     }

@@ -7,13 +7,14 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int AuditID { get; set; }
+                [ForeignKey("UserID")]
+
         public int? UserID { get; set; }
-        [ForeignKey("UserID")]
         public string? Action { get; set; }
         public DateTime Timestamp { get; set; }
         public string? Details { get; set; }
         //Navigation
-        [InverseProperty("User")]
+        [InverseProperty("AuditLogs")]
         public virtual User? User { get; set; }
 
     }

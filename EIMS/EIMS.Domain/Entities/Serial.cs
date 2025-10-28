@@ -11,10 +11,10 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int SerialID { get; set; }
-        public int PrefixID { get; set; }
         [ForeignKey("PrefixID")]
-        public int InvoiceTypeID { get; set; }
+        public int PrefixID { get; set; }
         [ForeignKey("InvoiceTypeID")]
+        public int InvoiceTypeID { get; set; }
         [StringLength(2)]
         public string? Year { get; set; }
         [StringLength(2)]
@@ -22,13 +22,13 @@ namespace EIMS.Domain.Entities
         public int SerialStatusID { get; set; }
         [ForeignKey("SerialStatusID")]
         // --- Navigation Properties ---
-        [InverseProperty("InvoiceTemplates")]
+        [InverseProperty("Serial")]
         public virtual ICollection<InvoiceTemplate> InvoiceTemplates { get; set; } = new List<InvoiceTemplate>();
-        [InverseProperty("Prefix")]
+        [InverseProperty("Serials")]
         public virtual Prefix Prefix { get; set; }
-        [InverseProperty("InvoiceType")]
+        [InverseProperty("Serials")]
         public virtual InvoiceType InvoiceType { get; set; }
-        [InverseProperty("SerialStatus")]
+        [InverseProperty("Serials")]
         public virtual SerialStatus SerialStatus { get; set; }
     }
 }

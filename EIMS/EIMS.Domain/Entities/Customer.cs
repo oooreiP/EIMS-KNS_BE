@@ -27,9 +27,9 @@ namespace EIMS.Domain.Entities
         [StringLength(20)]
         public string? ContactPhone { get; set; }
         // --- Navigation Properties ---
-        [InverseProperty("Invoices")]
+        [InverseProperty("Customer")]
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-        [InverseProperty("Statements")]
+        [InverseProperty("Customer")]
         public virtual ICollection<InvoiceStatement> Statements { get; set; } = new List<InvoiceStatement>();
     }
 }

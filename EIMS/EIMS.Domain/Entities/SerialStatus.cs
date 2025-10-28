@@ -11,7 +11,7 @@ namespace EIMS.Domain.Entities
         public string? StatusName { get; set; }
 
         // --- Navigation Properties ---
-        [InverseProperty("Serials")]
+        [InverseProperty("SerialStatus")]
         public virtual ICollection<Serial> Serials { get; set; } = new List<Serial>();
     }
 }

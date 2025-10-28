@@ -7,10 +7,10 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int InvoiceItemID { get; set; }
-        public int InvoiceID { get; set; }
         [ForeignKey("InvoiceID")]
-        public int CategoryID { get; set; }
+        public int InvoiceID { get; set; }
         [ForeignKey("CategoryID")]
+        public int CategoryID { get; set; }
         [Required]
         [StringLength(500)]
         public string ItemName { get; set; } = string.Empty;
@@ -31,9 +31,9 @@ namespace EIMS.Domain.Entities
         [Column(TypeName = "decimal(18, 2)")]
         public decimal VATAmount { get; set; }
         //navigations
-        [InverseProperty("Invoice")]
+        [InverseProperty("InvoiceItems")]
         public virtual Invoice Invoice { get; set; }
-        [InverseProperty("Category")]
+        [InverseProperty("InvoiceItems")]
         public virtual Category Category { get; set; }
     }
 }
