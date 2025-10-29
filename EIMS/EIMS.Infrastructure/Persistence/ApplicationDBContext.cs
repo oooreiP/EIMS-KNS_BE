@@ -34,6 +34,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<TaxApiStatus> TaxApiStatuses { get; set; }
         public DbSet<TemplateType> TemplateTypes { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
