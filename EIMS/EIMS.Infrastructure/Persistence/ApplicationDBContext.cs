@@ -46,6 +46,63 @@ namespace EIMS.Infrastructure.Persistence
                 new Role { RoleID = 4, RoleName = "HOD" }, // Head of Department
                 new Role { RoleID = 5, RoleName = "Customer" }
             );
+            modelBuilder.Entity<User>().HasData(
+        new User
+        {
+            UserID = 1, // Start with ID 1 for Admin
+            FullName = "Admin User",
+            Email = "admin@eims.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("P3ssword!"),
+            PhoneNumber = "0101010101",
+            RoleID = 1, // Admin Role
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        },
+        new User
+        {
+            UserID = 2,
+            FullName = "Accountant User",
+            Email = "accountant@eims.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("P3ssword!"),
+            PhoneNumber = "0202020202",
+            RoleID = 2, // Accountant Role
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        },
+        new User
+        {
+            UserID = 3,
+            FullName = "Sales User",
+            Email = "sale@eims.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("P3ssword!"),
+            PhoneNumber = "0303030303",
+            RoleID = 3, // Sale Role
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        },
+        new User
+        {
+            UserID = 4,
+            FullName = "Head Dept User",
+            Email = "hod@eims.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("P3ssword!"),
+            PhoneNumber = "0404040404",
+            RoleID = 4, // HOD Role
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        },
+            new User
+            {
+                UserID = 5,
+                FullName = "Customer User",
+                Email = "customer@eims.local",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("P3ssword!"),
+                PhoneNumber = "0505050505",
+                RoleID = 5, // Customer Role
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            }
+            );
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
