@@ -38,10 +38,14 @@ namespace EIMS.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // EF Core can infer most relationships from your entity annotations.
-            // If you have complex relationships, you would configure them here.
-            // Example: modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Role>().HasData(
+                new Role { RoleID = 1, RoleName = "Admin" },
+                new Role { RoleID = 2, RoleName = "Accountant" },
+                new Role { RoleID = 3, RoleName = "Sale" },
+                new Role { RoleID = 4, RoleName = "HOD" }, // Head of Department
+                new Role { RoleID = 5, RoleName = "Customer" }
+            );
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

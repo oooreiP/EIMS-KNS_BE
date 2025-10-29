@@ -1,0 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace EIMS.Application.DTOs.Authentication // Or EIMS.Application.DTOs
+{
+    public class RegisterRequest
+    {
+        [Required, MaxLength(100)]
+        public string FullName { get; set; }
+
+        [Required, EmailAddress, MaxLength(255)]
+        public string Email { get; set; }
+
+        [Required, MinLength(6)]
+        public string Password { get; set; }
+
+        [Phone, MaxLength(20)]
+        public string? PhoneNumber { get; set; }
+    }
+}

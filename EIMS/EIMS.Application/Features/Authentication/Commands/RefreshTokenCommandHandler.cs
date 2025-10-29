@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.Authentication.Commands
 {
-    public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, AuthResponse>
+    public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenResponse>
     {
         private readonly IApplicationDBContext _context;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -15,7 +15,8 @@ namespace EIMS.Application.Features.Authentication.Commands
             _context = context;
             _jwtTokenGenerator = jwtTokenGenerator;
         }
-        public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+
+        public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
             //find token in db
             var savedRefreshToken = await _context.RefreshTokens
@@ -31,16 +32,24 @@ namespace EIMS.Application.Features.Authentication.Commands
 
             //generate new access token
             var user = savedRefreshToken.User;
+
+            //token rotation
+            var newRefreshToken = _jwtTokenGenerator.GenerateRefreshToken(user.UserID);
+            _context.RefreshTokens.Remove(savedRefreshToken);
+            _context.RefreshTokens.Add(newRefreshToken);
+            await _context.SaveChangesAsync(cancellationToken);
             var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
 
             //generate new refresh token and save, disable the old one
-            return new AuthResponse
+            return new RefreshTokenResponse
             {
-                UserID = user.UserID,
+                UserID = user.UserID, // Corrected casing
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role.RoleName,
-                AccessToken = newAccessToken
+                AccessToken = newAccessToken,
+                NewRefreshToken = newRefreshToken.Token,      // Add this line
+                NewRefreshTokenExpiry = newRefreshToken.Expires // Add this line
             };
         }
     }
