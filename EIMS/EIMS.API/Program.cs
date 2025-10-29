@@ -16,9 +16,8 @@ builder.Services.AddApplicationServices()
     .AddInfrastructureServices(config);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+
+builder.Services.AddControllers();
 
 //configure jwt settings
 var jwtSettings = config.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
@@ -78,7 +77,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();

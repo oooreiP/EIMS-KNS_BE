@@ -7,7 +7,7 @@ using MediatR;
 
 namespace EIMS.Application.Features.Authentication.Commands
 {
-    public class RefreshTokenCommand : IRequest<AuthResponse>
+    public class RefreshTokenCommand : IRequest<RefreshTokenResponse>
     {
         public string RefreshToken { get; set; }
     }
