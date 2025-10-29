@@ -56,6 +56,7 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         [InverseProperty("Users")]
         public virtual Role Role { get; set; }
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     }
 }

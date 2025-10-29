@@ -28,6 +28,7 @@ namespace EIMS.Application.Commons.Interfaces
         DbSet<TaxApiStatus> TaxApiStatuses { get; set; }
         DbSet<TemplateType> TemplateTypes { get; set; }
         DbSet<User> Users { get; set; }
+        DbSet<RefreshToken> RefreshTokens { get; set; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }
