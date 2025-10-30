@@ -43,14 +43,6 @@ namespace EIMS.API.Controllers
             var loginResponse = loginResult.Value;
             _authCookieService.SetRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiry);
             _authCookieService.SetRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiry);
-            // var authResponse = new AuthResponse
-            // {
-            //     UserID = loginResponse.UserID,
-            //     FullName = loginResponse.FullName,
-            //     Email = loginResponse.Email,
-            //     Role = loginResponse.Role,
-            //     AccessToken = loginResponse.AccessToken
-            // };
             var authResponse = _mapper.Map<AuthResponse>(loginResponse);
             return Ok(authResponse);
         }
@@ -76,17 +68,7 @@ namespace EIMS.API.Controllers
             var response = refreshTokenResult.Value;
             // Set the new refresh token in the cookie using the new response fields
             _authCookieService.SetRefreshTokenCookie(response.NewRefreshToken, response.NewRefreshTokenExpiry);
-
-            // var authResponseToReturn = new AuthResponse
-            // {
-            //     UserID = response.UserID,
-            //     FullName = response.FullName,
-            //     Email = response.Email,
-            //     Role = response.Role,
-            //     AccessToken = response.AccessToken
-            // };
             var authResponseToReturn = _mapper.Map<AuthResponse>(response);
-
             return Ok(authResponseToReturn);
         }
         [HttpPost("register")]
