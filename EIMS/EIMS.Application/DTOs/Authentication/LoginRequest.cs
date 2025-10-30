@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace EIMS.Application.DTOs
+namespace EIMS.Application.DTOs.Authentication
 {
     public class LoginRequest
     {

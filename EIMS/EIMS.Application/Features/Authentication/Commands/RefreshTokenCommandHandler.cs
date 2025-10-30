@@ -1,12 +1,13 @@
 using System.Security.Authentication;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Authentication;
+using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.Authentication.Commands
 {
-    public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenResponse>
+    public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
     {
         private readonly IApplicationDBContext _context;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -16,7 +17,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
-        public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+        public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
             //find token in db
             var savedRefreshToken = await _context.RefreshTokens
@@ -27,7 +28,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             //validate token
             if (savedRefreshToken == null || !savedRefreshToken.IsActive)
             {
-                throw new AuthenticationException("Invalid refresh token");
+                return Result.Fail(new Error("Refresh token not found or inactive ").WithMetadata("ErrorCode", "Auth.RefreshToken.InvalidToken"));
             }
 
             //generate new access token
@@ -41,7 +42,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
 
             //generate new refresh token and save, disable the old one
-            return new RefreshTokenResponse
+            var refreshTokenResponse = new RefreshTokenResponse
             {
                 UserID = user.UserID, // Corrected casing
                 FullName = user.FullName,
@@ -51,6 +52,7 @@ namespace EIMS.Application.Features.Authentication.Commands
                 NewRefreshToken = newRefreshToken.Token,      // Add this line
                 NewRefreshTokenExpiry = newRefreshToken.Expires // Add this line
             };
+            return Result.Ok(refreshTokenResponse);
         }
     }
 }

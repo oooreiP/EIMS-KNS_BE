@@ -23,6 +23,8 @@ namespace EIMS.Infrastructure
             //register security services
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddHttpContextAccessor();
+            services.AddScoped<IAuthCookieService, AuthCookieService>();
             return services;
 
         }

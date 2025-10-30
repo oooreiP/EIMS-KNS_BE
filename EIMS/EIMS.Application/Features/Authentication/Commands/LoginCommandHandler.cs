@@ -4,9 +4,10 @@ using EIMS.Application.DTOs.Authentication;
 using EIMS.Application.Features.Commands;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using FluentResults;
 namespace EIMS.Application.Features.Authentication.Commands
 {
-    public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
+    public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginResponse>>
     {
         private readonly IApplicationDBContext _context;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -17,7 +18,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             _jwtTokenGenerator = jwtTokenGenerator;
             _passwordHasher = passwordHasher;
         }
-        public async Task<AuthResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
+        public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             //check user
             var user = await _context.Users
@@ -26,25 +27,32 @@ namespace EIMS.Application.Features.Authentication.Commands
 
             if (user == null || !user.IsActive)
             {
-                throw new AuthenticationException("Invalid email or password");
+                return Result.Fail(new Error("Invalid email or password").WithMetadata("ErrorCode", "Auth.Login.InvalidCredentials"));
             }
             //verify password
             var passwordIsValid = _passwordHasher.Verify(request.Password, user.PasswordHash);
             if (!passwordIsValid)
             {
-                throw new AuthenticationException("Invalid email or password");
+                return Result.Fail(new Error("Invalid email or password.").WithMetadata("ErrorCode", "Auth.Login.InvalidCredentials"));
             }
-            //generate access token
+            //generate Tokens and Save Refresh Token
             var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
-            //generate, store and return AuthResponse
-            return new AuthResponse
+            var refreshToken = _jwtTokenGenerator.GenerateRefreshToken(user.UserID); // Generate RefreshToken object
+
+            //save the refresh token to the database
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync(cancellationToken); // Save changes here
+            var LoginResponse = new LoginResponse
             {
                 UserID = user.UserID,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role.RoleName,
-                AccessToken = accessToken
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                RefreshTokenExpiry = refreshToken.Expires
             };
-    }
+            return Result.Ok(LoginResponse);
+        }
     }
 }

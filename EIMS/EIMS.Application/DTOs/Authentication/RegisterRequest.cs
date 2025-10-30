@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EIMS.Application.DTOs.Authentication // Or EIMS.Application.DTOs
+namespace EIMS.Application.DTOs.Authentication 
 {
     public class RegisterRequest
     {
@@ -15,5 +15,7 @@ namespace EIMS.Application.DTOs.Authentication // Or EIMS.Application.DTOs
 
         [Phone, MaxLength(20)]
         public string? PhoneNumber { get; set; }
+        [Required]
+        public string RoleName { get; set; }
     }
 }
