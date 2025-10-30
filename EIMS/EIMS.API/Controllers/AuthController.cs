@@ -1,6 +1,6 @@
 using System.Security.Authentication;
+using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
-using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Authentication;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
@@ -13,48 +13,46 @@ namespace EIMS.API.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly IMapper _mapper;
         private readonly ISender _sender;
-        private readonly IJwtTokenGenerator _jwtTokenGenerator;
-        private readonly IApplicationDBContext _context;
+        private readonly IAuthCookieService _authCookieService;
 
-        public AuthController(ISender sender, IJwtTokenGenerator jwtTokenGenerator, IApplicationDBContext context)
+        public AuthController(ISender sender, IAuthCookieService authCookieService, IMapper mapper)
         {
             _sender = sender;
-            _jwtTokenGenerator = jwtTokenGenerator;
-            _context = context;
+            _authCookieService = authCookieService;
+            _mapper = mapper;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            try
+            var command = _mapper.Map<LoginCommand>(request);
+            var loginResult = await _sender.Send(command);
+            if (loginResult.IsFailed)
             {
-                var authResponse = await _sender.Send(new LoginCommand
+                var firstError = loginResult.Errors.FirstOrDefault();
+                // Return error response
+                return Unauthorized(new ProblemDetails // Use ProblemDetails for standard error responses
                 {
-                    Email = request.Email,
-                    Password = request.Password
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Authentication Failed",
+                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
                 });
-
-                // Generate a refresh token
-                var refreshToken = _jwtTokenGenerator.GenerateRefreshToken(authResponse.UserID);
-
-                // Save refresh token to DB
-                _context.RefreshTokens.Add(refreshToken);
-                await _context.SaveChangesAsync(default);
-
-                // Set refresh token in HttpOnly, Secure cookie
-                SetRefreshTokenCookie(refreshToken.Token, refreshToken.Expires);
-
-                return Ok(authResponse);
             }
-            catch (AuthenticationException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var loginResponse = loginResult.Value;
+            _authCookieService.SetRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiry);
+            _authCookieService.SetRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiry);
+            // var authResponse = new AuthResponse
+            // {
+            //     UserID = loginResponse.UserID,
+            //     FullName = loginResponse.FullName,
+            //     Email = loginResponse.Email,
+            //     Role = loginResponse.Role,
+            //     AccessToken = loginResponse.AccessToken
+            // };
+            var authResponse = _mapper.Map<AuthResponse>(loginResponse);
+            return Ok(authResponse);
         }
 
         [HttpPost("refresh")]
@@ -64,75 +62,65 @@ namespace EIMS.API.Controllers
             var refreshToken = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized(new { message = "Invalid refresh token." });
-            }
-
-            try
-            {
-                var response = await _sender.Send(new RefreshTokenCommand
+                return Unauthorized(new ProblemDetails 
                 {
-                    RefreshToken = refreshToken
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Authentication Failed",
+                    Detail = "Invalid credentials provided." 
                 });
-
-                // Set the NEW refresh token in the cookie using the new response fields
-                SetRefreshTokenCookie(response.NewRefreshToken, response.NewRefreshTokenExpiry);
-
-                // Create the simpler AuthResponse to return to the client
-                var authResponseToReturn = new AuthResponse
-                {
-                    UserID = response.UserID, // Corrected casing
-                    FullName = response.FullName,
-                    Email = response.Email,
-                    Role = response.Role,
-                    AccessToken = response.AccessToken
-                };
-                // --- END: Modify these lines ---
-
-                return Ok(authResponseToReturn);
             }
-            catch (AuthenticationException ex)
+            var refreshTokenResult = await _sender.Send(new RefreshTokenCommand
             {
-                return Unauthorized(new { message = ex.Message });
-            }
+                RefreshToken = refreshToken
+            });
+            var response = refreshTokenResult.Value;
+            // Set the new refresh token in the cookie using the new response fields
+            _authCookieService.SetRefreshTokenCookie(response.NewRefreshToken, response.NewRefreshTokenExpiry);
+
+            // var authResponseToReturn = new AuthResponse
+            // {
+            //     UserID = response.UserID,
+            //     FullName = response.FullName,
+            //     Email = response.Email,
+            //     Role = response.Role,
+            //     AccessToken = response.AccessToken
+            // };
+            var authResponseToReturn = _mapper.Map<AuthResponse>(response);
+
+            return Ok(authResponseToReturn);
         }
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            try
+            var command = _mapper.Map<RegisterCommand>(request);
+            var registerResult = await _sender.Send(command);
+            if (registerResult.IsFailed)
             {
-                var command = new RegisterCommand
+                var firstError = registerResult.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
                 {
-                    FullName = request.FullName,
-                    Email = request.Email,
-                    Password = request.Password,
-                    PhoneNumber = request.PhoneNumber
-                };
-
-                var userId = await _sender.Send(command);
-
-                return StatusCode(StatusCodes.Status201Created, new { UserId = userId });
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Register Failed",
+                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
+                });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during registration: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred during registration." });
-            }
+            return StatusCode(StatusCodes.Status201Created, "User creation successfully");
         }
 
-        private void SetRefreshTokenCookie(string token, DateTime expires)
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
-            var cookieOptions = new CookieOptions
+            // 1. Get the refresh token from the cookie
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            // 2. Invalidate the token in the database (if found)
+            if (!string.IsNullOrEmpty(refreshToken))
             {
-                HttpOnly = true, // Prevents client-side script access (XSS)
-                Secure = true, // Ensures cookie is sent over HTTPS
-                SameSite = SameSiteMode.Strict, // Prevents CSRF
-                Expires = expires
-            };
-            Response.Cookies.Append("refreshToken", token, cookieOptions);
+                await _sender.Send(new LogoutCommand { RefreshToken = refreshToken });
+            }
+            // 3. Clear the refresh token cookie
+            _authCookieService.ClearRefreshTokenCookie();
+            return Ok(new { message = "Logout successful" });
         }
     }
 }
