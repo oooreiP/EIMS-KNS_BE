@@ -36,7 +36,6 @@ COPY --from=build-env /app/out .
 
 # Expose the port the application will listen on (ASP.NET Core defaults to 8080 in containers)
 EXPOSE 8080
-EXPOSE 8081
 
 # (Optional but Recommended) Add a non-root user for security
 RUN adduser --system --group appuser
