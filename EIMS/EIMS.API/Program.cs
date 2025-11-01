@@ -11,6 +11,21 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+var corsPolicyName = "AllowSpecificOrigins";
+var allowedOrigins = config.GetSection("AllowedOrigins").Get<string[]>() ?? new string[0];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicyName,
+                      policy =>
+                      {
+                          policy.WithOrigins(allowedOrigins) // Read URLs from appsettings
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials(); // Allow cookies (for refresh token)
+                      });
+});
+
 //add services from other layers
 builder.Services.AddApplicationServices()
     .AddInfrastructureServices(config);
@@ -102,6 +117,7 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production");
     options.RoutePrefix = String.Empty;
 });
+app.UseCors(corsPolicyName);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
