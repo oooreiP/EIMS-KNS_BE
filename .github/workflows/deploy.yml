@@ -37,7 +37,7 @@ jobs:
           # Tag the image with 'latest' (for deployment)
           # and the unique GitHub run number (for history)
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/eims-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/eims-api:lastest
             ${{ secrets.DOCKERHUB_USERNAME }}/eims-api:${{ github.run_number }}
 
   # --- JOB 2: DEPLOY THE IMAGE TO DROPLET ---
