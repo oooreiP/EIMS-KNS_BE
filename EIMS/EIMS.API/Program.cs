@@ -115,7 +115,7 @@ app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production");
-    options.RoutePrefix = "swagger";
+    options.RoutePrefix = String.Empty;
 });
 app.UseCors(corsPolicyName);
 app.UseHttpsRedirection();
