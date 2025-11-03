@@ -4,10 +4,12 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace EIMS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddProductTable : Migration
+    public partial class AddProductTableAndSeedData : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -39,40 +41,60 @@ namespace EIMS.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Categories",
+                columns: new[] { "CategoryID", "CategoryType", "Code", "CreatedDate", "Description", "IsActive", "IsTaxable", "Name", "VATRate" },
+                values: new object[,]
+                {
+                    { 1, "Goods", "HH", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7703), "Mặt hàng vật lý chịu thuế GTGT 10%", true, true, "Hàng hóa chịu thuế 10%", 10m },
+                    { 2, "Service", "DV", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7712), "Dịch vụ lưu trữ, cho thuê máy chủ", true, true, "Dịch vụ chịu thuế 8%", 8m },
+                    { 3, "Software", "SW", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7715), "Sản phẩm phần mềm và bản quyền", true, false, "Phần mềm không chịu thuế", 0m }
+                });
+
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 3, 11, 4, 28, 514, DateTimeKind.Utc).AddTicks(3057), "$2a$11$b1cEWzZ7kNbM3XChtTEArekniZl3ZeywIxCT/z2gZv.obwG6kq8RC" });
+                values: new object[] { new DateTime(2025, 11, 3, 13, 18, 51, 872, DateTimeKind.Utc).AddTicks(8362), "$2a$11$6GjLKMjl5cfgGMbt87fDDOZ50uca.4U3bVT/magt9phA2TsFypzBS" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 3, 11, 4, 28, 682, DateTimeKind.Utc).AddTicks(6404), "$2a$11$RqJ3bhXMeM1nV/h9UDhjIucoaQ0p2tbG/MkQ.dAwcjiYY.KaIhTQW" });
+                values: new object[] { new DateTime(2025, 11, 3, 13, 18, 52, 27, DateTimeKind.Utc).AddTicks(239), "$2a$11$ujZLLqB8SuSotFetUSh7yOxY.NA6uNzelPVdWAiiN7SzLey39TZeO" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 3, 11, 4, 28, 844, DateTimeKind.Utc).AddTicks(8329), "$2a$11$4br/8T89v/wZfyKdLSNpkOw4W99MZ.78hkazdjr.VXAhR2mxbYpCq" });
+                values: new object[] { new DateTime(2025, 11, 3, 13, 18, 52, 184, DateTimeKind.Utc).AddTicks(7), "$2a$11$bnsLs4Pefx1YMOc9aBTtnuC36/b/8qolUchrZoXQk57yrUMcUgDVW" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 3, 11, 4, 29, 3, DateTimeKind.Utc).AddTicks(2539), "$2a$11$ccpCmtWmwpwqJU6rNpI7Bergs8Vu8y.Liwue7D4/mm6eRY9P0p/Bq" });
+                values: new object[] { new DateTime(2025, 11, 3, 13, 18, 52, 341, DateTimeKind.Utc).AddTicks(293), "$2a$11$z8UAxmxLHSJ7gXwIN/sDFuziTw.dhPfo3EnsyRykK/hzyJ8riXYv." });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 3, 11, 4, 29, 167, DateTimeKind.Utc).AddTicks(9684), "$2a$11$elHI.Rf53mcHoJI/zCSJSuB29j0zOUkRlz/arKljPUE2ESG5WfVEe" });
+                values: new object[] { new DateTime(2025, 11, 3, 13, 18, 52, 496, DateTimeKind.Utc).AddTicks(9111), "$2a$11$nrQDuD9NBYm/rDFOm8PE3OpIYH8lw2I6umt/R/YDHYplRMx9QJoJ6" });
+
+            migrationBuilder.InsertData(
+                table: "Products",
+                columns: new[] { "ProductID", "BasePrice", "CategoryID", "Code", "CreatedDate", "Description", "IsActive", "Name", "Unit", "VATRate" },
+                values: new object[,]
+                {
+                    { 1, 23000m, 1, "HH0001", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7768), "Xăng RON95 chịu thuế GTGT 10%", true, "Xăng RON95", "Lít", 10m },
+                    { 2, 500000m, 2, "DV001", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7772), "Dịch vụ hosting thuế suất 8%", true, "Dịch vụ cho thuê máy chủ (Hosting)", "Tháng", 8m },
+                    { 3, 10000000m, 3, "SW001", new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7776), "Phần mềm không chịu thuế GTGT", true, "Phần mềm kế toán bản quyền", "Gói", 0m }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_CategoryID",
@@ -85,6 +107,21 @@ namespace EIMS.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DeleteData(
+                table: "Categories",
+                keyColumn: "CategoryID",
+                keyValue: 1);
+
+            migrationBuilder.DeleteData(
+                table: "Categories",
+                keyColumn: "CategoryID",
+                keyValue: 2);
+
+            migrationBuilder.DeleteData(
+                table: "Categories",
+                keyColumn: "CategoryID",
+                keyValue: 3);
 
             migrationBuilder.UpdateData(
                 table: "Users",

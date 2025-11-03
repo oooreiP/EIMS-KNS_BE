@@ -77,7 +77,7 @@ namespace EIMS.Infrastructure.Persistence
                     .HasDefaultValue(true);
 
                 entity.Property(p => p.CreatedDate)
-                    .HasDefaultValueSql("GETDATE()");
+                    .HasDefaultValueSql("NOW()");
 
                 entity.HasOne(p => p.Category)
                     .WithMany(c => c.Products)
