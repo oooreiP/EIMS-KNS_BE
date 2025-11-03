@@ -60,7 +60,24 @@ namespace EIMS.Infrastructure.Service
             await _unitOfWork.SaveChanges();
             return product;
         }
+        public async Task<Product> UpdateAsync(int id, UpdateProductRequest request)
+        {
+            var product = await _unitOfWork.ProductRepository.GetByIdAsync(id)
+                          ?? throw new Exception("Product not found.");
 
+            product.Name = request.Name ?? product.Name;
+            product.Unit = request.Unit ?? product.Unit;
+            product.BasePrice = request.BasePrice ?? product.BasePrice;
+            product.VATRate = request.VATRate ?? product.VATRate;
+            product.Description = request.Description ?? product.Description;
+            product.CategoryID = request.CategoryID ?? product.CategoryID;
+            product.IsActive = request.IsActive ?? product.IsActive;
+
+            await _unitOfWork.ProductRepository.UpdateAsync(product);
+            await _unitOfWork.SaveChanges();
+
+            return product;
+        }
         public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
         {
             return await _unitOfWork.CategoryRepository.GetAllAsync();

@@ -43,7 +43,12 @@ namespace EIMS.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request)
+        {
+            var updated = await _productService.UpdateAsync(id, request);
+            return Ok(new { message = "Updated successfully", data = updated });
+        }
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()
         {
