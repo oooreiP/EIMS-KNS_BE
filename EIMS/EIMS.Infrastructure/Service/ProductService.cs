@@ -64,7 +64,7 @@ namespace EIMS.Infrastructure.Service
         {
             var product = await _unitOfWork.ProductRepository.GetByIdAsync(id)
                           ?? throw new Exception("Product not found.");
-
+            product.Code = request.Code ?? product.Code;
             product.Name = request.Name ?? product.Name;
             product.Unit = request.Unit ?? product.Unit;
             product.BasePrice = request.BasePrice ?? product.BasePrice;
