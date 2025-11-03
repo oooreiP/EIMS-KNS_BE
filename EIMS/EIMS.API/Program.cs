@@ -11,6 +11,21 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+var corsPolicyName = "AllowSpecificOrigins";
+var allowedOrigins = config.GetSection("AllowedOrigins").Get<string[]>() ?? new string[0];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicyName,
+                      policy =>
+                      {
+                          policy.WithOrigins(allowedOrigins) // Read URLs from appsettings
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials(); // Allow cookies (for refresh token)
+                      });
+});
+
 //add services from other layers
 builder.Services.AddApplicationServices()
     .AddInfrastructureServices(config);
@@ -80,14 +95,29 @@ builder.Services.AddSwaggerGen(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    using (var scope = app.Services.CreateScope())
+    {
+        //get the dbContext from services
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        //apply pending migrations 
+        dbContext.Database.Migrate();
+    }
 }
-
+catch (Exception ex)
+{
+    //log the error if fail
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while migrating the database.");
+}
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production");
+    options.RoutePrefix = String.Empty;
+});
+app.UseCors(corsPolicyName);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
