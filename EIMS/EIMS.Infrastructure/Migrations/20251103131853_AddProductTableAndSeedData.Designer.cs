@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251103110429_AddProductTable")]
-    partial class AddProductTable
+    [Migration("20251103131853_AddProductTableAndSeedData")]
+    partial class AddProductTableAndSeedData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,6 +92,44 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("CategoryID");
 
                     b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            CategoryID = 1,
+                            CategoryType = "Goods",
+                            Code = "HH",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7703),
+                            Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
+                            IsActive = true,
+                            IsTaxable = true,
+                            Name = "Hàng hóa chịu thuế 10%",
+                            VATRate = 10m
+                        },
+                        new
+                        {
+                            CategoryID = 2,
+                            CategoryType = "Service",
+                            Code = "DV",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7712),
+                            Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
+                            IsActive = true,
+                            IsTaxable = true,
+                            Name = "Dịch vụ chịu thuế 8%",
+                            VATRate = 8m
+                        },
+                        new
+                        {
+                            CategoryID = 3,
+                            CategoryType = "Software",
+                            Code = "SW",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7715),
+                            Description = "Sản phẩm phần mềm và bản quyền",
+                            IsActive = true,
+                            IsTaxable = false,
+                            Name = "Phần mềm không chịu thuế",
+                            VATRate = 0m
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Company", b =>
@@ -614,6 +652,47 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("CategoryID");
 
                     b.ToTable("Products", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            ProductID = 1,
+                            BasePrice = 23000m,
+                            CategoryID = 1,
+                            Code = "HH0001",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7768),
+                            Description = "Xăng RON95 chịu thuế GTGT 10%",
+                            IsActive = true,
+                            Name = "Xăng RON95",
+                            Unit = "Lít",
+                            VATRate = 10m
+                        },
+                        new
+                        {
+                            ProductID = 2,
+                            BasePrice = 500000m,
+                            CategoryID = 2,
+                            Code = "DV001",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7772),
+                            Description = "Dịch vụ hosting thuế suất 8%",
+                            IsActive = true,
+                            Name = "Dịch vụ cho thuê máy chủ (Hosting)",
+                            Unit = "Tháng",
+                            VATRate = 8m
+                        },
+                        new
+                        {
+                            ProductID = 3,
+                            BasePrice = 10000000m,
+                            CategoryID = 3,
+                            Code = "SW001",
+                            CreatedDate = new DateTime(2025, 11, 3, 13, 18, 51, 717, DateTimeKind.Utc).AddTicks(7776),
+                            Description = "Phần mềm không chịu thuế GTGT",
+                            IsActive = true,
+                            Name = "Phần mềm kế toán bản quyền",
+                            Unit = "Gói",
+                            VATRate = 0m
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.RefreshToken", b =>
@@ -878,55 +957,55 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 514, DateTimeKind.Utc).AddTicks(3057),
+                            CreatedAt = new DateTime(2025, 11, 3, 13, 18, 51, 872, DateTimeKind.Utc).AddTicks(8362),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$b1cEWzZ7kNbM3XChtTEArekniZl3ZeywIxCT/z2gZv.obwG6kq8RC",
+                            PasswordHash = "$2a$11$6GjLKMjl5cfgGMbt87fDDOZ50uca.4U3bVT/magt9phA2TsFypzBS",
                             PhoneNumber = "0101010101",
                             RoleID = 1
                         },
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 682, DateTimeKind.Utc).AddTicks(6404),
+                            CreatedAt = new DateTime(2025, 11, 3, 13, 18, 52, 27, DateTimeKind.Utc).AddTicks(239),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$RqJ3bhXMeM1nV/h9UDhjIucoaQ0p2tbG/MkQ.dAwcjiYY.KaIhTQW",
+                            PasswordHash = "$2a$11$ujZLLqB8SuSotFetUSh7yOxY.NA6uNzelPVdWAiiN7SzLey39TZeO",
                             PhoneNumber = "0202020202",
                             RoleID = 2
                         },
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 844, DateTimeKind.Utc).AddTicks(8329),
+                            CreatedAt = new DateTime(2025, 11, 3, 13, 18, 52, 184, DateTimeKind.Utc).AddTicks(7),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$4br/8T89v/wZfyKdLSNpkOw4W99MZ.78hkazdjr.VXAhR2mxbYpCq",
+                            PasswordHash = "$2a$11$bnsLs4Pefx1YMOc9aBTtnuC36/b/8qolUchrZoXQk57yrUMcUgDVW",
                             PhoneNumber = "0303030303",
                             RoleID = 3
                         },
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 3, DateTimeKind.Utc).AddTicks(2539),
+                            CreatedAt = new DateTime(2025, 11, 3, 13, 18, 52, 341, DateTimeKind.Utc).AddTicks(293),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$ccpCmtWmwpwqJU6rNpI7Bergs8Vu8y.Liwue7D4/mm6eRY9P0p/Bq",
+                            PasswordHash = "$2a$11$z8UAxmxLHSJ7gXwIN/sDFuziTw.dhPfo3EnsyRykK/hzyJ8riXYv.",
                             PhoneNumber = "0404040404",
                             RoleID = 4
                         },
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 167, DateTimeKind.Utc).AddTicks(9684),
+                            CreatedAt = new DateTime(2025, 11, 3, 13, 18, 52, 496, DateTimeKind.Utc).AddTicks(9111),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$elHI.Rf53mcHoJI/zCSJSuB29j0zOUkRlz/arKljPUE2ESG5WfVEe",
+                            PasswordHash = "$2a$11$nrQDuD9NBYm/rDFOm8PE3OpIYH8lw2I6umt/R/YDHYplRMx9QJoJ6",
                             PhoneNumber = "0505050505",
                             RoleID = 5
                         });
