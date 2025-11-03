@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>{{InvoiceTitle}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 15mm;
+      color: #000;
+    }
+    h1 {
+      color: #004aad;
+      text-align: center;
+    }
+    .header, .seller, .buyer, .footer {
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .right {
+      text-align: right;
+    }
+    .signature {
+      margin-top: 40px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="{{LogoPath}}" alt="Logo" style="height:50px;">
+    <h1>{{InvoiceTitle}}</h1>
+    <p><b>Mẫu số:</b> {{InvoiceForm}} | <b>Ký hiệu:</b> {{InvoiceSerial}}</p>
+    <p><b>Ngày phát hành:</b> {{IssueDate}}</p>
+  </div>
+
+  <div class="seller">
+    <h3>Bên bán hàng</h3>
+    <p>Đơn vị: {{SellerName}}</p>
+    <p>Mã số thuế: {{SellerTaxCode}}</p>
+    <p>Địa chỉ: {{SellerAddress}}</p>
+  </div>
+
+  <div class="buyer">
+    <h3>Bên mua hàng</h3>
+    <p>Người mua: {{BuyerName}}</p>
+    <p>Đơn vị: {{BuyerCompany}}</p>
+    <p>Địa chỉ: {{BuyerAddress}}</p>
+    <p>Mã số thuế: {{BuyerTaxCode}}</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Tên hàng hóa, dịch vụ</th>
+        <th>Đơn vị tính</th>
+        <th class="right">Số lượng</th>
+        <th class="right">Đơn giá</th>
+        <th class="right">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each Items}}
+      <tr>
+        <td>{{@index}}</td>
+        <td>{{Description}}</td>
+        <td>{{Unit}}</td>
+        <td class="right">{{Quantity}}</td>
+        <td class="right">{{UnitPrice}}</td>
+        <td class="right">{{Total}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p><b>Tổng tiền trước thuế:</b> {{TotalAmount}}</p>
+    <p><b>Thuế suất:</b> {{VatRate}}</p>
+    <p><b>Tiền thuế:</b> {{VatAmount}}</p>
+    <p><b>Tổng cộng:</b> {{GrandTotal}}</p>
+    <p><b>Bằng chữ:</b> {{AmountInWords}}</p>
+    <p><b>Hình thức thanh toán:</b> {{PaymentMethod}}</p>
+  </div>
+
+  <div class="signature">
+    <p><b>Người bán hàng</b></p>
+    <br><br><br>
+    <p>(Ký, ghi rõ họ tên)</p>
+  </div>
+
+</body>
+</html>

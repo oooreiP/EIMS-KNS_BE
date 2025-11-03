@@ -35,7 +35,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<TemplateType> TemplateTypes { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-
+        public DbSet<Product> Products { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -46,6 +46,44 @@ namespace EIMS.Infrastructure.Persistence
                 new Role { RoleID = 4, RoleName = "HOD" }, // Head of Department
                 new Role { RoleID = 5, RoleName = "Customer" }
             );
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.ToTable("Products");
+
+                entity.HasKey(p => p.ProductID);
+
+                entity.Property(p => p.Code)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(p => p.Name)
+                    .HasMaxLength(255)
+                    .IsRequired();
+
+                entity.Property(p => p.Unit)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.BasePrice)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(p => p.VATRate)
+                    .HasColumnType("decimal(5,2)");
+
+                entity.Property(p => p.Description)
+                    .HasMaxLength(500);
+
+                entity.Property(p => p.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.CreatedDate)
+                    .HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(p => p.Category)
+                    .WithMany(c => c.Products)
+                    .HasForeignKey(p => p.CategoryID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
             modelBuilder.Entity<User>().HasData(
         new User
         {

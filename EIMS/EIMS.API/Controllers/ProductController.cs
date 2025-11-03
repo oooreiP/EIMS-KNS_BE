@@ -1,0 +1,74 @@
+﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.Products;
+using EIMS.Infrastructure.Service;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EIMS.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductController : ControllerBase
+    {
+        private readonly IProductService _productService;
+
+        public ProductController(IProductService productService)
+        {
+            _productService = productService;
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var products = await _productService.GetAllAsync();
+            return Ok(products);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var product = await _productService.GetByIdAsync(id);
+            if (product == null) return NotFound("Product not found.");
+            return Ok(product);
+        }
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+        {
+            try
+            {
+                var product = await _productService.CreateProductAsync(request);
+                return Ok(new { message = "Thêm hàng hóa thành công!", data = product });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await _productService.GetAllCategoriesAsync();
+            return Ok(categories);
+        }
+        [HttpGet("categories_names")]
+        public async Task<IActionResult> GetCategoryNames()
+        {
+            var names = await _productService.GetAllCategoryNamesAsync();
+            return Ok(names);
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deleted = await _productService.DeleteAsync(id);
+            if (!deleted) return NotFound("Product not found.");
+            return Ok(new { message = "Deleted successfully" });
+        }
+
+        [HttpGet("category/{categoryId}")]
+        public async Task<IActionResult> GetByCategory(int categoryId)
+        {
+            var products = await _productService.GetByCategoryAsync(categoryId);
+            return Ok(products);
+        }
+    }
+}
