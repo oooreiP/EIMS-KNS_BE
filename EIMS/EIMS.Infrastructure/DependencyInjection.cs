@@ -8,6 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Infrastructure.Security;
+using EIMS.Infrastructure.Service;
+using EIMS.Infrastructure.Repositories.Interface;
+using EIMS.Infrastructure.Repositories;
+using EIMS.Domain.Entities;
+using EIMS.Application.Commons.UnitOfWork;
 
 namespace EIMS.Infrastructure
 {
@@ -25,6 +30,9 @@ namespace EIMS.Infrastructure
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddHttpContextAccessor();
             services.AddScoped<IAuthCookieService, AuthCookieService>();
+            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IInvoiceService, InvoiceService>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             return services;
 
         }
