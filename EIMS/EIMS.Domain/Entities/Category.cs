@@ -25,5 +25,7 @@ namespace EIMS.Domain.Entities
         // --- Navigation Properties ---
         [InverseProperty("Category")]
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+        [InverseProperty("Category")]
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

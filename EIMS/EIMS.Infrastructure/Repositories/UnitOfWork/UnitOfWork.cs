@@ -1,0 +1,62 @@
+﻿using EIMS.Infrastructure.Persistence;
+using EIMS.Infrastructure.Repositories;
+using EIMS.Infrastructure.Repositories.Interface;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using EIMS.Application.Commons.Interfaces;
+using EIMS.Domain.Entities;
+
+namespace EIMS.Application.Commons.UnitOfWork
+{
+    public class UnitOfWork : IUnitOfWork
+    {
+        private readonly ApplicationDbContext _db;
+        private readonly IConfiguration _configuration;
+        public IProductRepository ProductRepository { get; set; }
+        public IInvoicesRepository InvoicesRepository { get; set; }
+        public ICustomerRepository CustomerRepository { get; set; }
+        public IBaseRepository<Category> CategoryRepository { get; set; }
+        public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
+        {
+            _db = db;
+            _configuration = configuration;
+            ProductRepository = new ProductRepository(_db);
+            InvoicesRepository = new InvoiceRepository(_db);
+            CustomerRepository = new CustomerRepository(_db);
+            CategoryRepository = new BaseRepository<Category>(_db);
+        }
+        public async Task SaveChanges()
+        {
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _db.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitAsync()
+        {
+            await _db.Database.CurrentTransaction?.CommitAsync();
+        }
+
+        public async Task RollbackAsync()
+        {
+            await _db.Database.CurrentTransaction?.RollbackAsync();
+        }
+    }
+}
