@@ -8,6 +8,7 @@ namespace EIMS.Application.DTOs.Products
 {
     public class UpdateProductRequest
     {
+        public string? Code { get; set; }
         public string? Name { get; set; }
         public int? CategoryID { get; set; }
         public string? Unit { get; set; }
