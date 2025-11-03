@@ -875,55 +875,55 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 8, 43, 33, 731, DateTimeKind.Utc).AddTicks(9985),
+                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 514, DateTimeKind.Utc).AddTicks(3057),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$U/LNM4DL8czDLmSx3K.r..98AJWtFR2zHylzBVa/Jb7X2YybyJyLG",
+                            PasswordHash = "$2a$11$b1cEWzZ7kNbM3XChtTEArekniZl3ZeywIxCT/z2gZv.obwG6kq8RC",
                             PhoneNumber = "0101010101",
                             RoleID = 1
                         },
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 8, 43, 33, 846, DateTimeKind.Utc).AddTicks(6114),
+                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 682, DateTimeKind.Utc).AddTicks(6404),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$oRwE6gYGqMXXiDyJ.PRvOeic9bycZ5R6La0CgGuoBDT/YJO.uLgc.",
+                            PasswordHash = "$2a$11$RqJ3bhXMeM1nV/h9UDhjIucoaQ0p2tbG/MkQ.dAwcjiYY.KaIhTQW",
                             PhoneNumber = "0202020202",
                             RoleID = 2
                         },
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 8, 43, 33, 963, DateTimeKind.Utc).AddTicks(5941),
+                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 844, DateTimeKind.Utc).AddTicks(8329),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$bp/Jw36m/yVUfJGdJEEbx.KHeDoXarUYe33Mt4XHRcsShqyStZQcO",
+                            PasswordHash = "$2a$11$4br/8T89v/wZfyKdLSNpkOw4W99MZ.78hkazdjr.VXAhR2mxbYpCq",
                             PhoneNumber = "0303030303",
                             RoleID = 3
                         },
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 8, 43, 34, 76, DateTimeKind.Utc).AddTicks(9475),
+                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 3, DateTimeKind.Utc).AddTicks(2539),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$HtoBsCypVoTh8HPsi0h9jOAzRE3VkRKhHqx2LiZQixKeOXnjuitv6",
+                            PasswordHash = "$2a$11$ccpCmtWmwpwqJU6rNpI7Bergs8Vu8y.Liwue7D4/mm6eRY9P0p/Bq",
                             PhoneNumber = "0404040404",
                             RoleID = 4
                         },
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 8, 43, 34, 191, DateTimeKind.Utc).AddTicks(8146),
+                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 167, DateTimeKind.Utc).AddTicks(9684),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$M18H7yUlXjOCbwURNraYaeZ3g/872jlAM6/GDmS6pI2ApdNrNlmri",
+                            PasswordHash = "$2a$11$elHI.Rf53mcHoJI/zCSJSuB29j0zOUkRlz/arKljPUE2ESG5WfVEe",
                             PhoneNumber = "0505050505",
                             RoleID = 5
                         });
