@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251103101358_SeedCategory")]
+    partial class SeedCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -954,55 +957,55 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 514, DateTimeKind.Utc).AddTicks(3057),
+                            CreatedAt = new DateTime(2025, 11, 3, 10, 13, 53, 952, DateTimeKind.Utc).AddTicks(2219),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$b1cEWzZ7kNbM3XChtTEArekniZl3ZeywIxCT/z2gZv.obwG6kq8RC",
+                            PasswordHash = "$2a$11$hU/BJYme/jv5IkLrluysjudSxYKy1x.iIQlI6CgQxU4UlC.JDTogC",
                             PhoneNumber = "0101010101",
                             RoleID = 1
                         },
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 682, DateTimeKind.Utc).AddTicks(6404),
+                            CreatedAt = new DateTime(2025, 11, 3, 10, 13, 54, 63, DateTimeKind.Utc).AddTicks(5433),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$RqJ3bhXMeM1nV/h9UDhjIucoaQ0p2tbG/MkQ.dAwcjiYY.KaIhTQW",
+                            PasswordHash = "$2a$11$PitfAT6Ws9sKxn5Wj3QNw.p0nG4sfSLESqKTU40yPU4FJ/zUcXu12",
                             PhoneNumber = "0202020202",
                             RoleID = 2
                         },
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 28, 844, DateTimeKind.Utc).AddTicks(8329),
+                            CreatedAt = new DateTime(2025, 11, 3, 10, 13, 54, 175, DateTimeKind.Utc).AddTicks(5028),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$4br/8T89v/wZfyKdLSNpkOw4W99MZ.78hkazdjr.VXAhR2mxbYpCq",
+                            PasswordHash = "$2a$11$JA9YU5LfRQcZty/HTevht.zFLxSrznCvPN2HtNrfIrWfLI99n.k1i",
                             PhoneNumber = "0303030303",
                             RoleID = 3
                         },
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 3, DateTimeKind.Utc).AddTicks(2539),
+                            CreatedAt = new DateTime(2025, 11, 3, 10, 13, 54, 288, DateTimeKind.Utc).AddTicks(1461),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$ccpCmtWmwpwqJU6rNpI7Bergs8Vu8y.Liwue7D4/mm6eRY9P0p/Bq",
+                            PasswordHash = "$2a$11$RSOVIWkDoHkHrmy9jtyfLOIIfnV7vusV5yDbApfahLl8D1J7RyRi.",
                             PhoneNumber = "0404040404",
                             RoleID = 4
                         },
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 11, 4, 29, 167, DateTimeKind.Utc).AddTicks(9684),
+                            CreatedAt = new DateTime(2025, 11, 3, 10, 13, 54, 398, DateTimeKind.Utc).AddTicks(3129),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$elHI.Rf53mcHoJI/zCSJSuB29j0zOUkRlz/arKljPUE2ESG5WfVEe",
+                            PasswordHash = "$2a$11$uhaUFhZS55C3W7lQvq3f3OMM5cuWm9hyv5CeaI7lk58vJ20N8INKS",
                             PhoneNumber = "0505050505",
                             RoleID = 5
                         });

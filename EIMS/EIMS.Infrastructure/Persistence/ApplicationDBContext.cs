@@ -1,4 +1,4 @@
-using EIMS.Application.Commons.Interfaces;
+﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,6 +84,85 @@ namespace EIMS.Infrastructure.Persistence
                     .HasForeignKey(p => p.CategoryID)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<Category>().HasData(
+       new Category
+       {
+           CategoryID = 1,
+           Code = "HH",
+           Name = "Hàng hóa chịu thuế 10%",
+           Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
+           VATRate = 10,
+           CategoryType = "Goods",
+           IsTaxable = true,
+           IsActive = true,
+           CreatedDate = DateTime.UtcNow
+       },
+       new Category
+       {
+           CategoryID = 2,
+           Code = "DV",
+           Name = "Dịch vụ chịu thuế 8%",
+           Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
+           VATRate = 8,
+           CategoryType = "Service",
+           IsTaxable = true,
+           IsActive = true,
+           CreatedDate = DateTime.UtcNow
+       },
+       new Category
+       {
+           CategoryID = 3,
+           Code = "SW",
+           Name = "Phần mềm không chịu thuế",
+           Description = "Sản phẩm phần mềm và bản quyền",
+           VATRate = 0,
+           CategoryType = "Software",
+           IsTaxable = false,
+           IsActive = true,
+           CreatedDate = DateTime.UtcNow
+       }
+   );
+            modelBuilder.Entity<Product>().HasData(
+    new Product
+    {
+        ProductID = 1,
+        Code = "HH0001",
+        Name = "Xăng RON95",
+        CategoryID = 1,
+        Unit = "Lít",
+        BasePrice = 23000,
+        VATRate = 10,
+        Description = "Xăng RON95 chịu thuế GTGT 10%",
+        IsActive = true,
+        CreatedDate = DateTime.UtcNow
+    },
+    new Product
+    {
+        ProductID = 2,
+        Code = "DV001",
+        Name = "Dịch vụ cho thuê máy chủ (Hosting)",
+        CategoryID = 2,
+        Unit = "Tháng",
+        BasePrice = 500000,
+        VATRate = 8,
+        Description = "Dịch vụ hosting thuế suất 8%",
+        IsActive = true,
+        CreatedDate = DateTime.UtcNow
+    },
+    new Product
+    {
+        ProductID = 3,
+        Code = "SW001",
+        Name = "Phần mềm kế toán bản quyền",
+        CategoryID = 3,
+        Unit = "Gói",
+        BasePrice = 10000000,
+        VATRate = 0,
+        Description = "Phần mềm không chịu thuế GTGT",
+        IsActive = true,
+        CreatedDate = DateTime.UtcNow
+    }
+);
             modelBuilder.Entity<User>().HasData(
         new User
         {
