@@ -32,6 +32,7 @@ namespace EIMS.Infrastructure
             services.AddScoped<IAuthCookieService, AuthCookieService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IInvoiceService, InvoiceService>();
+            services.AddScoped<IFileStorageService, FileStorageService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             return services;
 
