@@ -1,7 +1,10 @@
 using AutoMapper;
 using EIMS.Application.DTOs.Authentication;
+using EIMS.Application.DTOs.Serials;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
+using EIMS.Application.Features.Serial.Commands;
+using EIMS.Domain.Entities;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -15,6 +18,8 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<LoginRequest, LoginCommand>();
             CreateMap<LoginResponse, AuthResponse>();
             CreateMap<RefreshTokenResponse, AuthResponse>();
+            CreateMap<CreateSerialCommand, Serial>();
+            CreateMap<CreateSerialRequest, CreateSerialCommand>();
         }
     }
 }
