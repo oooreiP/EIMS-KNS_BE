@@ -1,4 +1,5 @@
 using System.Text;
+using EIMS.API.Middleware;
 using EIMS.Application;
 using EIMS.Infrastructure;
 using EIMS.Infrastructure.Persistence;
@@ -119,6 +120,7 @@ app.UseSwaggerUI(options =>
 });
 app.UseCors(corsPolicyName);
 app.UseHttpsRedirection();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

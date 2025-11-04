@@ -8,6 +8,7 @@ namespace EIMS.Application.Commons.Interfaces
         IProductRepository ProductRepository { get; }
         ICustomerRepository CustomerRepository { get; }
         IInvoicesRepository InvoicesRepository { get; }
+        ISerialRepository SerialRepository { get; }
         IBaseRepository<Category> CategoryRepository { get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();

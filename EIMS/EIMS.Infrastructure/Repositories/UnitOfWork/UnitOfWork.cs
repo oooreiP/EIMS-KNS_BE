@@ -15,6 +15,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IProductRepository ProductRepository { get; set; }
         public IInvoicesRepository InvoicesRepository { get; set; }
         public ICustomerRepository CustomerRepository { get; set; }
+        public ISerialRepository SerialRepository { get; set; }
         public IBaseRepository<Category> CategoryRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
@@ -23,6 +24,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             ProductRepository = new ProductRepository(_db);
             InvoicesRepository = new InvoiceRepository(_db);
             CustomerRepository = new CustomerRepository(_db);
+            SerialRepository = new SerialRepository(_db);
             CategoryRepository = new BaseRepository<Category>(_db);
         }
         public async Task SaveChanges()
