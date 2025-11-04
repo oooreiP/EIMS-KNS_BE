@@ -1,12 +1,7 @@
-﻿using EIMS.Infrastructure.Persistence;
-using EIMS.Infrastructure.Repositories.Interface;
+﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EIMS.Infrastructure.Repositories
 {

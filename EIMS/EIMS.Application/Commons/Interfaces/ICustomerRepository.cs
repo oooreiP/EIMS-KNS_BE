@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EIMS.Infrastructure.Repositories.Interface
+namespace EIMS.Application.Commons.Interfaces
 {
     public interface ICustomerRepository : IBaseRepository<Customer>
     {

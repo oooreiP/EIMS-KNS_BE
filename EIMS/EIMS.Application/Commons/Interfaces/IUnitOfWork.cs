@@ -1,11 +1,5 @@
 ﻿using EIMS.Domain.Entities;
-using EIMS.Infrastructure.Repositories.Interface;
 using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EIMS.Application.Commons.Interfaces
 {
