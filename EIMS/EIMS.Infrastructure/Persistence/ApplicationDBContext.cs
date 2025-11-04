@@ -241,6 +241,10 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceType { InvoiceTypeID = 8, Symbol = "H", TypeName = "Tem, vé, thẻ điện tử là hóa đơn bán hàng" },
                 new InvoiceType { InvoiceTypeID = 9, Symbol = "X", TypeName = "Hóa đơn thương mại điện tử" }
             );
+            modelBuilder.Entity<SerialStatus>().HasData(
+                new SerialStatus { SerialStatusID = 1, Symbol = "C", StatusName = "Hóa đơn có mã của cơ quan thuế" },
+                new SerialStatus { SerialStatusID = 2, Symbol = "K", StatusName = "Hóa đơn không có mã của cơ quan thuế" }
+            );
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
