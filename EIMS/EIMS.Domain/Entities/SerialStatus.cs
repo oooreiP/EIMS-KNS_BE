@@ -7,6 +7,8 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int SerialStatusID { get; set; }
+        [StringLength(1)]
+        public string? Symbol { get; set; }
         [StringLength(255)]
         public string? StatusName { get; set; }
 

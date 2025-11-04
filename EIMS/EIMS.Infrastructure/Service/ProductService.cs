@@ -1,7 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Products;
 using EIMS.Domain.Entities;
-using EIMS.Infrastructure.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

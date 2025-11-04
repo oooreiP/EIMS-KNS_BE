@@ -1,15 +1,8 @@
 ﻿using EIMS.Infrastructure.Persistence;
 using EIMS.Infrastructure.Repositories;
-using EIMS.Infrastructure.Repositories.Interface;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 

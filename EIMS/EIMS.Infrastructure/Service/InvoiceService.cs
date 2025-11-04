@@ -1,12 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
 using EIMS.Domain.Entities;
-using EIMS.Infrastructure.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EIMS.Infrastructure.Service
 {
