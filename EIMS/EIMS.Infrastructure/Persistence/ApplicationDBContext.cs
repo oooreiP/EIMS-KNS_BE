@@ -245,6 +245,10 @@ namespace EIMS.Infrastructure.Persistence
                 new SerialStatus { SerialStatusID = 1, Symbol = "C", StatusName = "Hóa đơn có mã của cơ quan thuế" },
                 new SerialStatus { SerialStatusID = 2, Symbol = "K", StatusName = "Hóa đơn không có mã của cơ quan thuế" }
             );
+            modelBuilder.Entity<InvoiceTemplate>()
+                .HasOne(p => p.Serial)
+                .WithMany(b => b.InvoiceTemplates)
+                .HasForeignKey(p => p.SerialID); 
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
