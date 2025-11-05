@@ -19,9 +19,9 @@ namespace EIMS.Domain.Entities
         public string? Year { get; set; }
         [StringLength(2)]
         public string? Tail { get; set; }
+        [ForeignKey("SerialStatusID")]
         public int SerialStatusID { get; set; }
         public long CurrentInvoiceNumber { get; set; } = 1;
-        [ForeignKey("SerialStatusID")]
         // --- Navigation Properties ---
         [InverseProperty("Serial")]
         public virtual ICollection<InvoiceTemplate> InvoiceTemplates { get; set; } = new List<InvoiceTemplate>();
