@@ -10,11 +10,10 @@ namespace EIMS.Domain.Entities
         [Required]
         [StringLength(255)]
         public string TemplateName { get; set; } = string.Empty;
-        [ForeignKey("InvoiceTypeID")]
-        public int InvoiceTypeID { get; set; }
+        [ForeignKey("TemplateTypeID")]
+        public int TemplateTypeID { get; set; }
         [ForeignKey("SerialID")]
         public int SerialID { get; set; }
-        public long CurrentInvoiceNumber { get; set; } = 0;
         public string? LayoutDefinition { get; set; }
         public bool IsActive { get; set; } = true;
         [ForeignKey("CreatedByUserID")]

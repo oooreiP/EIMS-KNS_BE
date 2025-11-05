@@ -10,6 +10,8 @@ namespace EIMS.Application.Commons.Interfaces
         IInvoicesRepository InvoicesRepository { get; }
         ISerialRepository SerialRepository { get; }
         IBaseRepository<Category> CategoryRepository { get; }
+        IBaseRepository<InvoiceTemplate> InvoiceTemplateRepository { get; }
+
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();

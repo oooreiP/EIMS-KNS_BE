@@ -245,11 +245,17 @@ namespace EIMS.Infrastructure.Persistence
                 new SerialStatus { SerialStatusID = 1, Symbol = "C", StatusName = "Hóa đơn có mã của cơ quan thuế" },
                 new SerialStatus { SerialStatusID = 2, Symbol = "K", StatusName = "Hóa đơn không có mã của cơ quan thuế" }
             );
+            modelBuilder.Entity<TemplateType>().HasData(
+                new TemplateType { TemplateTypeID = 1, TypeName = "Hóa đơn mới", TypeCategory = "New" },
+                new TemplateType { TemplateTypeID = 2, TypeName = "Hóa đơn điều chỉnh", TypeCategory = "Adjustment" },
+                new TemplateType { TemplateTypeID = 3, TypeName = "Hóa đơn thay thế", TypeCategory = "Replacement" }
+            );
             modelBuilder.Entity<InvoiceTemplate>()
-                .HasOne(p => p.Serial)
-                .WithMany(b => b.InvoiceTemplates)
-                .HasForeignKey(p => p.SerialID); 
+        .HasOne(t => t.Serial)
+        .WithMany(s => s.InvoiceTemplates)
+        .HasForeignKey(t => t.SerialID);
         }
+
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
