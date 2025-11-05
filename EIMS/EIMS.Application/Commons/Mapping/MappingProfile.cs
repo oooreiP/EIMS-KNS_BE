@@ -1,8 +1,10 @@
 using AutoMapper;
 using EIMS.Application.DTOs.Authentication;
+using EIMS.Application.DTOs.InvoiceTemplate;
 using EIMS.Application.DTOs.Serials;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
+using EIMS.Application.Features.InvoiceTemplate.Commands;
 using EIMS.Application.Features.Serial.Commands;
 using EIMS.Domain.Entities;
 
@@ -20,6 +22,8 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<RefreshTokenResponse, AuthResponse>();
             CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
+            CreateMap<CreateTemplateRequest, CreateTemplateCommand>();
+            CreateMap<CreateTemplateCommand, InvoiceTemplate>();
         }
     }
 }

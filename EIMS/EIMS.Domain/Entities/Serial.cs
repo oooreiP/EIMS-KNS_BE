@@ -20,6 +20,7 @@ namespace EIMS.Domain.Entities
         [StringLength(2)]
         public string? Tail { get; set; }
         public int SerialStatusID { get; set; }
+        public long CurrentInvoiceNumber { get; set; } = 1;
         [ForeignKey("SerialStatusID")]
         // --- Navigation Properties ---
         [InverseProperty("Serial")]

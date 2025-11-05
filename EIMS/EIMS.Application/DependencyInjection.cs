@@ -2,6 +2,7 @@
 
 using System.Reflection;
 using AutoMapper;
+using EIMS.Application.Commons.Behaviors;
 using EIMS.Application.Commons.Behaviours;
 using FluentValidation;
 using MediatR;
@@ -17,6 +18,7 @@ namespace EIMS.Application
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UserIdPopulationBehavior<,>));
             return services;
         }
     }
