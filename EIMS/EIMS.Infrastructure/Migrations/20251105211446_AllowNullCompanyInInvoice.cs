@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace EIMS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedSerialStatus : Migration
+    public partial class AllowNullCompanyInInvoice : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,177 +16,158 @@ namespace EIMS.Infrastructure.Migrations
                 keyColumn: "CategoryID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(5971));
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8976));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(5980));
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8981));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(5983));
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8984));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(6034));
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9035));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(6038));
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9038));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 10, 33, 52, 535, DateTimeKind.Utc).AddTicks(6042));
-
-            migrationBuilder.InsertData(
-                table: "SerialStatuses",
-                columns: new[] { "SerialStatusID", "StatusName", "Symbol" },
-                values: new object[,]
-                {
-                    { 1, "Hóa đơn có mã của cơ quan thuế", "C" },
-                    { 2, "Hóa đơn không có mã của cơ quan thuế", "K" }
-                });
+                value: new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9040));
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 10, 33, 52, 692, DateTimeKind.Utc).AddTicks(3507), "$2a$11$Uq3.Eqf0/IY82F5SXicwsuTdTk9qAq5m0x0IGTFXNVSTeaOXmHAXu" });
+                values: new object[] { new DateTime(2025, 11, 5, 21, 14, 45, 323, DateTimeKind.Utc).AddTicks(6028), "$2a$11$8OnAd5fTKq5K8FUoYdEXS.SKP.7cFSFA.k9mNjmxO8I5A7H14VSN2" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 10, 33, 52, 853, DateTimeKind.Utc).AddTicks(2083), "$2a$11$NsKsCViWgyyMGDxkBh8c5.76DZffkxA7EtsUmP517dDWdL2JnTA5u" });
+                values: new object[] { new DateTime(2025, 11, 5, 21, 14, 45, 436, DateTimeKind.Utc).AddTicks(6497), "$2a$11$0VeNKilzvqyUHn51meEZren/oNTOo8KiiASbc9VLXatzz4mxBAhEa" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 10, 33, 53, 9, DateTimeKind.Utc).AddTicks(238), "$2a$11$de53I21Px.56GsZ16EUll.DKaTbu.C2pVSEod7ADiclSGkIWLXV7G" });
+                values: new object[] { new DateTime(2025, 11, 5, 21, 14, 45, 546, DateTimeKind.Utc).AddTicks(6976), "$2a$11$ax5kXFGJrm1wMeNy582p7.P4YHlMEq4HGlt7r2TebP9zACF2m2FkW" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 10, 33, 53, 164, DateTimeKind.Utc).AddTicks(6781), "$2a$11$64VI4BtrOzGstEWuLoeynuJXhlpN8Le33VsxJrUdTWB0YCSpuZKuW" });
+                values: new object[] { new DateTime(2025, 11, 5, 21, 14, 45, 657, DateTimeKind.Utc).AddTicks(6569), "$2a$11$s1S1tT4SiQi61n..sitNcO/g.qmvOCWEWU2pauINLZvC2bj1vAvA." });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 10, 33, 53, 321, DateTimeKind.Utc).AddTicks(184), "$2a$11$eIDNj/6/IdVu70l1XU26Hub6kFRW2yIhaYo2uxvbZVwhh4d3XpKty" });
+                values: new object[] { new DateTime(2025, 11, 5, 21, 14, 45, 770, DateTimeKind.Utc).AddTicks(5167), "$2a$11$t6Aa.Uf5l6o2JBt5yllg4.U6lMm7SfDA7mqOodS7WS0WMm9uF6Bsu" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "SerialStatuses",
-                keyColumn: "SerialStatusID",
-                keyValue: 1);
-
-            migrationBuilder.DeleteData(
-                table: "SerialStatuses",
-                keyColumn: "SerialStatusID",
-                keyValue: 2);
-
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5052));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9067));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5063));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9072));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5068));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9075));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5147));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9125));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5152));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9128));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2025, 11, 4, 8, 13, 8, 268, DateTimeKind.Utc).AddTicks(5156));
+                value: new DateTime(2025, 11, 5, 20, 27, 26, 551, DateTimeKind.Utc).AddTicks(9131));
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 8, 13, 8, 467, DateTimeKind.Utc).AddTicks(1480), "$2a$11$gJ3UTJszrr4kpQGrUAw9auovtz2lPbdk5qdwEgpx6LgTY0R9TlQ9." });
+                values: new object[] { new DateTime(2025, 11, 5, 20, 27, 26, 667, DateTimeKind.Utc).AddTicks(766), "$2a$11$VoYG6VEbaJlWBug9oPoz3utuak3QUFuVzxcUBQqO4OKhoHajzUwIC" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 8, 13, 8, 624, DateTimeKind.Utc).AddTicks(2865), "$2a$11$LgLCkTLBcNjJhPGvzncPtu3krOTqrO28wXelp5emJ5/gk/Ip3LkSm" });
+                values: new object[] { new DateTime(2025, 11, 5, 20, 27, 26, 783, DateTimeKind.Utc).AddTicks(2989), "$2a$11$6sy0d7x.V4mgV.eztfK.1.St9LAPoe4IOB5SFxTo1eXkpfavdALPa" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 8, 13, 8, 810, DateTimeKind.Utc).AddTicks(6476), "$2a$11$qm0Sy66sXt26dA2or2hkJuftwBbPQrj8qyUHbp8yvWJIRvIj3s.Hu" });
+                values: new object[] { new DateTime(2025, 11, 5, 20, 27, 26, 893, DateTimeKind.Utc).AddTicks(9218), "$2a$11$l4NQY//c8ClpJtrsl2nq8uEEwQ/7XQE5kuH3dZA5EVCwE/lFNahCK" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 8, 13, 8, 973, DateTimeKind.Utc).AddTicks(4821), "$2a$11$616vfFHiQQsVISer44Jh7OMuQ5vZ2FLLWpO/cbDlFp1nk1qS7pyB." });
+                values: new object[] { new DateTime(2025, 11, 5, 20, 27, 27, 4, DateTimeKind.Utc).AddTicks(5107), "$2a$11$uhEk8PSqqM3JnWPlWWWkG.HzfwXljRehFdjBfnnoxv5njPL.V4f6W" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2025, 11, 4, 8, 13, 9, 149, DateTimeKind.Utc).AddTicks(6220), "$2a$11$gBw9FkyRNuNda6961tW3PuBnmdGmHM5nHHuRYOeSFLfVVtGklFfUe" });
+                values: new object[] { new DateTime(2025, 11, 5, 20, 27, 27, 117, DateTimeKind.Utc).AddTicks(9357), "$2a$11$p9ZpnIjHj1pVyPcAHyodeuFxX0ee7PRl7hal9XlJcvlLriGG9w/de" });
         }
     }
 }
