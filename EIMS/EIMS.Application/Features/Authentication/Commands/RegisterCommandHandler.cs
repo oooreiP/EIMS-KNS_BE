@@ -14,7 +14,7 @@ namespace EIMS.Application.Features.Authentication.Commands
         private readonly IApplicationDBContext _context;
         private readonly IPasswordHasher _passwordHasher;
 
-        private const string DEFAULT_ROLE_NAME = "Accountant"; // Ensure this role exists in your DB
+        private const string DEFAULT_ROLE_NAME = "Accountant"; 
 
         public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher)
         {

@@ -1,6 +1,7 @@
 using AutoMapper;
 using EIMS.Application.DTOs.InvoiceTemplate;
 using EIMS.Application.Features.InvoiceTemplate.Commands;
+using EIMS.Application.Features.InvoiceTemplate.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,7 +31,42 @@ namespace EIMS.API.Controllers
                 return BadRequest(new ProblemDetails // Use ProblemDetails for standard error responses
                 {
                     Status = StatusCodes.Status400BadRequest,
-                    Title = "Invoice tempate creation failed",
+                    Title = "Invoice template creation failed",
+                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
+                });
+            }
+            return Ok(result.Value);
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetTemplates()
+        {
+            var result = await _sender.Send(new GetTemplatesQuery());
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                // Return error response
+                return BadRequest(new ProblemDetails // Use ProblemDetails for standard error responses
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Invoice template get all failed",
+                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
+                });
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetTemplateById(int id)
+        {
+            var result = await _sender.Send(new GetTemplateByIdQuery(id));
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                // Return error response
+                return BadRequest(new ProblemDetails // Use ProblemDetails for standard error responses
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Invoice template by ID failed",
                     Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
                 });
             }
