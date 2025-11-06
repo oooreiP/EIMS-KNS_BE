@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251029115325_SeedUsers")]
-    partial class SeedUsers
+    [Migration("20251105211446_AllowNullCompanyInInvoice")]
+    partial class AllowNullCompanyInInvoice
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,6 +92,44 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("CategoryID");
 
                     b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            CategoryID = 1,
+                            CategoryType = "Goods",
+                            Code = "HH",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8976),
+                            Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
+                            IsActive = true,
+                            IsTaxable = true,
+                            Name = "Hàng hóa chịu thuế 10%",
+                            VATRate = 10m
+                        },
+                        new
+                        {
+                            CategoryID = 2,
+                            CategoryType = "Service",
+                            Code = "DV",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8981),
+                            Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
+                            IsActive = true,
+                            IsTaxable = true,
+                            Name = "Dịch vụ chịu thuế 8%",
+                            VATRate = 8m
+                        },
+                        new
+                        {
+                            CategoryID = 3,
+                            CategoryType = "Software",
+                            Code = "SW",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(8984),
+                            Description = "Sản phẩm phần mềm và bản quyền",
+                            IsActive = true,
+                            IsTaxable = false,
+                            Name = "Phần mềm không chịu thuế",
+                            VATRate = 0m
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Company", b =>
@@ -307,24 +345,14 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18, 2)");
 
-                    b.Property<int>("CategoryID")
-                        .HasColumnType("integer");
-
                     b.Property<int>("InvoiceID")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                    b.Property<int>("ProductID")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18, 2)");
@@ -334,9 +362,9 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("InvoiceItemID");
 
-                    b.HasIndex("CategoryID");
-
                     b.HasIndex("InvoiceID");
+
+                    b.HasIndex("ProductID");
 
                     b.ToTable("InvoiceItems");
                 });
@@ -449,7 +477,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("CreatedByUserID");
 
-                    b.HasIndex("SerialStatusID");
+                    b.HasIndex("SerialID");
 
                     b.HasIndex("TemplateTypeID");
 
@@ -475,6 +503,62 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("InvoiceTypeID");
 
                     b.ToTable("InvoiceTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            InvoiceTypeID = 1,
+                            Symbol = "T",
+                            TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân kinh doanh đăng ký sử dụng"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 2,
+                            Symbol = "D",
+                            TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia hoặc hóa đơn điện tử đặc thù không nhất thiết phải có một số tiêu thức do các doanh nghiệp, tổ chức đăng ký sử dụng"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 3,
+                            Symbol = "L",
+                            TypeName = "Hóa đơn Cơ quan thuế cấp theo từng lần phát sinh"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 4,
+                            Symbol = "M",
+                            TypeName = "Hóa đơn khởi tạo từ máy tính tiền"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 5,
+                            Symbol = "N",
+                            TypeName = "Phiếu xuất kho kiêm vận chuyển nội bộ"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 6,
+                            Symbol = "B",
+                            TypeName = "Phiếu xuất kho gửi bán đại lý điện"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 7,
+                            Symbol = "G",
+                            TypeName = "Tem, vé, thẻ điện tử là hóa đơn GTGT"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 8,
+                            Symbol = "H",
+                            TypeName = "Tem, vé, thẻ điện tử là hóa đơn bán hàng"
+                        },
+                        new
+                        {
+                            InvoiceTypeID = 9,
+                            Symbol = "X",
+                            TypeName = "Hóa đơn thương mại điện tử"
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Notification", b =>
@@ -562,6 +646,146 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("PrefixID");
 
                     b.ToTable("Prefixes");
+
+                    b.HasData(
+                        new
+                        {
+                            PrefixID = 1,
+                            PrefixName = "Hóa đơn điện tử giá trị gia tăng"
+                        },
+                        new
+                        {
+                            PrefixID = 2,
+                            PrefixName = "Hóa đơn điện tử bán hàng"
+                        },
+                        new
+                        {
+                            PrefixID = 3,
+                            PrefixName = "Hóa đơn điện tử bán tài sản công"
+                        },
+                        new
+                        {
+                            PrefixID = 4,
+                            PrefixName = "Hóa đơn điện tử bán hàng dự trữ quốc gia"
+                        },
+                        new
+                        {
+                            PrefixID = 5,
+                            PrefixName = "Hóa đơn điện tử khác là tem điện tử, vé điện tử, thẻ điện tử, phiếu thu điện tử hoặc các chứng từ điện tử có tên gọi khác nhưng có nội dung của hóa đơn điện tử theo quy định tại Nghị định số 123/2020/NĐ-CP"
+                        },
+                        new
+                        {
+                            PrefixID = 6,
+                            PrefixName = "Chứng từ điện tử được sử dụng và quản lý như hóa đơn gồm phiếu xuất kho kiêm vận chuyển nội bộ điện tử, phiếu xuất kho hàng gửi bán đại lý điện tử"
+                        },
+                        new
+                        {
+                            PrefixID = 7,
+                            PrefixName = "Hóa đơn thương mại điện tử"
+                        },
+                        new
+                        {
+                            PrefixID = 8,
+                            PrefixName = "Hóa đơn giá trị gia tăng tích hợp biên lai thu thuế, phí, lệ phí"
+                        },
+                        new
+                        {
+                            PrefixID = 9,
+                            PrefixName = "Hóa đơn bán hàng tích hợp biên lai thu thuế, phí, lệ phí"
+                        });
+                });
+
+            modelBuilder.Entity("EIMS.Domain.Entities.Product", b =>
+                {
+                    b.Property<int>("ProductID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductID"));
+
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CategoryID")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("VATRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("ProductID");
+
+                    b.HasIndex("CategoryID");
+
+                    b.ToTable("Products", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            ProductID = 1,
+                            BasePrice = 23000m,
+                            CategoryID = 1,
+                            Code = "HH0001",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9035),
+                            Description = "Xăng RON95 chịu thuế GTGT 10%",
+                            IsActive = true,
+                            Name = "Xăng RON95",
+                            Unit = "Lít",
+                            VATRate = 10m
+                        },
+                        new
+                        {
+                            ProductID = 2,
+                            BasePrice = 500000m,
+                            CategoryID = 2,
+                            Code = "DV001",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9038),
+                            Description = "Dịch vụ hosting thuế suất 8%",
+                            IsActive = true,
+                            Name = "Dịch vụ cho thuê máy chủ (Hosting)",
+                            Unit = "Tháng",
+                            VATRate = 8m
+                        },
+                        new
+                        {
+                            ProductID = 3,
+                            BasePrice = 10000000m,
+                            CategoryID = 3,
+                            Code = "SW001",
+                            CreatedDate = new DateTime(2025, 11, 5, 21, 14, 45, 211, DateTimeKind.Utc).AddTicks(9040),
+                            Description = "Phần mềm không chịu thuế GTGT",
+                            IsActive = true,
+                            Name = "Phần mềm kế toán bản quyền",
+                            Unit = "Gói",
+                            VATRate = 0m
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.RefreshToken", b =>
@@ -685,9 +909,27 @@ namespace EIMS.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("Symbol")
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
                     b.HasKey("SerialStatusID");
 
                     b.ToTable("SerialStatuses");
+
+                    b.HasData(
+                        new
+                        {
+                            SerialStatusID = 1,
+                            StatusName = "Hóa đơn có mã của cơ quan thuế",
+                            Symbol = "C"
+                        },
+                        new
+                        {
+                            SerialStatusID = 2,
+                            StatusName = "Hóa đơn không có mã của cơ quan thuế",
+                            Symbol = "K"
+                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.StatementStatus", b =>
@@ -826,55 +1068,55 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 10, 29, 11, 53, 24, 185, DateTimeKind.Utc).AddTicks(863),
+                            CreatedAt = new DateTime(2025, 11, 5, 21, 14, 45, 323, DateTimeKind.Utc).AddTicks(6028),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$QIf1jRGnXSdTxLBzKczFX.0YVZ9slcpvM0Ald/OyIp7XUv7bGY0ma",
+                            PasswordHash = "$2a$11$8OnAd5fTKq5K8FUoYdEXS.SKP.7cFSFA.k9mNjmxO8I5A7H14VSN2",
                             PhoneNumber = "0101010101",
                             RoleID = 1
                         },
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 10, 29, 11, 53, 24, 338, DateTimeKind.Utc).AddTicks(2086),
+                            CreatedAt = new DateTime(2025, 11, 5, 21, 14, 45, 436, DateTimeKind.Utc).AddTicks(6497),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$vQH4TOwkluaVtJQqW5h8R.B/9M0RrVEFVlht1C3S8hgwELgw..woy",
+                            PasswordHash = "$2a$11$0VeNKilzvqyUHn51meEZren/oNTOo8KiiASbc9VLXatzz4mxBAhEa",
                             PhoneNumber = "0202020202",
                             RoleID = 2
                         },
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 10, 29, 11, 53, 24, 491, DateTimeKind.Utc).AddTicks(3899),
+                            CreatedAt = new DateTime(2025, 11, 5, 21, 14, 45, 546, DateTimeKind.Utc).AddTicks(6976),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$cAxQQcWX5Or4sBD6gUk4GepekcJ2VDsO7mtGeJEpyivhnJ7q/y3tO",
+                            PasswordHash = "$2a$11$ax5kXFGJrm1wMeNy582p7.P4YHlMEq4HGlt7r2TebP9zACF2m2FkW",
                             PhoneNumber = "0303030303",
                             RoleID = 3
                         },
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 10, 29, 11, 53, 24, 644, DateTimeKind.Utc).AddTicks(336),
+                            CreatedAt = new DateTime(2025, 11, 5, 21, 14, 45, 657, DateTimeKind.Utc).AddTicks(6569),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$XysmTrukGd0GqP7DEdVGwOaB4fQnJ1YGkh9JU1IG5FLSsuIl//kgm",
+                            PasswordHash = "$2a$11$s1S1tT4SiQi61n..sitNcO/g.qmvOCWEWU2pauINLZvC2bj1vAvA.",
                             PhoneNumber = "0404040404",
                             RoleID = 4
                         },
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 10, 29, 11, 53, 24, 797, DateTimeKind.Utc).AddTicks(1426),
+                            CreatedAt = new DateTime(2025, 11, 5, 21, 14, 45, 770, DateTimeKind.Utc).AddTicks(5167),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
-                            PasswordHash = "$2a$11$gXUZCHekA/kCEH5I7vu/nep2dSI.XrcCXXcrchwejvM22/ydu6QX.",
+                            PasswordHash = "$2a$11$t6Aa.Uf5l6o2JBt5yllg4.U6lMm7SfDA7mqOodS7WS0WMm9uF6Bsu",
                             PhoneNumber = "0505050505",
                             RoleID = 5
                         });
@@ -965,21 +1207,21 @@ namespace EIMS.Infrastructure.Migrations
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceItem", b =>
                 {
-                    b.HasOne("EIMS.Domain.Entities.Category", "Category")
-                        .WithMany("InvoiceItems")
-                        .HasForeignKey("CategoryID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
                         .WithMany("InvoiceItems")
                         .HasForeignKey("InvoiceID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Category");
+                    b.HasOne("EIMS.Domain.Entities.Product", "Product")
+                        .WithMany("InvoiceItems")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Invoice");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
@@ -1017,7 +1259,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasOne("EIMS.Domain.Entities.Serial", "Serial")
                         .WithMany("InvoiceTemplates")
-                        .HasForeignKey("SerialStatusID")
+                        .HasForeignKey("SerialID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1059,6 +1301,17 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("NotificationType");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EIMS.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("EIMS.Domain.Entities.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.RefreshToken", b =>
@@ -1131,7 +1384,7 @@ namespace EIMS.Infrastructure.Migrations
 
             modelBuilder.Entity("EIMS.Domain.Entities.Category", b =>
                 {
-                    b.Navigation("InvoiceItems");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Company", b =>
@@ -1185,6 +1438,11 @@ namespace EIMS.Infrastructure.Migrations
             modelBuilder.Entity("EIMS.Domain.Entities.Prefix", b =>
                 {
                     b.Navigation("Serials");
+                });
+
+            modelBuilder.Entity("EIMS.Domain.Entities.Product", b =>
+                {
+                    b.Navigation("InvoiceItems");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Role", b =>

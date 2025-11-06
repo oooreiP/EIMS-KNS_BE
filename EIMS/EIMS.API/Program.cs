@@ -1,5 +1,6 @@
 using System.Text;
 using EIMS.Application;
+using EIMS.Application.Common.Mapping;
 using EIMS.Infrastructure;
 using EIMS.Infrastructure.Persistence;
 using EIMS.Infrastructure.Security;
@@ -65,6 +66,7 @@ builder.Services
 builder.Services.AddAuthorization();
 
 //configure swagger to use jwt
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -115,7 +117,7 @@ app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production");
-    options.RoutePrefix = String.Empty;
+    options.RoutePrefix = "swagger";
 });
 app.UseCors(corsPolicyName);
 app.UseHttpsRedirection();

@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 using EIMS.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Infrastructure.Repositories
 {
@@ -35,6 +36,24 @@ namespace EIMS.Infrastructure.Repositories
 
             await _context.SaveChangesAsync();
             return invoice;
+        }
+        public async Task<string> GetNextInvoiceNumberAsync(int templateId)
+        {
+            var template = await _context.InvoiceTemplates
+                .FirstOrDefaultAsync(t => t.TemplateID == templateId);
+
+            if (template == null)
+                throw new KeyNotFoundException($"Không tìm thấy TemplateID = {templateId}");
+
+            // Tăng số hóa đơn tiếp theo
+            template.CurrentInvoiceNumber += 1;
+
+            // Lưu thay đổi
+            await _context.SaveChangesAsync();
+
+            string formattedNumber = template.CurrentInvoiceNumber.ToString("D4");
+
+            return formattedNumber;
         }
     }
 }
