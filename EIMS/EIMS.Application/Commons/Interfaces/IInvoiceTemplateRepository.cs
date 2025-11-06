@@ -8,6 +8,7 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface IInvoiceTemplateRepository : IBaseRepository<InvoiceTemplate>
     {
-        
+        Task<List<InvoiceTemplate>> GetTemplatesWithDetailsAsync();
+        Task<InvoiceTemplate?> GetTemplateDetailsAsync(int id);
     }
 }
