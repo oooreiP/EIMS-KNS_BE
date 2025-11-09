@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace EIMS.Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -153,6 +155,7 @@ namespace EIMS.Infrastructure.Migrations
                 {
                     SerialStatusID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Symbol = table.Column<string>(type: "character varying(1)", maxLength: 1, nullable: true),
                     StatusName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
                 constraints: table =>
@@ -201,6 +204,33 @@ namespace EIMS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    ProductID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CategoryID = table.Column<int>(type: "integer", nullable: false),
+                    Unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    BasePrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    VATRate = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: true, defaultValue: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.ProductID);
+                    table.ForeignKey(
+                        name: "FK_Products_Categories_CategoryID",
+                        column: x => x.CategoryID,
+                        principalTable: "Categories",
+                        principalColumn: "CategoryID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -235,7 +265,8 @@ namespace EIMS.Infrastructure.Migrations
                     InvoiceTypeID = table.Column<int>(type: "integer", nullable: false),
                     Year = table.Column<string>(type: "character varying(2)", maxLength: 2, nullable: true),
                     Tail = table.Column<string>(type: "character varying(2)", maxLength: 2, nullable: true),
-                    SerialStatusID = table.Column<int>(type: "integer", nullable: false)
+                    SerialStatusID = table.Column<int>(type: "integer", nullable: false),
+                    CurrentInvoiceNumber = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -356,27 +387,46 @@ namespace EIMS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false),
+                    Expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_RefreshTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InvoiceTemplates",
                 columns: table => new
                 {
                     TemplateID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     TemplateName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    InvoiceTypeID = table.Column<int>(type: "integer", nullable: false),
+                    TemplateTypeID = table.Column<int>(type: "integer", nullable: false),
                     SerialID = table.Column<int>(type: "integer", nullable: false),
-                    CurrentInvoiceNumber = table.Column<long>(type: "bigint", nullable: false),
                     LayoutDefinition = table.Column<string>(type: "text", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedByUserID = table.Column<int>(type: "integer", nullable: false),
-                    TemplateTypeID = table.Column<int>(type: "integer", nullable: false),
-                    SerialStatusID = table.Column<int>(type: "integer", nullable: false)
+                    CreatedByUserID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InvoiceTemplates", x => x.TemplateID);
                     table.ForeignKey(
-                        name: "FK_InvoiceTemplates_Serials_SerialStatusID",
-                        column: x => x.SerialStatusID,
+                        name: "FK_InvoiceTemplates_Serials_SerialID",
+                        column: x => x.SerialID,
                         principalTable: "Serials",
                         principalColumn: "SerialID",
                         onDelete: ReferentialAction.Cascade);
@@ -403,7 +453,7 @@ namespace EIMS.Infrastructure.Migrations
                     TemplateID = table.Column<int>(type: "integer", nullable: false),
                     InvoiceNumber = table.Column<long>(type: "bigint", nullable: false),
                     InvoiceStatusID = table.Column<int>(type: "integer", nullable: false),
-                    CompanyId = table.Column<int>(type: "integer", nullable: false),
+                    CompanyId = table.Column<int>(type: "integer", nullable: true),
                     CustomerID = table.Column<int>(type: "integer", nullable: false),
                     IssuerID = table.Column<int>(type: "integer", nullable: false),
                     SignDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -427,8 +477,7 @@ namespace EIMS.Infrastructure.Migrations
                         name: "FK_Invoices_Companies_CompanyId",
                         column: x => x.CompanyId,
                         principalTable: "Companies",
-                        principalColumn: "CompanyID",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "CompanyID");
                     table.ForeignKey(
                         name: "FK_Invoices_Customers_CustomerID",
                         column: x => x.CustomerID,
@@ -501,9 +550,7 @@ namespace EIMS.Infrastructure.Migrations
                     InvoiceItemID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     InvoiceID = table.Column<int>(type: "integer", nullable: false),
-                    CategoryID = table.Column<int>(type: "integer", nullable: false),
-                    ItemName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    Unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProductID = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
@@ -513,16 +560,16 @@ namespace EIMS.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_InvoiceItems", x => x.InvoiceItemID);
                     table.ForeignKey(
-                        name: "FK_InvoiceItems_Categories_CategoryID",
-                        column: x => x.CategoryID,
-                        principalTable: "Categories",
-                        principalColumn: "CategoryID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_InvoiceItems_Invoices_InvoiceID",
                         column: x => x.InvoiceID,
                         principalTable: "Invoices",
                         principalColumn: "InvoiceID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InvoiceItems_Products_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "Products",
+                        principalColumn: "ProductID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -555,6 +602,101 @@ namespace EIMS.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Categories",
+                columns: new[] { "CategoryID", "CategoryType", "Code", "CreatedDate", "Description", "IsActive", "IsTaxable", "Name", "VATRate" },
+                values: new object[,]
+                {
+                    { 1, "Goods", "HH", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7115), "Mặt hàng vật lý chịu thuế GTGT 10%", true, true, "Hàng hóa chịu thuế 10%", 10m },
+                    { 2, "Service", "DV", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7134), "Dịch vụ lưu trữ, cho thuê máy chủ", true, true, "Dịch vụ chịu thuế 8%", 8m },
+                    { 3, "Software", "SW", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7137), "Sản phẩm phần mềm và bản quyền", true, false, "Phần mềm không chịu thuế", 0m }
+                });
+
+            migrationBuilder.InsertData(
+                table: "InvoiceTypes",
+                columns: new[] { "InvoiceTypeID", "Symbol", "TypeName" },
+                values: new object[,]
+                {
+                    { 1, "T", "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân kinh doanh đăng ký sử dụng" },
+                    { 2, "D", "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia hoặc hóa đơn điện tử đặc thù không nhất thiết phải có một số tiêu thức do các doanh nghiệp, tổ chức đăng ký sử dụng" },
+                    { 3, "L", "Hóa đơn Cơ quan thuế cấp theo từng lần phát sinh" },
+                    { 4, "M", "Hóa đơn khởi tạo từ máy tính tiền" },
+                    { 5, "N", "Phiếu xuất kho kiêm vận chuyển nội bộ" },
+                    { 6, "B", "Phiếu xuất kho gửi bán đại lý điện" },
+                    { 7, "G", "Tem, vé, thẻ điện tử là hóa đơn GTGT" },
+                    { 8, "H", "Tem, vé, thẻ điện tử là hóa đơn bán hàng" },
+                    { 9, "X", "Hóa đơn thương mại điện tử" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Prefixes",
+                columns: new[] { "PrefixID", "PrefixName" },
+                values: new object[,]
+                {
+                    { 1, "Hóa đơn điện tử giá trị gia tăng" },
+                    { 2, "Hóa đơn điện tử bán hàng" },
+                    { 3, "Hóa đơn điện tử bán tài sản công" },
+                    { 4, "Hóa đơn điện tử bán hàng dự trữ quốc gia" },
+                    { 5, "Hóa đơn điện tử khác là tem điện tử, vé điện tử, thẻ điện tử, phiếu thu điện tử hoặc các chứng từ điện tử có tên gọi khác nhưng có nội dung của hóa đơn điện tử theo quy định tại Nghị định số 123/2020/NĐ-CP" },
+                    { 6, "Chứng từ điện tử được sử dụng và quản lý như hóa đơn gồm phiếu xuất kho kiêm vận chuyển nội bộ điện tử, phiếu xuất kho hàng gửi bán đại lý điện tử" },
+                    { 7, "Hóa đơn thương mại điện tử" },
+                    { 8, "Hóa đơn giá trị gia tăng tích hợp biên lai thu thuế, phí, lệ phí" },
+                    { 9, "Hóa đơn bán hàng tích hợp biên lai thu thuế, phí, lệ phí" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "RoleID", "RoleName" },
+                values: new object[,]
+                {
+                    { 1, "Admin" },
+                    { 2, "Accountant" },
+                    { 3, "Sale" },
+                    { 4, "HOD" },
+                    { 5, "Customer" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "SerialStatuses",
+                columns: new[] { "SerialStatusID", "StatusName", "Symbol" },
+                values: new object[,]
+                {
+                    { 1, "Hóa đơn có mã của cơ quan thuế", "C" },
+                    { 2, "Hóa đơn không có mã của cơ quan thuế", "K" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "TemplateTypes",
+                columns: new[] { "TemplateTypeID", "TypeCategory", "TypeName" },
+                values: new object[,]
+                {
+                    { 1, "New", "Hóa đơn mới" },
+                    { 2, "Adjustment", "Hóa đơn điều chỉnh" },
+                    { 3, "Replacement", "Hóa đơn thay thế" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Products",
+                columns: new[] { "ProductID", "BasePrice", "CategoryID", "Code", "CreatedDate", "Description", "IsActive", "Name", "Unit", "VATRate" },
+                values: new object[,]
+                {
+                    { 1, 23000m, 1, "HH0001", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7203), "Xăng RON95 chịu thuế GTGT 10%", true, "Xăng RON95", "Lít", 10m },
+                    { 2, 500000m, 2, "DV001", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7207), "Dịch vụ hosting thuế suất 8%", true, "Dịch vụ cho thuê máy chủ (Hosting)", "Tháng", 8m },
+                    { 3, 10000000m, 3, "SW001", new DateTime(2025, 11, 6, 13, 56, 13, 268, DateTimeKind.Utc).AddTicks(7211), "Phần mềm không chịu thuế GTGT", true, "Phần mềm kế toán bản quyền", "Gói", 0m }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "UserID", "CreatedAt", "Email", "FullName", "IsActive", "PasswordHash", "PhoneNumber", "RoleID" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2025, 11, 6, 13, 56, 13, 426, DateTimeKind.Utc).AddTicks(383), "admin@eims.local", "Admin User", true, "$2a$11$n/9c6eKIiaDI3aVVgJr2uOSLd2FN1M8VDZwTTrtIVdfhAJCUHNMtu", "0101010101", 1 },
+                    { 2, new DateTime(2025, 11, 6, 13, 56, 13, 585, DateTimeKind.Utc).AddTicks(1960), "accountant@eims.local", "Accountant User", true, "$2a$11$2aVHNgv9iqMxS.5Uy6b3euAQD5/0.URGZ19MqSDtbTtxEYqFXUBy.", "0202020202", 2 },
+                    { 3, new DateTime(2025, 11, 6, 13, 56, 13, 774, DateTimeKind.Utc).AddTicks(7520), "sale@eims.local", "Sales User", true, "$2a$11$sJ67ICZvi3cBCwcKWFkuheGtc4wdhTVcH91MRMTy3Y25XSb8FE2z2", "0303030303", 3 },
+                    { 4, new DateTime(2025, 11, 6, 13, 56, 13, 936, DateTimeKind.Utc).AddTicks(2223), "hod@eims.local", "Head Dept User", true, "$2a$11$gWPIEqxzwW/Zv6aBC3j1A.j9KvJ6e5h1wNYUQhRwfbitbOdkG0lZ.", "0404040404", 4 },
+                    { 5, new DateTime(2025, 11, 6, 13, 56, 14, 107, DateTimeKind.Utc).AddTicks(6576), "customer@eims.local", "Customer User", true, "$2a$11$ad5ZGPTMr2pv5QfVVWnkaeHrzJtd3FtLNiZgyFOGGsUqWrLaEI.sa", "0505050505", 5 }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_UserID",
                 table: "AuditLogs",
@@ -576,14 +718,14 @@ namespace EIMS.Infrastructure.Migrations
                 column: "ReferenceInvoiceID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InvoiceItems_CategoryID",
-                table: "InvoiceItems",
-                column: "CategoryID");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_InvoiceItems_InvoiceID",
                 table: "InvoiceItems",
                 column: "InvoiceID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InvoiceItems_ProductID",
+                table: "InvoiceItems",
+                column: "ProductID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invoices_CompanyId",
@@ -636,9 +778,9 @@ namespace EIMS.Infrastructure.Migrations
                 column: "CreatedByUserID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InvoiceTemplates_SerialStatusID",
+                name: "IX_InvoiceTemplates_SerialID",
                 table: "InvoiceTemplates",
-                column: "SerialStatusID");
+                column: "SerialID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvoiceTemplates_TemplateTypeID",
@@ -659,6 +801,16 @@ namespace EIMS.Infrastructure.Migrations
                 name: "IX_Notifications_UserID",
                 table: "Notifications",
                 column: "UserID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_CategoryID",
+                table: "Products",
+                column: "CategoryID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId",
+                table: "RefreshTokens",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Serials_InvoiceTypeID",
@@ -710,10 +862,13 @@ namespace EIMS.Infrastructure.Migrations
                 name: "Notifications");
 
             migrationBuilder.DropTable(
+                name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
                 name: "TaxApiLogs");
 
             migrationBuilder.DropTable(
-                name: "Categories");
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "StatementStatuses");
@@ -729,6 +884,9 @@ namespace EIMS.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "TaxApiStatuses");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
 
             migrationBuilder.DropTable(
                 name: "Companies");

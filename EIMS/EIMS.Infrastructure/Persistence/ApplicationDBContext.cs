@@ -36,6 +36,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<User> Users { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<PaymentStatus> PaymentStatuses { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -249,6 +250,20 @@ namespace EIMS.Infrastructure.Persistence
                 new TemplateType { TemplateTypeID = 1, TypeName = "Hóa đơn mới", TypeCategory = "New" },
                 new TemplateType { TemplateTypeID = 2, TypeName = "Hóa đơn điều chỉnh", TypeCategory = "Adjustment" },
                 new TemplateType { TemplateTypeID = 3, TypeName = "Hóa đơn thay thế", TypeCategory = "Replacement" }
+            );
+            modelBuilder.Entity<InvoiceStatus>().HasData(
+                new InvoiceStatus { InvoiceStatusID = 1, StatusName = "Draft" }, // Hóa đơn nháp
+                new InvoiceStatus { InvoiceStatusID = 2, StatusName = "Issued" }, // Đã phát hành
+                new InvoiceStatus { InvoiceStatusID = 3, StatusName = "Cancelled" }, // Đã hủy
+                new InvoiceStatus { InvoiceStatusID = 4, StatusName = "Adjusted" }, // Bị điều chỉnh
+                new InvoiceStatus { InvoiceStatusID = 5, StatusName = "Replaced" }  // Bị thay thế
+            );
+
+            modelBuilder.Entity<PaymentStatus>().HasData(
+                new PaymentStatus { PaymentStatusID = 1, StatusName = "Unpaid" },
+                new PaymentStatus { PaymentStatusID = 2, StatusName = "Partially Paid" },
+                new PaymentStatus { PaymentStatusID = 3, StatusName = "Paid" },
+                new PaymentStatus { PaymentStatusID = 4, StatusName = "Overdue" }
             );
             modelBuilder.Entity<InvoiceTemplate>()
         .HasOne(t => t.Serial)
