@@ -35,5 +35,21 @@ namespace EIMS.Infrastructure.Repositories
         {
             return await GetSerialsWithDetails().FirstOrDefaultAsync(s => s.SerialID == id);
         }
+        public async Task<Serial?> GetByIdAndLockAsync(int id)
+        {
+            // This SQL command tells PostgreSQL to find the row ("SerialID" = {0})
+            // and apply an exclusive lock to it ("FOR UPDATE").
+            //
+            // Any other user trying to "SELECT...FOR UPDATE" this *same row*
+            // will be forced to wait until your current database transaction
+            // is finished (either committed or rolled back).
+            //
+            // This 100% prevents a race condition.
+            var serial = await _db.Serials
+                .FromSqlRaw("SELECT * FROM \"Serials\" WHERE \"SerialID\" = {0} FOR UPDATE", id)
+                .FirstOrDefaultAsync();
+            
+            return serial;
+        }
     }
 }

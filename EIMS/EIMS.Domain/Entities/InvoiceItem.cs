@@ -7,17 +7,12 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int InvoiceItemID { get; set; }
-        [ForeignKey("InvoiceID")]
-        public int InvoiceID { get; set; }
-        [ForeignKey("CategoryID")]
-        public int CategoryID { get; set; }
-        [Required]
-        [StringLength(500)]
-        public string ItemName { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(50)]
-        public string Unit { get; set; } = string.Empty;
+        [ForeignKey("Invoice")]
+        public int InvoiceID { get; set; }
+
+        [ForeignKey("Product")]
+        public int ProductID { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Quantity { get; set; }
@@ -30,10 +25,12 @@ namespace EIMS.Domain.Entities
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal VATAmount { get; set; }
-        //navigations
+
+        // --- Navigation Properties ---
         [InverseProperty("InvoiceItems")]
         public virtual Invoice Invoice { get; set; }
+
         [InverseProperty("InvoiceItems")]
-        public virtual Category Category { get; set; }
+        public virtual Product Product { get; set; }
     }
 }

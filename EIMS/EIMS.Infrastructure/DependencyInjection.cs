@@ -24,7 +24,6 @@ namespace EIMS.Infrastructure
             services.AddHttpContextAccessor();
             services.AddScoped<IAuthCookieService, AuthCookieService>();
             services.AddScoped<IProductService, ProductService>();
-            services.AddScoped<IInvoiceService, InvoiceService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             return services;
 

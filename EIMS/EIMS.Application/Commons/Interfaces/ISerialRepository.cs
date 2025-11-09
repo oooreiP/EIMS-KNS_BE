@@ -8,6 +8,7 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface ISerialRepository : IBaseRepository<Serial>
     {
+        Task<Serial?> GetByIdAndLockAsync(int id);
         Task<List<Serial>> GetSerialsWithDetailsAsync();
         Task<Serial?> GetSerialWithDetailsAsync(int id);
     }

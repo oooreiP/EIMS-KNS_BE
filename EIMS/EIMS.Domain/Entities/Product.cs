@@ -44,5 +44,7 @@ namespace EIMS.Domain.Entities
         // --- Navigation ---
         [JsonIgnore]
         public virtual Category Category { get; set; }
+        [InverseProperty("Product")]
+        public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
     }
 }

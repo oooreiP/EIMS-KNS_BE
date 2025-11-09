@@ -1,5 +1,8 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
+using EIMS.Application.Features.Invoices.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,29 +12,41 @@ namespace EIMS.API.Controllers
     [ApiController]
     public class InvoiceController : ControllerBase
     {
-        private readonly IInvoiceService _invoiceService;
-
-        public InvoiceController(IInvoiceService invoiceService)
+        private readonly IMediator _mediator;
+        public InvoiceController(IMediator mediator)
         {
-            _invoiceService = invoiceService;
+            _mediator = mediator;
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceRequest request)
+        [HttpPost]
+        public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceCommand command)
         {
-            if (request == null)
-                return BadRequest("Invalid invoice data.");
-
-            var invoice = await _invoiceService.CreateInvoiceAsync(request);
-
-            return Ok(new
+            var result = await _mediator.Send(command);
+            if(result.IsFailed)
             {
-                message = "Invoice created successfully.",
-                invoiceID = invoice.InvoiceID,
-                customerID = invoice.CustomerID,
-                totalAmount = invoice.TotalAmount,
-                totalInWords = invoice.TotalAmountInWords
-            });
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Invoice creation failed",
+                    Detail = firstError?.Message ?? "Invalid credentials provided."
+                });
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var invoices = await _mediator.Send(new GetAllInvoicesQuery());
+            return Ok(invoices);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var invoice = await _mediator.Send(new GetInvoiceByIdQuery(id));
+            return invoice != null ? Ok(invoice) : NotFound();
         }
     }
 }

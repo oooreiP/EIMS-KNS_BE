@@ -9,7 +9,7 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface IInvoicesRepository : IBaseRepository<Invoice>
     {
-        //Task<string> GenerateInvoiceNumberAsync();
+        // Task<string> GetNextInvoiceNumberAsync(int templateId);
         Task<Invoice> CreateInvoiceAsync(Invoice invoice);
 
     }
