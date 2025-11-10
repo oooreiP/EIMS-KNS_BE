@@ -18,6 +18,12 @@ namespace EIMS.Application.Commons.UnitOfWork
         public ISerialRepository SerialRepository { get; set; }
         public IBaseRepository<Category> CategoryRepository { get; set; }
         public IInvoiceTemplateRepository InvoiceTemplateRepository { get; set; }
+        public IBaseRepository<Prefix> PrefixRepository { get; set; }
+        public IBaseRepository<InvoiceType> InvoiceTypeRepository { get; set; }
+        public IBaseRepository<SerialStatus> SerialStatusRepository { get; set; }
+
+
+
 
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
@@ -29,6 +35,9 @@ namespace EIMS.Application.Commons.UnitOfWork
             SerialRepository = new SerialRepository(_db);
             CategoryRepository = new BaseRepository<Category>(_db);
             InvoiceTemplateRepository = new InvoiceTemplateRepository(_db);
+            PrefixRepository = new BaseRepository<Prefix>(_db);
+            InvoiceTypeRepository = new BaseRepository<InvoiceType>(_db);
+            SerialStatusRepository = new BaseRepository<SerialStatus>(_db);
         }
         public async Task SaveChanges()
         {
