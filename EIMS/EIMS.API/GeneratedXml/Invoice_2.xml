@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HDon xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <DLHDon Id="INV_9_20251106041803">
+    <TTChung>
+      <PBan>2.1.0</PBan>
+      <THDon>Hóa đơn giá trị gia tăng</THDon>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>EINV</KHHDon>
+      <SHDon>2</SHDon>
+      <NLap>2025-11-06</NLap>
+      <DVTTe>VND</DVTTe>
+      <HTTToan>TM/CK</HTTToan>
+      <MSTTCGP>0311357436</MSTTCGP>
+    </TTChung>
+    <NDHDon>
+      <NBan>
+        <Ten>CÔNG TY TNHH E-INVOICE SYSTEM</Ten>
+        <MST>0109999999</MST>
+        <DChi>Hà Nội, Việt Nam</DChi>
+        <SDThoai>0123456789</SDThoai>
+        <DCTDTu>support@einvoice.vn</DCTDTu>
+        <STKNHang>0123456789</STKNHang>
+        <TNHang>Vietcombank</TNHang>
+      </NBan>
+      <NMua>
+        <Ten>Công ty TNHH Phần Mềm Sao Việt</Ten>
+        <MST>0101234567</MST>
+        <DChi>Số 12, Nguyễn Trãi, Thanh Xuân, Hà Nội</DChi>
+        <SDThoai>0912345678</SDThoai>
+        <DCTDTu>contact@saovietsoft.vn</DCTDTu>
+        <STKNHang />
+        <TNHang />
+      </NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT>
+          <THHDVu>Dịch vụ cho thuê máy chủ (Hosting)</THHDVu>
+          <DVTinh>Tháng</DVTinh>
+          <SLuong>1.00</SLuong>
+          <DGia>0.00</DGia>
+          <ThTien>500000.00</ThTien>
+          <TSuat>8%</TSuat>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>500000.00</TgTCThue>
+        <TgTThue>40000.00</TgTThue>
+        <TgTTTBSo>540000.00</TgTTTBSo>
+        <TgTTTBChu>540,000 đồng</TgTTTBChu>
+      </TToan>
+    </NDHDon>
+    <TTKhac>
+      <TTin>
+        <TTruong>NguoiKy</TTruong>
+        <KDLieu>string</KDLieu>
+        <DLieu>Kế toán trưởng</DLieu>
+      </TTin>
+      <TTin>
+        <TTruong>NgayKy</TTruong>
+        <KDLieu>date</KDLieu>
+        <DLieu>2025-11-06</DLieu>
+      </TTin>
+    </TTKhac>
+  </DLHDon>
+  <MCCQT Id="MCCQT_9">CHUA_GUI_CO_QUAN_THUE</MCCQT>
+</HDon>

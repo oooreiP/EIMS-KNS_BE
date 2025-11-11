@@ -31,5 +31,18 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpPost("generate-xml/{invoiceId:int}")]
+        public async Task<IActionResult> GenerateInvoiceXml(int invoiceId)
+        {
+            var result = await _mediator.Send(new GenerateInvoiceXmlCommand(invoiceId));
+            if (result.IsFailed)
+                return BadRequest(result.Reasons);
+
+            return Ok(new
+            {
+                Message = "XML file generated successfully",
+                FilePath = result.Value
+            });
+        }
     }
 }
