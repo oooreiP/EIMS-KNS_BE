@@ -28,10 +28,10 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 throw new ArgumentException("Invoice must contain at least one item.");
 
             // 1️⃣ Xử lý Customer
-            Customer? customer = null;
+            Domain.Entities.Customer? customer = null;
             if (request.CustomerID == null || request.CustomerID == 0)
             {
-                customer = new Customer
+                customer = new Domain.Entities.Customer
                 {
                     CustomerName = request.CompanyName ?? request.Name ?? "Khách hàng chưa đặt tên",
                     TaxCode = request.TaxCode ?? "",

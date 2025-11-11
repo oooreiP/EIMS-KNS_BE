@@ -2,6 +2,7 @@
 using EIMS.Application.DTOs;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Queries;
+using EIMS.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,8 @@ namespace EIMS.API.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(Invoice), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceCommand command)
         {
             var result = await _mediator.Send(command);
