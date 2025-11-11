@@ -48,7 +48,22 @@ namespace EIMS.Infrastructure.Repositories
         {
             return await dbSet.FindAsync(id);
         }
+        public virtual async Task<T?> GetByIdAsync(int id, string? includeProperties = null)
+        {
+            IQueryable<T> query = dbSet;
 
+            if (!string.IsNullOrWhiteSpace(includeProperties))
+            {
+                foreach (var includeProp in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProp.Trim());
+                }
+            }
+
+            // EF.Property để lấy cột ID theo tên entity (VD: InvoiceID)
+            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, typeof(T).Name + "ID") == id);
+            return entity;
+        }
         public async Task<T> UpdateAsync(T entity)
         {
             //_db.Attach(entity);
