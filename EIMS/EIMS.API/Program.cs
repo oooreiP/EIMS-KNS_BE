@@ -1,9 +1,12 @@
 using System.Text;
 using EIMS.Application;
 using EIMS.Application.Common.Mapping;
+using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.Mails;
 using EIMS.Infrastructure;
 using EIMS.Infrastructure.Persistence;
 using EIMS.Infrastructure.Security;
+using EIMS.Infrastructure.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -67,6 +70,9 @@ builder.Services.AddAuthorization();
 
 //configure swagger to use jwt
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddHttpClient<IEmailService, EmailService>();
+builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

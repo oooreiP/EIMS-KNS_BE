@@ -62,7 +62,8 @@ namespace EIMS.Domain.Entities
 
         public int? SalesID { get; set; }
         [ForeignKey("SalesID")]
-
+        [StringLength(500)]
+        public string? FilePath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---

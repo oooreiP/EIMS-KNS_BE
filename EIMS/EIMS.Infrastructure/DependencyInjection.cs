@@ -24,6 +24,10 @@ namespace EIMS.Infrastructure
             services.AddHttpContextAccessor();
             services.AddScoped<IAuthCookieService, AuthCookieService>();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IDocumentParserService, DocumentParserService>();
+            services.AddScoped<IFileStorageService, FileStorageService>();
+            services.AddScoped<IExternalCompanyLookupService, VietQrLookupService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             return services;
 
