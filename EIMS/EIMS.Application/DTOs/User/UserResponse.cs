@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EIMS.Domain.Enums;
 
 namespace EIMS.Application.DTOs.User
 {
@@ -13,6 +14,8 @@ namespace EIMS.Application.DTOs.User
         public string? PhoneNumber { get; set; }
         public string RoleName { get; set; }
         public bool IsActive { get; set; }
+        public UserAccountStatus Status { get; set; }
+        public string? EvidenceStoragePath { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

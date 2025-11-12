@@ -1,0 +1,64 @@
+using AutoMapper;
+using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.Mails;
+using EIMS.Domain.Enums;
+using FluentResults;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace EIMS.Application.Features.Admin.Commands
+{
+    public class UpdateHodStatusCommandHanlder : IRequestHandler<UpdateHodStatusCommand, Result>
+    {
+        private readonly IApplicationDBContext _context;
+        private readonly IEmailService _emailService;
+        public UpdateHodStatusCommandHanlder(IApplicationDBContext context, IMapper mapper, IEmailService emailService)
+        {
+            _context = context;
+            _emailService = emailService;
+        }
+        public async Task<Result> Handle(UpdateHodStatusCommand request, CancellationToken cancellationToken)
+        {
+            var user = await _context.Users
+                                .Include(u => u.Role)
+                                .FirstOrDefaultAsync(u => u.UserID == request.UserId);
+            if (user == null)
+                return Result.Fail(new Error("User not found").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserNotFound"));
+            if (user.Role.RoleName != "HOD")
+                return Result.Fail(new Error("User is not HOD").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserIsNotHod"));
+            if (user.Status != UserAccountStatus.PendingAdminReview)
+                return Result.Fail(new Error("User is not pending admin review").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserIsNotPendingAdminReview"));
+            if (request.NewStatus != UserAccountStatus.Active && request.NewStatus != UserAccountStatus.Declined)
+                return Result.Fail(new Error("Invalid status").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.InvalidStatus"));
+            string emailSubject;
+            string emailBody;
+            user.Status = request.NewStatus;
+            if (request.NewStatus == UserAccountStatus.Active)
+            {
+                user.IsActive = true;
+                emailSubject = "EIMS HOD Account Activated!";
+                emailBody = $"<p>Dear {user.FullName},</p><p>Good news! Your HOD account for EIMS has been successfully activated by an administrator. " +
+                            $"You can now fully access the system at [Your Login URL Here].</p><p>Thank you.</p>";
+            }
+            else
+            {
+                user.IsActive = false;
+                emailSubject = "EIMS HOD Account Status Update";
+                emailBody = $"<p>Dear {user.FullName},</p><p>We regret to inform you that your HOD account registration " +
+                            $"for EIMS has been declined by an administrator.</p>" +
+                            (string.IsNullOrEmpty(request.AdminNotes) ? "" : $"<p><strong>Reason:</strong> {request.AdminNotes}</p>") +
+                            "<p>Please contact support if you have any questions.</p><p>Thank you.</p>";
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+            // Send email
+            var mailRequest = new MailRequest
+            {
+                Email = user.Email,
+                Subject = emailSubject,
+                EmailBody = emailBody
+            };
+            await _emailService.SendMailAsync(mailRequest);
+            return Result.Ok();
+        }
+    }
+}
