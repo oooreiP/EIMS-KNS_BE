@@ -29,6 +29,8 @@ namespace EIMS.Domain.Entities
 
         [ForeignKey("RoleID")]
         public int RoleID { get; set; }
+        [ForeignKey("CustomerID")]
+        public int? CustomerID { get; set; }
 
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -57,6 +59,6 @@ namespace EIMS.Domain.Entities
         [InverseProperty("Users")]
         public virtual Role Role { get; set; }
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-
+        public virtual Customer? Customer { get; set; }
     }
 }

@@ -10,6 +10,7 @@ using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
 using EIMS.Domain.Entities;
+using EIMS.Application.DTOs.User;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -18,7 +19,6 @@ namespace EIMS.Application.Common.Mapping
     {
         public MappingProfile()
         {
-            // Map from the Request DTO to the Command
             CreateMap<RegisterRequest, RegisterCommand>();
             CreateMap<LoginRequest, LoginCommand>();
             CreateMap<LoginResponse, AuthResponse>();
@@ -28,6 +28,8 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
             CreateMap<CreateTemplateRequest, CreateTemplateCommand>();
             CreateMap<CreateTemplateCommand, InvoiceTemplate>();
+            CreateMap<User, UserResponse>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.RoleName));
         }
     }
 }
