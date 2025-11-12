@@ -124,8 +124,8 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     CustomerID = fullInvoice.CustomerID,
                     TotalAmount = fullInvoice.TotalAmount,
                     TotalAmountInWords = fullInvoice.TotalAmountInWords,
-                    Status = "Draft", // You can fetch this from InvoiceStatus table if needed
-                    XmlUrl = fullInvoice.FilePath // Add this to the response
+                    Status = "Draft", 
+                    XMLPath = fullInvoice.XMLPath
                 };
                 return Result.Ok(response);            }
             catch (Exception ex)
@@ -133,8 +133,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 // If anything fails, roll back everything.
                 await _unitOfWork.RollbackAsync();
                 
-                // Log the error (implement proper logging)
-                Console.WriteLine(ex.ToString()); // For debugging
+                Console.WriteLine(ex.ToString());
 
                 return Result.Fail(new Error($"Failed to create invoice: {ex.Message}").WithMetadata("ErrorCode", "Invoice.Create.Exception").CausedBy(ex));
             }

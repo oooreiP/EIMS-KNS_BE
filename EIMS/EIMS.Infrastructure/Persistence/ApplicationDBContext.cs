@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Infrastructure.Persistence
@@ -174,6 +175,7 @@ namespace EIMS.Infrastructure.Persistence
             PhoneNumber = "0101010101",
             RoleID = 1, // Admin Role
             IsActive = true,
+            Status = UserAccountStatus.Active,
             CreatedAt = DateTime.UtcNow
         },
         new User
@@ -185,6 +187,7 @@ namespace EIMS.Infrastructure.Persistence
             PhoneNumber = "0202020202",
             RoleID = 2, // Accountant Role
             IsActive = true,
+            Status = UserAccountStatus.Active,
             CreatedAt = DateTime.UtcNow
         },
         new User
@@ -196,6 +199,7 @@ namespace EIMS.Infrastructure.Persistence
             PhoneNumber = "0303030303",
             RoleID = 3, // Sale Role
             IsActive = true,
+            Status = UserAccountStatus.Active,
             CreatedAt = DateTime.UtcNow
         },
         new User
@@ -207,6 +211,7 @@ namespace EIMS.Infrastructure.Persistence
             PhoneNumber = "0404040404",
             RoleID = 4, // HOD Role
             IsActive = true,
+            Status = UserAccountStatus.Active,
             CreatedAt = DateTime.UtcNow
         },
             new User
@@ -218,6 +223,7 @@ namespace EIMS.Infrastructure.Persistence
                 PhoneNumber = "0505050505",
                 RoleID = 5, // Customer Role
                 IsActive = true,
+                Status = UserAccountStatus.Active,
                 CreatedAt = DateTime.UtcNow
             });
             modelBuilder.Entity<Prefix>().HasData(

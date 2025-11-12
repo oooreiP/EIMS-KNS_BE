@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using EIMS.Domain.Enums;
 
 namespace EIMS.Domain.Entities
 {
@@ -31,6 +32,8 @@ namespace EIMS.Domain.Entities
         public int RoleID { get; set; }
         [ForeignKey("CustomerID")]
         public int? CustomerID { get; set; }
+        public string? EvidenceStoragePath { get; set; } // URL or path to the evidence image
+        public UserAccountStatus Status { get; set; }
 
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
