@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.DTOs;
 using EIMS.Domain.Entities;
+using FluentResults;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 {
-    public class CreateInvoiceCommand : IRequest<Invoice>
+    public class CreateInvoiceCommand : IRequest<Result<Invoice>>
     {
         public int? TemplateID { get; set; }
         public int? CustomerID { get; set; }

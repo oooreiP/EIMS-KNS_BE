@@ -59,11 +59,13 @@ namespace EIMS.Domain.Entities
 
         [StringLength(2000)]
         public string? Notes { get; set; }
-
-        public int? SalesID { get; set; }
         [ForeignKey("SalesID")]
+        public int? SalesID { get; set; }
+        
         [StringLength(500)]
         public string? FilePath { get; set; }
+        [StringLength(500)]
+        public string? XMLPath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---
