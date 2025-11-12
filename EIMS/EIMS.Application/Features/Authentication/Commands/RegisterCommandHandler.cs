@@ -42,7 +42,7 @@ namespace EIMS.Application.Features.Authentication.Commands
 
             var passwordHash = _passwordHasher.Hash(request.Password);
 
-            var newUser = new User
+            var newUser = new Domain.Entities.User
             {
                 FullName = request.FullName,
                 Email = request.Email,
