@@ -1,17 +1,11 @@
 ﻿using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
-using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
@@ -35,6 +29,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 return Result.Fail(new Error("Invoice must has at least one item").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.TemplateID == null || request.TemplateID == 0)
                 return Result.Fail(new Error("Invoice must has a valid template id").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            string? xmlPath = null;
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -78,7 +73,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var invoice = new Invoice
                 {
                     InvoiceNumber = newInvoiceNumber,
-                    TemplateID = request.TemplateID ?? 1,
+                    TemplateID = request.TemplateID.Value,
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
                     SubtotalAmount = request.Amount,
@@ -106,7 +101,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 
                 var serializer = new XmlSerializer(typeof(HDon));
                 var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
-                var xmlPath = Path.Combine(Path.GetTempPath(), fileName);
+                xmlPath = Path.Combine(Path.GetTempPath(), fileName);
                 await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
                 {
                     serializer.Serialize(fs, xmlModel);
@@ -121,35 +116,35 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 fullInvoice.XMLPath = uploadResult.Value.Url;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _unitOfWork.SaveChanges();
-
-                return Result.Ok(invoice);
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail(new Error(ex.Message).CausedBy(ex));
-                await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
                 await _unitOfWork.CommitAsync();
                 var response = new CreateInvoiceResponse
                 {
-                    InvoiceID = invoice.InvoiceID,
-                    InvoiceNumber = invoice.InvoiceNumber,
-                    CustomerID = invoice.CustomerID,
-                    TotalAmount = invoice.TotalAmount,
-                    TotalAmountInWords = invoice.TotalAmountInWords,
-                    Status = "Draft"
+                    InvoiceID = fullInvoice.InvoiceID,
+                    InvoiceNumber = fullInvoice.InvoiceNumber,
+                    CustomerID = fullInvoice.CustomerID,
+                    TotalAmount = fullInvoice.TotalAmount,
+                    TotalAmountInWords = fullInvoice.TotalAmountInWords,
+                    Status = "Draft", // You can fetch this from InvoiceStatus table if needed
+                    XmlUrl = fullInvoice.FilePath // Add this to the response
                 };
-                return Result.Ok(response);
-            }
+                return Result.Ok(response);            }
             catch (Exception ex)
             {
-                // 10. If anything fails, roll back everything.
+                // If anything fails, roll back everything.
                 await _unitOfWork.RollbackAsync();
+                
+                // Log the error (implement proper logging)
+                Console.WriteLine(ex.ToString()); // For debugging
 
-                // Log the error (implement logging)
-                // _logger.LogError(ex, "Failed to create invoice.");
-
-                // Re-throw the exception
-                return Result.Fail(new Error("Failed to create invoice").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+                return Result.Fail(new Error($"Failed to create invoice: {ex.Message}").WithMetadata("ErrorCode", "Invoice.Create.Exception").CausedBy(ex));
+            }
+            finally
+            {
+                // 12. Clean up temp file
+                if (!string.IsNullOrEmpty(xmlPath) && File.Exists(xmlPath))
+                {
+                    File.Delete(xmlPath);
+                }
             }
         }
     }
