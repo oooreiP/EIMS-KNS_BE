@@ -64,6 +64,7 @@ namespace EIMS.Application.DTOs.Invoices
         [ForeignKey("SalesID")]
         [StringLength(500)]
         public string? FilePath { get; set; }
+        public string? XMLPath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
