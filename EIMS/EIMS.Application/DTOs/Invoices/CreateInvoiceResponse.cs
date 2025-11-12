@@ -12,6 +12,7 @@ namespace EIMS.Application.DTOs.Invoices
         public int CustomerID { get; set; }
         public decimal TotalAmount { get; set; }
         public string TotalAmountInWords { get; set; }
+        public string XmlUrl { get; set; }
         public string Status { get; set; }
     }
 }
