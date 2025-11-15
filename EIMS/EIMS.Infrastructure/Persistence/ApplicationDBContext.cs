@@ -48,6 +48,10 @@ namespace EIMS.Infrastructure.Persistence
                 new Role { RoleID = 4, RoleName = "HOD" }, // Head of Department
                 new Role { RoleID = 5, RoleName = "Customer" }
             );
+            modelBuilder.Entity<Customer>(entity =>
+            {
+                entity.HasIndex(c => c.TaxCode).IsUnique();
+            });
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("Products");

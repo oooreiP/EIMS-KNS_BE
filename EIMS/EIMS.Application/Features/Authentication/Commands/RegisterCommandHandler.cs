@@ -52,6 +52,41 @@ namespace EIMS.Application.Features.Authentication.Commands
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
+            if (requestedRole.RoleName == "Customer")
+            {
+                // 1. Validate required fields for a customer
+                if (string.IsNullOrWhiteSpace(request.TaxCode) || 
+                    string.IsNullOrWhiteSpace(request.CompanyName) || 
+                    string.IsNullOrWhiteSpace(request.Address))
+                {
+                    return Result.Fail(new Error("For 'Customer' role, TaxCode, CompanyName, and Address are required.")
+                        .WithMetadata("ErrorCode", "Auth.Register.CustomerInfoMissing"));
+                }
+
+                // 2. Check if this customer (by TaxCode) already exists
+                var existingCustomer = await _context.Customers
+                    .FirstOrDefaultAsync(c => c.TaxCode == request.TaxCode, cancellationToken);
+
+                if (existingCustomer != null)
+                {
+                    // 3a. If customer exists, link this new user to them
+                    newUser.CustomerID = existingCustomer.CustomerID;
+                }
+                else
+                {
+                    // 3b. If customer does not exist, create a new one
+                    var newCustomer = new Customer
+                    {
+                        CustomerName = request.CompanyName,
+                        TaxCode = request.TaxCode,
+                        Address = request.Address,
+                        ContactEmail = request.Email, // Use the user's email as the contact
+                        ContactPerson = request.FullName, // Use the user's name as the contact
+                        ContactPhone = request.PhoneNumber
+                    };
+                    newUser.Customer = newCustomer; 
+                }
+            }
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync(cancellationToken);
             return Result.Ok(newUser.UserID);

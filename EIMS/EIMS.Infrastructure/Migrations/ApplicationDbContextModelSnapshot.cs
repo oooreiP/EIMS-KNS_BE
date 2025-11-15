@@ -46,7 +46,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Category", b =>
@@ -88,7 +88,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("CategoryID");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
 
                     b.HasData(
                         new
@@ -166,7 +166,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("CompanyID");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Customer", b =>
@@ -207,7 +207,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("CustomerID");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Invoice", b =>
@@ -307,7 +307,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("TemplateID");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceHistory", b =>
@@ -341,7 +341,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("ReferenceInvoiceID");
 
-                    b.ToTable("InvoiceHistories");
+                    b.ToTable("InvoiceHistories", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceItem", b =>
@@ -376,7 +376,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("InvoiceItems");
+                    b.ToTable("InvoiceItems", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
@@ -425,7 +425,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("StatementStatusStatusID");
 
-                    b.ToTable("InvoiceStatements");
+                    b.ToTable("InvoiceStatements", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatus", b =>
@@ -443,7 +443,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("InvoiceStatusID");
 
-                    b.ToTable("InvoiceStatuses");
+                    b.ToTable("InvoiceStatuses", (string)null);
 
                     b.HasData(
                         new
@@ -509,7 +509,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("TemplateTypeID");
 
-                    b.ToTable("InvoiceTemplates");
+                    b.ToTable("InvoiceTemplates", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceType", b =>
@@ -530,7 +530,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("InvoiceTypeID");
 
-                    b.ToTable("InvoiceTypes");
+                    b.ToTable("InvoiceTypes", (string)null);
 
                     b.HasData(
                         new
@@ -621,7 +621,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.NotificationStatus", b =>
@@ -638,7 +638,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("StatusID");
 
-                    b.ToTable("NotificationStatuses");
+                    b.ToTable("NotificationStatuses", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.NotificationType", b =>
@@ -655,7 +655,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("TypeID");
 
-                    b.ToTable("NotificationTypes");
+                    b.ToTable("NotificationTypes", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.PaymentStatus", b =>
@@ -673,7 +673,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("PaymentStatusID");
 
-                    b.ToTable("PaymentStatuses");
+                    b.ToTable("PaymentStatuses", (string)null);
 
                     b.HasData(
                         new
@@ -713,7 +713,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("PrefixID");
 
-                    b.ToTable("Prefixes");
+                    b.ToTable("Prefixes", (string)null);
 
                     b.HasData(
                         new
@@ -881,7 +881,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Role", b =>
@@ -899,7 +899,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("RoleID");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new
@@ -965,7 +965,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("SerialStatusID");
 
-                    b.ToTable("Serials");
+                    b.ToTable("Serials", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.SerialStatus", b =>
@@ -986,7 +986,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("SerialStatusID");
 
-                    b.ToTable("SerialStatuses");
+                    b.ToTable("SerialStatuses", (string)null);
 
                     b.HasData(
                         new
@@ -1018,7 +1018,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("StatusID");
 
-                    b.ToTable("StatementStatuses");
+                    b.ToTable("StatementStatuses", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TaxApiLog", b =>
@@ -1051,7 +1051,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("TaxApiStatusID");
 
-                    b.ToTable("TaxApiLogs");
+                    b.ToTable("TaxApiLogs", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TaxApiStatus", b =>
@@ -1068,7 +1068,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("TaxApiStatusID");
 
-                    b.ToTable("TaxApiStatuses");
+                    b.ToTable("TaxApiStatuses", (string)null);
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TemplateType", b =>
@@ -1091,7 +1091,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("TemplateTypeID");
 
-                    b.ToTable("TemplateTypes");
+                    b.ToTable("TemplateTypes", (string)null);
 
                     b.HasData(
                         new
@@ -1164,7 +1164,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("RoleID");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
