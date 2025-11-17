@@ -1,6 +1,8 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Products;
+using EIMS.Application.Features.Products.Commands;
 using EIMS.Infrastructure.Service;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +13,12 @@ namespace EIMS.API.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly ISender _sender;
 
-        public ProductController(IProductService productService)
+        public ProductController(IProductService productService, ISender sender)
         {
             _productService = productService;
+            _sender = sender;
         }
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -75,5 +79,28 @@ namespace EIMS.API.Controllers
             var products = await _productService.GetByCategoryAsync(categoryId);
             return Ok(products);
         }
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] bool isActive)
+        {
+            var command = new UpdateProductStatusCommand
+            {
+                ProductID = id,
+                IsActive = isActive
+            };
+
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+            {
+                if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Product.NotFound"))
+                {
+                    return NotFound(result.Errors.First().Message);
+                }
+                return BadRequest(result.Errors.First().Message);
+            }
+
+            return Ok(new { message = "Product status updated successfully." });
+        }
     }
 }
+
