@@ -18,6 +18,5 @@ namespace EIMS.Application.Commons.Interfaces
         Task<IEnumerable<object>> GetAllCategoryNamesAsync();
         Task<bool> DeleteAsync(int id);
         Task<IEnumerable<Product>> GetByCategoryAsync(int categoryId);
-
     }
 }
