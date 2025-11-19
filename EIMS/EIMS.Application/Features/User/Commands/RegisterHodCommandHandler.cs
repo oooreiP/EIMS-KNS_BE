@@ -33,31 +33,31 @@ namespace EIMS.Application.Features.User.Commands
             var hodRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "HOD", cancellationToken);
             if (hodRole == null)
                 return Result.Fail(new Error("HOD role not found").WithMetadata("ErrorCode", "User.Register.Failed"));
-            string temporaryPassword = "P3ssword!";
-            var hashedPassword = _passwordHasher.Hash(temporaryPassword);
+            var tempPassword = Path.GetRandomFileName().Replace(".", "").Substring(0, 8);
+            var passwordHash = _passwordHasher.Hash(tempPassword);
             var user = new Domain.Entities.User
             {
                 FullName = request.FullName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
-                PasswordHash = hashedPassword,
+                PasswordHash = passwordHash,
                 RoleID = hodRole.RoleID,
                 IsActive = false,
                 Status = UserAccountStatus.PendingEvidence,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsPasswordChangeRequired = true
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
 
             // 5. Send welcome email to HOD
             string emailBody = $@"
-                <div style='font-family:Arial,sans-serif; font-size:14px;'>
-                    <p>Dear {request.FullName},</p>
-                    <p>Your EIMS HOD account has been created by an administrator.</p>
-                    <p>Your temporary password is: <strong>{temporaryPassword}</strong></p>
-                    <p>Please log in to upload your evidence for activation. You can access the system at [Your Login URL Here].</p>
-                    <p>Thank you.</p>
-                </div>";
+            <h3>Welcome to EIMS</h3>
+            <p>Your account has been created.</p>
+            <p><strong>Email:</strong> {request.Email}</p>
+            <p><strong>Temporary Password:</strong> {tempPassword}</p>
+            <p>Please log in and change your password immediately.</p>
+            <a href='http://your-frontend-url/login'>Click here to Login</a>";
 
             var mailRequest = new MailRequest
             {

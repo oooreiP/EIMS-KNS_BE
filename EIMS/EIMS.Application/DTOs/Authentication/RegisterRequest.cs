@@ -9,10 +9,6 @@ namespace EIMS.Application.DTOs.Authentication
 
         [Required, EmailAddress, MaxLength(255)]
         public string Email { get; set; }
-
-        [Required, MinLength(6)]
-        public string Password { get; set; }
-
         [Phone, MaxLength(20)]
         public string? PhoneNumber { get; set; }
         [Required]
