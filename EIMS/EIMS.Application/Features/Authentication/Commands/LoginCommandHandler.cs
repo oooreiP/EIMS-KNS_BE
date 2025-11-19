@@ -61,7 +61,9 @@ namespace EIMS.Application.Features.Authentication.Commands
                     Role = user.Role.RoleName,
                     AccessToken = accessToken,
                     RefreshToken = refreshToken.Token,
-                    RefreshTokenExpiry = refreshToken.Expires
+                    IsActive = user.IsActive,
+                    RefreshTokenExpiry = refreshToken.Expires,
+                    IsPasswordChangeRequired = user.IsPasswordChangeRequired
                 };
                 return Result.Ok(LoginResponse);
             }

@@ -34,7 +34,7 @@ namespace EIMS.Domain.Entities
         public int? CustomerID { get; set; }
         public string? EvidenceStoragePath { get; set; } // URL or path to the evidence image
         public UserAccountStatus Status { get; set; }
-
+        public bool IsPasswordChangeRequired { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -5,6 +5,7 @@ using EIMS.Application.DTOs.Authentication;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EIMS.API.Controllers
@@ -54,11 +55,11 @@ namespace EIMS.API.Controllers
             var refreshToken = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized(new ProblemDetails 
+                return Unauthorized(new ProblemDetails
                 {
                     Status = StatusCodes.Status401Unauthorized,
                     Title = "Authentication Failed",
-                    Detail = "Invalid credentials provided." 
+                    Detail = "Invalid credentials provided."
                 });
             }
             var refreshTokenResult = await _sender.Send(new RefreshTokenCommand
@@ -88,7 +89,18 @@ namespace EIMS.API.Controllers
             }
             return StatusCode(StatusCodes.Status201Created, "User creation successfully");
         }
-
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var command = new ChangePasswordCommand
+            {
+                CurrentPassword = request.CurrentPassword,
+                NewPassword = request.NewPassword
+            };
+            var result = await _sender.Send(command);
+            return result.IsSuccess ? Ok("Password changed successfully.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
+        }
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
