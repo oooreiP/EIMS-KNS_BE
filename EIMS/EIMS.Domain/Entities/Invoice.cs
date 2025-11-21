@@ -94,5 +94,7 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<InvoiceHistory> ReferencedByHistory { get; set; } = new List<InvoiceHistory>();
         [InverseProperty("Invoices")]
         public virtual PaymentStatus PaymentStatus { get; set; }
+        [InverseProperty("Invoice")]
+    public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
     }
 }

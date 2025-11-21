@@ -11,6 +11,8 @@ using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
 using EIMS.Domain.Entities;
 using EIMS.Application.DTOs.User;
+using EIMS.Application.DTOs.InvoiceStatement;
+using EIMS.Application.Features.InvoiceStatements.Commands;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -30,6 +32,8 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<CreateTemplateCommand, InvoiceTemplate>();
             CreateMap<User, UserResponse>()
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.RoleName));
+            CreateMap<GenerateStatementRequest, CreateStatementCommand>();
         }
+
     }
 }
