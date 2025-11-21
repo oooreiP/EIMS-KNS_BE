@@ -14,7 +14,7 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<Prefix> PrefixRepository { get; }
         IBaseRepository<InvoiceType> InvoiceTypeRepository { get; }
         IBaseRepository<SerialStatus> SerialStatusRepository { get; }
-
+        IInvoiceStatementRepository InvoiceStatementRepository { get; }
 
 
         Task SaveChanges();

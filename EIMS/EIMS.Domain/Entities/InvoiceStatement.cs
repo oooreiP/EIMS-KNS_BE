@@ -31,7 +31,8 @@ namespace EIMS.Domain.Entities
         public virtual User Creator { get; set; }
         [InverseProperty("InvoiceStatements")]
         public virtual StatementStatus StatementStatus { get; set; }
-
+        [InverseProperty("Statement")]
+        public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
 
     }
 }
