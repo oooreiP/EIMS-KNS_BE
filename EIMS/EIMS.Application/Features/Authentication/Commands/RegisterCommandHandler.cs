@@ -101,7 +101,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             var mailRequest = new MailRequest
             {
                 Email = request.Email,
-                Subject = "Welcome to EIMS - Your HOD Account is Pending Activation",
+                Subject = "Welcome to EIMS - Your Account is Pending Activation",
                 EmailBody = emailBody
             };
             await _emailService.SendMailAsync(mailRequest);
