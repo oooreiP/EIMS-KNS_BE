@@ -147,7 +147,7 @@ namespace EIMS.API.Controllers
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        [HttpPut("admin/hod/{userId}/active")]
+        [HttpPut("admin/{userId}/active")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActiveAccount(int userId)
         {
@@ -164,7 +164,7 @@ namespace EIMS.API.Controllers
         /// <returns></returns>
         [HttpPut("admin/{userId}/inactive")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> InActicveAccount(int userId, [FromBody] AdminDeclineRequest request) // Create a DTO for request
+        public async Task<IActionResult> IncticveAccount(int userId, [FromBody] AdminDeclineRequest request) // Create a DTO for request
         {
             var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = false, AdminNotes = request?.AdminNotes };
             var result = await _sender.Send(command);
