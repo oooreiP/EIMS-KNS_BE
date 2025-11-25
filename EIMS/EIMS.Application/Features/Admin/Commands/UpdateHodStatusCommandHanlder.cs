@@ -24,27 +24,22 @@ namespace EIMS.Application.Features.Admin.Commands
                                 .FirstOrDefaultAsync(u => u.UserID == request.UserId);
             if (user == null)
                 return Result.Fail(new Error("User not found").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserNotFound"));
-            if (user.Role.RoleName != "HOD")
-                return Result.Fail(new Error("User is not HOD").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserIsNotHod"));
-            if (user.Status != UserAccountStatus.PendingAdminReview)
-                return Result.Fail(new Error("User is not pending admin review").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.UserIsNotPendingAdminReview"));
-            if (request.NewStatus != UserAccountStatus.Active && request.NewStatus != UserAccountStatus.Declined)
+            if (request.NewStatus != true && request.NewStatus != false)
                 return Result.Fail(new Error("Invalid status").WithMetadata("ErroCode", "Admin.UpdateHodStatusCommand.InvalidStatus"));
             string emailSubject;
             string emailBody;
-            user.Status = request.NewStatus;
-            if (request.NewStatus == UserAccountStatus.Active)
+            if (request.NewStatus == true)
             {
                 user.IsActive = true;
-                emailSubject = "EIMS HOD Account Activated!";
-                emailBody = $"<p>Dear {user.FullName},</p><p>Good news! Your HOD account for EIMS has been successfully activated by an administrator. " +
+                emailSubject = "EIMS Account Activated!";
+                emailBody = $"<p>Dear {user.FullName},</p><p>Good news! Your account for EIMS has been successfully activated by an administrator. " +
                             $"You can now fully access the system at [Your Login URL Here].</p><p>Thank you.</p>";
             }
             else
             {
                 user.IsActive = false;
                 emailSubject = "EIMS HOD Account Status Update";
-                emailBody = $"<p>Dear {user.FullName},</p><p>We regret to inform you that your HOD account registration " +
+                emailBody = $"<p>Dear {user.FullName},</p><p>We regret to inform you that your account" +
                             $"for EIMS has been declined by an administrator.</p>" +
                             (string.IsNullOrEmpty(request.AdminNotes) ? "" : $"<p><strong>Reason:</strong> {request.AdminNotes}</p>") +
                             "<p>Please contact support if you have any questions.</p><p>Thank you.</p>";

@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.Features.InvoiceStatements.Commands;
+using EIMS.Application.Features.InvoiceStatements.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +32,23 @@ namespace EIMS.API.Controllers
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Generate Statement Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+            return Ok(result.Value);
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetStatementById(int id)
+        {
+            var query = new GetStatementByIdQuery(id);
+            var result = await _sender.Send(query);
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Get Statement Failed",
                     Detail = firstError?.Message ?? "Invalid request."
                 });
             }

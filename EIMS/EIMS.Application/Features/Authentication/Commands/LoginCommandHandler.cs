@@ -26,20 +26,20 @@ namespace EIMS.Application.Features.Authentication.Commands
                               .Include(u => u.Role)
                               .SingleOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
-            if (user == null)
+            if (user == null || !user.IsActive)
             {
                 return Result.Fail(new Error("Invalid email or password").WithMetadata("ErrorCode", "Auth.Login.InvalidCredentials"));
             }
-            if (!user.IsActive)
-            {
-                bool isHod = user.Role.RoleName == "HOD"
-                                && (user.Status == UserAccountStatus.PendingEvidence
-                                    || user.Status == UserAccountStatus.PendingAdminReview);
-                if (!isHod)
-                {
-                    return Result.Fail(new Error("Invalid email or password").WithMetadata("ErrorCode", "Auth.Login.InvalidCredentials"));
-                }
-            }
+            // if (!user.IsActive)
+            // {
+            //     bool isHod = user.Role.RoleName == "HOD"
+            //                     && (user.Status == UserAccountStatus.PendingEvidence
+            //                         || user.Status == UserAccountStatus.PendingAdminReview);
+            //     if (!isHod)
+            //     {
+            //         return Result.Fail(new Error("Invalid email or password").WithMetadata("ErrorCode", "Auth.Login.InvalidCredentials"));
+            //     }
+            // }
                 //verify password
                 var passwordIsValid = _passwordHasher.Verify(request.Password, user.PasswordHash);
                 if (!passwordIsValid)

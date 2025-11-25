@@ -276,6 +276,12 @@ namespace EIMS.Infrastructure.Persistence
                 new PaymentStatus { PaymentStatusID = 3, StatusName = "Paid" },
                 new PaymentStatus { PaymentStatusID = 4, StatusName = "Overdue" }
             );
+            modelBuilder.Entity<StatementStatus>().HasData(
+                new StatementStatus { StatusID = 1, StatusName = "Draft" }, // Mới tạo (Chưa gửi)
+                new StatementStatus { StatusID = 2, StatusName = "Sent" },  // Đã gửi cho khách hàng
+                new StatementStatus { StatusID = 3, StatusName = "Paid" },  // Khách đã thanh toán hết
+                new StatementStatus { StatusID = 4, StatusName = "Overdue" } // Quá hạn (Optional)
+            );
             modelBuilder.Entity<InvoiceTemplate>()
         .HasOne(t => t.Serial)
         .WithMany(s => s.InvoiceTemplates)
