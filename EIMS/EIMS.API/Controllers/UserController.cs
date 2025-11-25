@@ -20,7 +20,7 @@ namespace EIMS.API.Controllers
         /// <summary>
         /// Gets all users with the 'HoD' role (Paginated).
         /// </summary>
-        [HttpGet("hod/all")]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAllHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var query = new GetHodUsersQuery 
@@ -45,7 +45,7 @@ namespace EIMS.API.Controllers
        /// <summary>
         /// Gets only active users with the 'HoD' role (Paginated).
         /// </summary>
-        [HttpGet("hod/active")]
+        [HttpGet("active")]
         public async Task<IActionResult> GetActiveHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var query = new GetHodUsersQuery 
@@ -71,7 +71,7 @@ namespace EIMS.API.Controllers
         /// <summary>
         /// Gets only inactive users with the 'HoD' role (Paginated).
         /// </summary>
-        [HttpGet("hod/inactive")]
+        [HttpGet("inactive")]
         public async Task<IActionResult> GetInactiveHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var query = new GetHodUsersQuery 
