@@ -22,6 +22,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IBaseRepository<InvoiceType> InvoiceTypeRepository { get; set; }
         public IBaseRepository<SerialStatus> SerialStatusRepository { get; set; }
         public IInvoiceStatementRepository InvoiceStatementRepository { get; private set; }
+        public IUserRepository UserRepository { get; set; }
 
 
 
@@ -39,6 +40,8 @@ namespace EIMS.Application.Commons.UnitOfWork
             InvoiceTypeRepository = new BaseRepository<InvoiceType>(_db);
             SerialStatusRepository = new BaseRepository<SerialStatus>(_db);
             InvoiceStatementRepository = new InvoiceStatementRepository(_db);
+            UserRepository = new UserRepository(_db);
+
         }
         public async Task SaveChanges()
         {

@@ -11,7 +11,7 @@ namespace EIMS.Application.Features.Admin.Commands
     public class UpdateHodStatusCommand : IRequest<Result>
     {
         public int UserId { get; set; }
-        public UserAccountStatus NewStatus { get; set; } // Active or Declined
+        public bool NewStatus { get; set; } // Active or Declined
         public string? AdminNotes { get; set; } // Optional, for decline reasons
     }
 }

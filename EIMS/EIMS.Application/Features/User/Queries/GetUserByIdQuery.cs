@@ -8,10 +8,10 @@ using MediatR;
 
 namespace EIMS.Application.Features.User.Queries
 {
-    public class GetHodUserByIdQuery : IRequest<Result<UserResponse>>
+    public class GetUserByIdQuery : IRequest<Result<UserResponse>>
     {
         public int UserId { get; }
-        public GetHodUserByIdQuery(int userId)
+        public GetUserByIdQuery(int userId)
         {
             UserId = userId;
         }

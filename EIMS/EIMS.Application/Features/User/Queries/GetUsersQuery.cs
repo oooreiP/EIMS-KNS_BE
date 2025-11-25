@@ -9,13 +9,11 @@ using MediatR;
 
 namespace EIMS.Application.Features.User.Queries
 {
-    public class GetHodUsersQuery : IRequest<Result<PaginatedList<UserResponse>>>
+    public class GetUsersQuery : IRequest<Result<PaginatedList<UserResponse>>>
     {
-        // If IsActive is null, get all.
-        // If IsActive is true, get active.
-        // If IsActive is false, get inactive.
-        public bool? IsActive { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+        public string? SearchTerm { get; set; } 
+        public string? RoleFilter { get; set; } 
     }
 }

@@ -18,65 +18,78 @@ namespace EIMS.API.Controllers
             _sender = sender;
         }
         /// <summary>
-        /// Gets all users with the 'HoD' role.
+        /// Gets all users with the 'HoD' role (Paginated).
         /// </summary>
         [HttpGet("hod/all")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllHodUsers()
+        public async Task<IActionResult> GetAllHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _sender.Send(new GetHodUsersQuery());
+            var query = new GetHodUsersQuery 
+            { 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            };
+            
+            var result = await _sender.Send(query);
+            
             if (result.IsFailed)
             {
-                var firstError = result.Errors.FirstOrDefault();
                 return BadRequest(new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Get Hod Users Failed",
-                    Detail = firstError?.Message ?? "Invalid request."
+                    Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                 });
             }
             return Ok(result.Value);
         }
-        /// <summary>
-        /// Gets only active users with the 'HoD' role.
+       /// <summary>
+        /// Gets only active users with the 'HoD' role (Paginated).
         /// </summary>
         [HttpGet("hod/active")]
-        [Authorize(Roles = "Admin")]
-
-        public async Task<IActionResult> GetActiveHodUsers()
+        public async Task<IActionResult> GetActiveHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var query = new GetHodUsersQuery { IsActive = true };
+            var query = new GetHodUsersQuery 
+            { 
+                IsActive = true, 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            };
+            
             var result = await _sender.Send(query);
+            
             if (result.IsFailed)
             {
-                var firstError = result.Errors.FirstOrDefault();
                 return BadRequest(new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Get Hod Users Failed",
-                    Detail = firstError?.Message ?? "Invalid request."
+                    Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                 });
             }
             return Ok(result.Value);
         }
-
         /// <summary>
-        /// Gets only inactive users with the 'HoD' role.
+        /// Gets only inactive users with the 'HoD' role (Paginated).
         /// </summary>
         [HttpGet("hod/inactive")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetInactiveHodUsers()
+        public async Task<IActionResult> GetInactiveHodUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var query = new GetHodUsersQuery { IsActive = false };
+            var query = new GetHodUsersQuery 
+            { 
+                IsActive = false, 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            };
+            
             var result = await _sender.Send(query);
+            
             if (result.IsFailed)
             {
-                var firstError = result.Errors.FirstOrDefault();
                 return BadRequest(new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Get Hod Users Failed",
-                    Detail = firstError?.Message ?? "Invalid request."
+                    Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                 });
             }
             return Ok(result.Value);
@@ -85,11 +98,11 @@ namespace EIMS.API.Controllers
         /// <summary>
         /// Gets a specific 'HoD' user by their ID.
         /// </summary>
-        [HttpGet("hod/{id}")]
+        [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetHodUserById(int id)
+        public async Task<IActionResult> GetUserById(int id)
         {
-            var query = new GetHodUserByIdQuery(id);
+            var query = new GetUserByIdQuery(id);
             var result = await _sender.Send(query);
 
             if (result.IsFailed)
@@ -121,24 +134,24 @@ namespace EIMS.API.Controllers
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        [HttpPost("admin/register-hod")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisterHod([FromBody] RegisterHodCommand command)
-        {
-            var result = await _sender.Send(command);
-            return result.IsSuccess ? CreatedAtAction(nameof(GetHodUserById), new { id = result.Value.UserID }, result.Value) : BadRequest(result.Errors.FirstOrDefault()?.Message);
-        }
+        // [HttpPost("admin/register-hod")]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<IActionResult> RegisterHod([FromBody] RegisterHodCommand command)
+        // {
+        //     var result = await _sender.Send(command);
+        //     return result.IsSuccess ? CreatedAtAction(nameof(GetHodUserById), new { id = result.Value.UserID }, result.Value) : BadRequest(result.Errors.FirstOrDefault()?.Message);
+        // }
 
         /// <summary>
         /// Admin approves an HoD account after reviewing evidence.
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        [HttpPut("admin/hod/{userId}/approve")]
+        [HttpPut("admin/hod/{userId}/active")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ApproveHodAccount(int userId)
+        public async Task<IActionResult> ActiveAccount(int userId)
         {
-            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = Domain.Enums.UserAccountStatus.Active };
+            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = true };
             var result = await _sender.Send(command);
             return result.IsSuccess ? Ok("HOD account approved and activated.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
@@ -149,11 +162,11 @@ namespace EIMS.API.Controllers
         /// <param name="userId"></param>
         /// <param name="notes">Optional notes for the decline reason.</param>
         /// <returns></returns>
-        [HttpPut("admin/hod/{userId}/decline")]
+        [HttpPut("admin/{userId}/inactive")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeclineHodAccount(int userId, [FromBody] AdminDeclineRequest request) // Create a DTO for request
+        public async Task<IActionResult> InActicveAccount(int userId, [FromBody] AdminDeclineRequest request) // Create a DTO for request
         {
-            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = Domain.Enums.UserAccountStatus.Declined, AdminNotes = request?.AdminNotes };
+            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = false, AdminNotes = request?.AdminNotes };
             var result = await _sender.Send(command);
             return result.IsSuccess ? Ok("HOD account declined.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
@@ -170,6 +183,21 @@ namespace EIMS.API.Controllers
         {
             var result = await _sender.Send(command);
             return result.IsSuccess ? Ok("Evidence uploaded successfully, pending admin review.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
+        }
+        /// <summary>
+        /// Gets a paginated list of all users with optional search and filtering.
+        /// </summary>
+        [HttpGet("users")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] GetUsersQuery query)
+        {
+            var result = await _sender.Send(query);
+            
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors.FirstOrDefault()?.Message);
+            }
+            return Ok(result.Value);
         }
     }
 }
