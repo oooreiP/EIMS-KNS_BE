@@ -12,7 +12,7 @@ namespace EIMS.Application.Features.Admin.Commands
     {
         private readonly IApplicationDBContext _context;
         private readonly IEmailService _emailService;
-        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IMapper mapper, IEmailService emailService)
+        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IEmailService emailService)
         {
             _context = context;
             _emailService = emailService;
@@ -52,7 +52,17 @@ namespace EIMS.Application.Features.Admin.Commands
                 Subject = emailSubject,
                 EmailBody = emailBody
             };
-            await _emailService.SendMailAsync(mailRequest);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendMailAsync(mailRequest);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Email send error: {ex.Message}");
+                }
+            });
             return Result.Ok();
         }
     }
