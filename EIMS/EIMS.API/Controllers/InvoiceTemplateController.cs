@@ -3,6 +3,7 @@ using EIMS.Application.DTOs.InvoiceTemplate;
 using EIMS.Application.Features.InvoiceTemplate.Commands;
 using EIMS.Application.Features.InvoiceTemplate.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EIMS.API.Controllers
@@ -71,6 +72,21 @@ namespace EIMS.API.Controllers
                 });
             }
             return Ok(result.Value);
+        }
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateTemplate(int id, [FromBody] UpdateTemplateRequest request)
+        {
+            if (id != request.TemplateID)
+                return BadRequest("ID mismatch.");        
+            var command = _mapper.Map<UpdateTemplateCommand>(request);
+
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(result.Errors.FirstOrDefault()?.Message);
+
+            return Ok(new { Message = "Template updated successfully" });
         }
     }
 }

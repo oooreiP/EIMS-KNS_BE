@@ -24,6 +24,8 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
                 TemplateTypeID = command.TemplateTypeID,
                 CreatedByUserID = command.AuthenticatedUserId,
                 LayoutDefinition = command.LayoutDefinition,
+                TemplateFrameID = command.TemplateFrameID,
+                LogoUrl = command.LogoUrl,
                 IsActive = true, // Set default
             };
             await _uow.InvoiceTemplateRepository.CreateAsync(newTemplate);

@@ -22,6 +22,7 @@ namespace EIMS.Infrastructure.Repositories
                 .Include(t => t.Serial)
                     .ThenInclude(s => s.InvoiceType)
                 .Include(t => t.TemplateType)
+                .Include(t => t.TemplateFrame)
                 .OrderBy(t => t.TemplateName);
         }
 

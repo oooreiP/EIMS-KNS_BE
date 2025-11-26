@@ -38,7 +38,8 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<PaymentStatus> PaymentStatuses { get; set; }
-        public DbSet<InvoiceStatementDetail> InvoiceStatementDetails { get; set; } // <-- ADD THIS
+        public DbSet<TemplateFrame> TemplateFrames { get; set; }
+        public DbSet<InvoiceStatementDetail> InvoiceStatementDetails { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -91,6 +92,19 @@ namespace EIMS.Infrastructure.Persistence
                     .HasForeignKey(p => p.CategoryID)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<TemplateFrame>().HasData(
+                new TemplateFrame { FrameID = 1, FrameName = "Frame 1", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156291/khunghoadon11_kqjill.png" },
+                new TemplateFrame { FrameID = 2, FrameName = "Frame 2", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156289/khunghoadon3_utka5u.png" },
+                new TemplateFrame { FrameID = 3, FrameName = "Frame 3", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156287/khunghoadon10_pjapiv.png" },
+                new TemplateFrame { FrameID = 4, FrameName = "Frame 4", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon7_shsqte.png" },
+                new TemplateFrame { FrameID = 5, FrameName = "Frame 5", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon4_o9xatr.png" },
+                new TemplateFrame { FrameID = 6, FrameName = "Frame 6", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon9_smq1lj.pngg" },
+                new TemplateFrame { FrameID = 7, FrameName = "Frame 7", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon5_tveg16.png" },
+                new TemplateFrame { FrameID = 8, FrameName = "Frame 8", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon6_mp5fh1.png" },
+                new TemplateFrame { FrameID = 9, FrameName = "Frame 9", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon8_d5ho2y.png" },
+                new TemplateFrame { FrameID = 10, FrameName = "Frame 10", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156284/khunghoadon2_vamivw.png" },
+                new TemplateFrame { FrameID = 11, FrameName = "Frame 11", ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156219/khunghoadon1_urc2b5.png" }
+                );
             modelBuilder.Entity<Category>().HasData(
        new Category
        {

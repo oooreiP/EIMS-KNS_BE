@@ -23,8 +23,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IBaseRepository<SerialStatus> SerialStatusRepository { get; set; }
         public IInvoiceStatementRepository InvoiceStatementRepository { get; private set; }
         public IUserRepository UserRepository { get; set; }
-
-
+        public ITemplateFrameRepository TemplateFrameRepository { get; set; }
 
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
@@ -41,7 +40,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             SerialStatusRepository = new BaseRepository<SerialStatus>(_db);
             InvoiceStatementRepository = new InvoiceStatementRepository(_db);
             UserRepository = new UserRepository(_db);
-
+            TemplateFrameRepository = new TemplateFrameRepository(_db);
         }
         public async Task SaveChanges()
         {

@@ -8,17 +8,14 @@ using MediatR;
 
 namespace EIMS.Application.Features.InvoiceTemplate.Commands
 {
-    public class CreateTemplateCommand : IRequest<Result<int>>, IAuthenticatedCommand
+    public class UpdateTemplateCommand : IRequest<Result>, IAuthenticatedCommand
     {
+        public int TemplateID { get; set; }
         public string TemplateName { get; set; } = string.Empty;
-
-        public int SerialID { get; set; }
-
-        public int TemplateTypeID { get; set; }
-
-        public int TemplateFrameID { get; set; } 
-        public string? LogoUrl { get; set; }  
-        public string LayoutDefinition { get; set; }
+        public string LayoutDefinition { get; set; } = string.Empty;
+        public int TemplateFrameID { get; set; }
+        public string? LogoUrl { get; set; }
+        public bool IsActive { get; set; }
         public int AuthenticatedUserId { get; set; }
     }
 }

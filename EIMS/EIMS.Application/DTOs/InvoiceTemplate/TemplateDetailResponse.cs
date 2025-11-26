@@ -14,6 +14,11 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         public string Serial { get; set; } = string.Empty; // e.g., "1C25TYY"
         public int TemplateTypeID { get; set; }
         public string TemplateTypeName { get; set; } = string.Empty;
-        public string LayoutDefinition { get; set; } = string.Empty;
+        public int? TemplateFrameID { get; set; }
+        public string? FrameUrl { get; set; }
+        public string? LogoUrl { get; set; }
+        public string LayoutDefinition { get; set; }
+        
     }
+
 }

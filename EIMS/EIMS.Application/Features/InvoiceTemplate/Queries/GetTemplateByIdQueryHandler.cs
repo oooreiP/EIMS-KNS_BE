@@ -32,7 +32,10 @@ namespace EIMS.Application.Features.InvoiceTemplate.Queries
                 Serial = $"{template.Serial.Prefix.PrefixID}{template.Serial.SerialStatus.Symbol}{template.Serial.Year}{template.Serial.InvoiceType.Symbol}{template.Serial.Tail}",
                 TemplateTypeID = template.TemplateTypeID,
                 TemplateTypeName = template.TemplateType.TypeName,
-                LayoutDefinition = template.LayoutDefinition ?? string.Empty
+                LayoutDefinition = template.LayoutDefinition ?? string.Empty,
+                LogoUrl = template.LogoUrl,
+                TemplateFrameID = template.TemplateFrameID,
+                FrameUrl = template.TemplateFrame?.ImageUrl
             };
             return Result.Ok(response);
         }

@@ -17,7 +17,7 @@ namespace EIMS.API.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> Upload([FromForm] UploadFileCommand command )
+        public async Task<IActionResult> Upload([FromForm] UploadFileCommand command)
         {
             var result = await _mediator.Send(command);
             return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Errors);
@@ -43,6 +43,17 @@ namespace EIMS.API.Controllers
                 Message = "XML file generated successfully",
                 FilePath = result.Value
             });
+        }
+        [HttpPost("upload-template-image")]
+public async Task<IActionResult> UploadTemplateImage(IFormFile file, [FromQuery] string type = "logo")        {
+            var command = new UploadTemplateImageCommand(file, type);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
+
+            // Return the URL to the frontend
+            return Ok(new { Url = result.Value });
         }
     }
 }
