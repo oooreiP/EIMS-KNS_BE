@@ -88,7 +88,7 @@ namespace EIMS.API.Controllers
                 return BadRequest(new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,
-                    Title = "Get Hod Users Failed",
+                    Title = "Get Users Failed",
                     Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                 });
             }
@@ -122,7 +122,7 @@ namespace EIMS.API.Controllers
                 return BadRequest(new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,
-                    Title = "Get Hod User Failed",
+                    Title = "Get Users Failed",
                     Detail = firstError?.Message ?? "Invalid request."
                 });
             }
@@ -168,7 +168,7 @@ namespace EIMS.API.Controllers
         {
             var command = new UpdateUserStatusCommand { UserId = userId, NewStatus = false, AdminNotes = request?.AdminNotes };
             var result = await _sender.Send(command);
-            return result.IsSuccess ? Ok("HOD account declined.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
+            return result.IsSuccess ? Ok("Account declined.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
 
         /// <summary>
