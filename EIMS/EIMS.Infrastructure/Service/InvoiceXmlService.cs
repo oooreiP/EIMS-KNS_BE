@@ -1,0 +1,138 @@
+﻿using EIMS.Application.Commons.Interfaces;
+using FluentResults;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
+
+namespace EIMS.Infrastructure.Service
+{
+    public class InvoiceXmlService : IInvoiceXMLService
+    {
+        private readonly IFileStorageService _fileStorageService;
+        private readonly IConfiguration _config;
+        private readonly HttpClient _httpClient;
+
+        public InvoiceXmlService(IFileStorageService fileStorageService, HttpClient httpClient, IConfiguration config)
+        {
+            _fileStorageService = fileStorageService;
+            _httpClient = httpClient;
+            _config = config;
+        }
+
+        // Hàm tải XML từ Cloudinary về XmlDocument
+        public async Task<XmlDocument> LoadXmlFromUrlAsync(string url)
+        {
+            var xmlContent = await _httpClient.GetStringAsync(url);
+            var xmlDoc = new XmlDocument();
+            xmlDoc.PreserveWhitespace = true; // QUAN TRỌNG: Giữ nguyên định dạng để không hỏng chữ ký
+            xmlDoc.LoadXml(xmlContent);
+            return xmlDoc;
+        }
+
+        // Hàm lưu XmlDocument lên Cloudinary và trả về URL mới
+        public async Task<string> UploadXmlAsync(XmlDocument xmlDoc, string fileName)
+        {
+            using var stream = new MemoryStream();
+            xmlDoc.Save(stream);
+            stream.Position = 0;
+
+            var uploadResult = await _fileStorageService.UploadFileAsync(stream, fileName, "invoices");
+            if (uploadResult.IsFailed) throw new Exception("Upload failed");
+
+            return uploadResult.Value.Url;
+        }
+        public Result<X509Certificate2> GetCertificate(string? serialNumber = null)
+        {
+            try
+            {
+                var path = _config["Signature:PfxPath"];
+                var password = _config["Signature:Password"];
+                // Load cert
+                var cert = new X509Certificate2(path, password, X509KeyStorageFlags.MachineKeySet);
+                return Result.Ok(cert);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Lỗi tải chứng thư số: {ex.Message}");
+            }
+        }
+        public void EmbedMccqtIntoXml(XmlDocument xmlDoc, string mccqtValue)
+        {
+            // 1. Tìm vị trí (root) và thẻ MCCQT đã tồn tại
+            var root = xmlDoc.DocumentElement; // Thẻ <HDon>
+
+            // Tìm thẻ MCCQT bằng tên
+            var mccqtElement = (XmlElement)root.SelectSingleNode("MCCQT");
+
+            if (mccqtElement != null)
+            {
+                // 2. Nếu thẻ MCCQT đã tồn tại (do đã được serialize từ model)
+                // Cập nhật giá trị MCCQT được truyền vào (giá trị 34 ký tự)
+                mccqtElement.InnerText = mccqtValue;
+
+                // Bỏ qua logic chèn thẻ (InsertBefore/AppendChild)
+                // vì thẻ đã nằm đúng vị trí theo XSD khi serialize từ model.
+            }
+            else
+            {
+                // TRƯỜNG HỢP PHÒNG NGỪA: Nếu thẻ MCCQT chưa tồn tại
+                // (Chỉ nên xảy ra nếu cấu trúc model của bạn không có MCCQT)
+
+                // Tạo thẻ MCCQT mới
+                var newMccqtElement = xmlDoc.CreateElement("MCCQT");
+                newMccqtElement.InnerText = mccqtValue;
+
+                // Tìm vị trí để chèn (Phải đúng thứ tự XSD)
+                var dscksNode = root.SelectSingleNode("DSCKS");
+
+                if (dscksNode != null)
+                {
+                    // Nếu đã có chữ ký, chèn MCCQT vào TRƯỚC chữ ký (theo thứ tự XSD)
+                    root.InsertBefore(newMccqtElement, dscksNode);
+                }
+                else
+                {
+                    // Nếu chưa có chữ ký, chèn vào cuối (Cần xem XSD để chèn đúng vị trí)
+                    root.AppendChild(newMccqtElement);
+                }
+            }
+        }
+        public async Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl)
+        {
+            try
+            {
+                // 1. Tải file XML từ Cloudinary
+                var xmlContent = await _httpClient.GetStringAsync(xmlUrl);
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(xmlContent);
+
+                // 2. Kiểm tra Chữ ký số (Thẻ <DSCKS> chứa <Signature>)
+                // XPath "//" tìm ở bất cứ đâu trong document
+                var signatureNode = xmlDoc.SelectSingleNode("//*[local-name()='DSCKS']/*[local-name()='Signature']");
+                if (signatureNode == null)
+                {
+                    return Result.Fail("File XML chưa có Chữ ký số (Thẻ DSCKS/Signature).");
+                }
+
+                // 3. Kiểm tra Mã CQT (Thẻ <MCCQT>)
+                var mccqtNode = xmlDoc.SelectSingleNode("//*[local-name()='MCCQT']");
+                if (mccqtNode == null || string.IsNullOrWhiteSpace(mccqtNode.InnerText))
+                {
+                    return Result.Fail("File XML chưa có Mã của Cơ quan Thuế (Thẻ MCCQT).");
+                }
+
+                // Trả về thành công kèm giá trị MCCQT để tiện lưu DB nếu cần
+                return Result.Ok().WithSuccess(mccqtNode.InnerText);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Lỗi khi đọc file XML: {ex.Message}");
+            }
+        }
+    }
+}

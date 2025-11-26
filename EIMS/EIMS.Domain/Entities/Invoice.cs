@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EIMS.Domain.Entities
@@ -28,9 +29,11 @@ namespace EIMS.Domain.Entities
         public int CustomerID { get; set; }
         [ForeignKey("IssuerID")]
 
-        public int IssuerID { get; set; }
+        public int? IssuerID { get; set; }
+        public string? MCCQT { get; set; }
 
-        public DateTime SignDate { get; set; }
+        public DateTime? SignDate { get; set; }
+        public DateTime? IssuedDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
@@ -69,25 +72,34 @@ namespace EIMS.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---
+        [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual InvoiceTemplate Template { get; set; }
+        [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual InvoiceStatus InvoiceStatus { get; set; }
+        [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Company Company { get; set; }
+        [JsonIgnore]
         [InverseProperty("SalesInvoices")]
         public virtual User? Sales { get; set; }
+        [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }
+        [JsonIgnore]
         [InverseProperty("IssuedInvoices")]
-        public virtual User Issuer { get; set; }
+        public virtual User? Issuer { get; set; }
+        [JsonIgnore]
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+        [JsonIgnore]
         [InverseProperty("Invoice")]
         public virtual ICollection<TaxApiLog> TaxApiLogs { get; set; } = new List<TaxApiLog>();
+        [JsonIgnore]
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoiceHistory> HistoryEntries { get; set; } = new List<InvoiceHistory>();
-
+        [JsonIgnore]
         [InverseProperty("ReferenceInvoice")]
         public virtual ICollection<InvoiceHistory> ReferencedByHistory { get; set; } = new List<InvoiceHistory>();
     }

@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://tempuri.org/HDonSchema.xsd"
+           targetNamespace="http://tempuri.org/HDonSchema.xsd"
+           elementFormDefault="qualified">
+
+    <xs:simpleType name="Number21_6">
+        <xs:restriction base="xs:decimal">
+            <xs:totalDigits value="21"/>
+            <xs:fractionDigits value="6"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="Number7_2">
+        <xs:restriction base="xs:decimal">
+            <xs:totalDigits value="7"/>
+            <xs:fractionDigits value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Number6_4">
+        <xs:restriction base="xs:decimal">
+            <xs:totalDigits value="6"/>
+            <xs:fractionDigits value="4"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="DateType">
+        <xs:restriction base="xs:date"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="StringType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="Number1">
+        <xs:restriction base="xs:integer">
+            <xs:totalDigits value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="Number4">
+        <xs:restriction base="xs:integer">
+            <xs:totalDigits value="4"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:complexType name="TTinType">
+        <xs:sequence>
+            <xs:element name="TTruong">
+                <xs:simpleType>
+                    <xs:restriction base="StringType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="KDLieu">
+                <xs:simpleType>
+                    <xs:restriction base="StringType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DLieu">
+                <xs:simpleType>
+                    <xs:restriction base="StringType"/>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TTKhacType">
+        <xs:sequence>
+            <xs:element name="TTin" type="TTinType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:complexType name="TTinHDDThuType">
+        <xs:sequence>
+            <xs:element name="TTruong">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DLieu">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TTHDDThuType">
+        <xs:sequence>
+            <xs:element name="TTin" type="TTinHDDThuType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="HHDVuType">
+        <xs:sequence>
+            <xs:element name="TChat" type="Number1"/>
+            <xs:element name="STT" type="Number4" minOccurs="0"/>
+            <xs:element name="MHHDVu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="THHDVu">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="500"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DVTinh" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SLuong" type="Number21_6" minOccurs="0"/>
+            <xs:element name="Dgia" type="Number21_6" minOccurs="0"/>
+            <xs:element name="TLCKhau" type="Number6_4" minOccurs="0"/>
+            <xs:element name="STCKhau" type="Number21_6" minOccurs="0"/>
+            <xs:element name="ThTien" type="Number21_6" minOccurs="0"/>
+            <xs:element name="TSuat" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="11"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TTHDDThu" type="TTHDDThuType" minOccurs="0"/>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DSHHDVuType">
+        <xs:sequence>
+            <xs:element name="HHDVu" type="HHDVuType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LTSuatType">
+        <xs:sequence>
+            <xs:element name="TSuat" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="11"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="ThTien" type="Number21_6"/>
+            <xs:element name="TThue" type="Number21_6" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="THTTLTSuatType">
+        <xs:sequence>
+            <xs:element name="LTSuat" type="LTSuatType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LPhiType">
+        <xs:sequence>
+            <xs:element name="TLPhi" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TPhi" type="Number21_6" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DSLPhiType">
+        <xs:sequence>
+            <xs:element name="LPhi" type="LPhiType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TToanType">
+        <xs:sequence>
+            <xs:element name="THTTLTSuat" type="THTTLTSuatType" minOccurs="0"/>
+            <xs:element name="TgTCThue" type="Number21_6"/>
+            <xs:element name="TGTKCThue" type="Number21_6" minOccurs="0"/>
+            <xs:element name="TgTThue" type="Number21_6"/>
+            <xs:element name="DSLPhi" type="DSLPhiType" minOccurs="0"/>
+            <xs:element name="TTCKTMai" type="Number21_6" minOccurs="0"/>
+            <xs:element name="TGTKhac" type="Number21_6" minOccurs="0"/>
+            <xs:element name="TgTTTBSo" type="Number21_6"/>
+            <xs:element name="TgTTTBChu">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="255"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:complexType name="NMuaType">
+        <xs:sequence>
+            <xs:element name="Ten" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MST" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MDVQHNSach" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="7"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Dchi" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MKHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SDThoai" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="CCCDan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="12"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SHChieu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DCTDTu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="HVTNMHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="STKNHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="30"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TNHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NBanType">
+        <xs:sequence>
+            <xs:element name="Ten">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MST">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Dchi">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SDThoai" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DCTDTu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="STKNHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="30"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TNHang" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Fax" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Website" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NDHDonType">
+        <xs:sequence>
+            <xs:element name="NBan" type="NBanType"/>
+            <xs:element name="NMua" type="NMuaType" minOccurs="0"/>
+            <xs:element name="DSHHDVu" type="DSHHDVuType" minOccurs="0"/>
+            <xs:element name="TToan" type="TToanType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TTHDLQuanType">
+        <xs:sequence>
+            <xs:element name="TCHDon" type="Number1"/>
+            <xs:element name="LHDCLQuan" type="Number1" minOccurs="0"/>
+            <xs:element name="KHMSHDCLQuan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="11"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="KHHDCLQuan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="8"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SHDCLQuan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="8"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="NLHDCLQuan" type="DateType" minOccurs="0"/>
+            <xs:element name="Gchu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="255"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SBKCLQuan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="NBKCLQuan" type="DateType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TTChungType">
+        <xs:sequence>
+            <xs:element name="Pban">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="6"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="THDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="KHMSHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="KHHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="6"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:totalDigits value="8"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MHSo" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Nlap" type="DateType"/>
+            <xs:element name="SBKe" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="NBKe" type="DateType" minOccurs="0"/>
+            <xs:element name="DVTTe">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="3"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Tgia" type="Number7_2" minOccurs="0"/>
+            <xs:element name="HTTToan" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MSTTCGP">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MSTDVNUNLHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="TDVNUNLHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DCDVNUNLHDon" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="400"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="HDDThu" type="Number1" minOccurs="0"/>
+            <xs:element name="TTHDLQuan" type="TTHDLQuanType" minOccurs="0"/>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DLHDonType">
+        <xs:sequence>
+            <xs:element name="TTChung" type="TTChungType"/>
+            <xs:element name="NDHDon" type="NDHDonType"/>
+            <xs:element name="TTKhac" type="TTKhacType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SignatureType">
+        <xs:sequence>
+            <xs:any minOccurs="0" processContents="lax"/> 
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NBanCKSType">
+        <xs:sequence>
+            <xs:element name="Signature" type="SignatureType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NMuaCKSType">
+        <xs:sequence>
+            <xs:element name="Signature" type="SignatureType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="CQTCKSType">
+        <xs:sequence>
+            <xs:element name="Signature" type="SignatureType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CCKSKhacType">
+        <xs:sequence>
+            <xs:any minOccurs="0" processContents="lax"/> 
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="DSCKSType">
+        <xs:sequence>
+            <xs:element name="NBan" type="NBanCKSType" minOccurs="0"/>
+            <xs:element name="NMua" type="NMuaCKSType" minOccurs="0"/>
+            <xs:element name="CQT" type="CQTCKSType" minOccurs="0"/>
+            <xs:element name="CCKSKhac" type="CCKSKhacType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="HDon">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="DLHDon" type="DLHDonType"/>
+                <xs:element name="DLQRCode" minOccurs="0">
+                    <xs:simpleType>
+                        <xs:restriction base="StringType">
+                            <xs:maxLength value="512"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element name="MCCQT" minOccurs="0">
+                    <xs:simpleType>
+                        <xs:restriction base="StringType">
+                            <xs:maxLength value="34"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element name="DSCKS" type="DSCKSType" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

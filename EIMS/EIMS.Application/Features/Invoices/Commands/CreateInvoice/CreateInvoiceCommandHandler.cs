@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using EIMS.Application.Commons;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs;
@@ -73,10 +74,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     VATAmount = request.TaxAmount,
                     VATRate = vatRate,
                     TotalAmount = request.TotalAmount,
-                    TotalAmountInWords = $"{request.TotalAmount:n0} đồng",
-                    SignDate = DateTime.UtcNow,
+                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(request.TotalAmount),
                     InvoiceStatusID = 1,
-                    IssuerID = request.SignedBy ?? 1,
+                    IssuerID = request.SignedBy,
                     InvoiceItems = request.Items.Select(i => new InvoiceItem
                     {
                         ProductID = i.ProductId,
@@ -87,8 +87,21 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
                 await _unitOfWork.SaveChanges();
+
+                var history = new InvoiceHistory
+                {
+                    InvoiceID = invoice.InvoiceID,
+                    ActionType = "Created",         
+                    ReferenceInvoiceID = null,
+                    Date = DateTime.UtcNow,
+                    PerformedBy = request.SignedBy,
+                };
+
+                await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
+                await _unitOfWork.SaveChanges();
+
                 var fullInvoice = await _unitOfWork.InvoicesRepository
-                    .GetByIdAsync(invoice.InvoiceID, includeProperties: "Customer,InvoiceItems.Product");
+                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
                 var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
 
                 var serializer = new XmlSerializer(typeof(HDon));

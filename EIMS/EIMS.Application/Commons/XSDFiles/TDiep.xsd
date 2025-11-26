@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://tempuri.org/TDiepSchema.xsd"
+           xmlns:hdon="http://tempuri.org/HDonSchema.xsd"
+           targetNamespace="http://tempuri.org/TDiepSchema.xsd"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://tempuri.org/HDonSchema.xsd" schemaLocation="HDon.xsd"/>
+    
+    <xs:simpleType name="Number7">
+        <xs:restriction base="xs:integer">
+            <xs:totalDigits value="7"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="SimpleInteger">
+        <xs:restriction base="xs:integer"/>
+    </xs:simpleType>
+    
+    <xs:simpleType name="StringType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    
+    <xs:simpleType name="DateType">
+        <xs:restriction base="xs:date"/>
+    </xs:simpleType>
+    
+    <xs:simpleType name="DateTimeType">
+        <xs:restriction base="xs:dateTime"/>
+    </xs:simpleType>
+    
+
+    <xs:complexType name="TTChungType">
+        <xs:sequence>
+            <xs:element name="PBan">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="6"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MNGui">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MNNhan">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MLTDiep">
+                <xs:simpleType>
+                    <xs:restriction base="SimpleInteger">
+                        <xs:totalDigits value="3"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MTDiep">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="46"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MTDTChieu" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="46"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="MST">
+                <xs:simpleType>
+                    <xs:restriction base="StringType">
+                        <xs:maxLength value="14"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="SLuong" type="Number7"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DLieuType">
+        <xs:sequence>
+            <xs:element name="HDon" type="hdon:DLHDonType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="TDiep">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="TTChung" type="TTChungType"/>
+                <xs:element name="DLieu" type="DLieuType"/>
+                </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
