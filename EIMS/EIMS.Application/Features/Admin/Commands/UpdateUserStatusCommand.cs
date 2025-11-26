@@ -8,7 +8,7 @@ using MediatR;
 
 namespace EIMS.Application.Features.Admin.Commands
 {
-    public class UpdateHodStatusCommand : IRequest<Result>
+    public class UpdateUserStatusCommand : IRequest<Result>
     {
         public int UserId { get; set; }
         public bool NewStatus { get; set; } // Active or Declined
