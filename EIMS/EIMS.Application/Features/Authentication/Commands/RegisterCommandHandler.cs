@@ -104,7 +104,17 @@ namespace EIMS.Application.Features.Authentication.Commands
                 Subject = "Welcome to EIMS - Your Account is Pending Activation",
                 EmailBody = emailBody
             };
-            await _emailService.SendMailAsync(mailRequest);
+            _ = Task.Run(async () =>
+                       {
+                           try
+                           {
+                               await _emailService.SendMailAsync(mailRequest);
+                           }
+                           catch (Exception ex)
+                           {
+                               Console.WriteLine($"Email send error: {ex.Message}");
+                           }
+                       });
             return Result.Ok(newUser.UserID);
         }
     }
