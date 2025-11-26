@@ -8,10 +8,8 @@ namespace EIMS.Application.DTOs.Mails
 {
     public class EmailSettings
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string Host { get; set; }
-        public string DisplayName { get; set; }
-        public int Port { get; set; }
+        public string ApiToken { get; set; } = string.Empty;
+        public string FromEmail { get; set; } = string.Empty; // Must be the verified domain email from MailerSend
+        public string FromName { get; set; } = "EIMS System";
     }
 }

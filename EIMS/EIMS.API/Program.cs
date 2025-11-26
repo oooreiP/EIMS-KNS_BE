@@ -72,7 +72,7 @@ builder.Services.AddAuthorization();
 //configure swagger to use jwt
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddHttpClient<IEmailService, EmailService>();
+// builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
