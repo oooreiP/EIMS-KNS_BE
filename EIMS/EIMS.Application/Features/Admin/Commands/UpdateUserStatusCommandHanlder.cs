@@ -8,16 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.Admin.Commands
 {
-    public class UpdateHodStatusCommandHanlder : IRequestHandler<UpdateHodStatusCommand, Result>
+    public class UpdateUserStatusCommandHanlder : IRequestHandler<UpdateUserStatusCommand, Result>
     {
         private readonly IApplicationDBContext _context;
         private readonly IEmailService _emailService;
-        public UpdateHodStatusCommandHanlder(IApplicationDBContext context, IMapper mapper, IEmailService emailService)
+        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IMapper mapper, IEmailService emailService)
         {
             _context = context;
             _emailService = emailService;
         }
-        public async Task<Result> Handle(UpdateHodStatusCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(UpdateUserStatusCommand request, CancellationToken cancellationToken)
         {
             var user = await _context.Users
                                 .Include(u => u.Role)
@@ -38,7 +38,7 @@ namespace EIMS.Application.Features.Admin.Commands
             else
             {
                 user.IsActive = false;
-                emailSubject = "EIMS HOD Account Status Update";
+                emailSubject = "EIMS Account Status Update";
                 emailBody = $"<p>Dear {user.FullName},</p><p>We regret to inform you that your account" +
                             $"for EIMS has been declined by an administrator.</p>" +
                             (string.IsNullOrEmpty(request.AdminNotes) ? "" : $"<p><strong>Reason:</strong> {request.AdminNotes}</p>") +

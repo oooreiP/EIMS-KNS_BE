@@ -151,9 +151,9 @@ namespace EIMS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActiveAccount(int userId)
         {
-            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = true };
+            var command = new UpdateUserStatusCommand { UserId = userId, NewStatus = true };
             var result = await _sender.Send(command);
-            return result.IsSuccess ? Ok("HOD account approved and activated.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
+            return result.IsSuccess ? Ok("Account approved and activated.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace EIMS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> IncticveAccount(int userId, [FromBody] AdminDeclineRequest request) // Create a DTO for request
         {
-            var command = new UpdateHodStatusCommand { UserId = userId, NewStatus = false, AdminNotes = request?.AdminNotes };
+            var command = new UpdateUserStatusCommand { UserId = userId, NewStatus = false, AdminNotes = request?.AdminNotes };
             var result = await _sender.Send(command);
             return result.IsSuccess ? Ok("HOD account declined.") : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
