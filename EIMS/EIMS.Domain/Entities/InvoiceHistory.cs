@@ -22,16 +22,16 @@ namespace EIMS.Domain.Entities
 
         public DateTime Date { get; set; }
 
-        public int PerformedBy { get; set; }
         [ForeignKey("PerformedBy")]
-
+        public int? PerformedBy { get; set; }
+        
         //Navigations
         [InverseProperty("HistoryActions")]
-        public virtual User Performer { get; set; }
+        public virtual User? Performer { get; set; }
         [InverseProperty("ReferencedByHistory")]
         public virtual Invoice? ReferenceInvoice { get; set; }
         [InverseProperty("HistoryEntries")]
-        public virtual Invoice Invoice { get; set; }
+        public virtual Invoice? Invoice { get; set; }
 
     }
 }

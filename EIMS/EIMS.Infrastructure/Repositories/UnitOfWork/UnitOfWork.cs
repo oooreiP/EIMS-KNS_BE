@@ -16,6 +16,10 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IInvoicesRepository InvoicesRepository { get; set; }
         public ICustomerRepository CustomerRepository { get; set; }
         public IBaseRepository<Category> CategoryRepository { get; set; }
+        public IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; set; }
+        public IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; set; }
+        public IBaseRepository<TaxApiLog> TaxApiLogRepository { get; set; }
+        public IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
             _db = db;
@@ -24,6 +28,10 @@ namespace EIMS.Application.Commons.UnitOfWork
             InvoicesRepository = new InvoiceRepository(_db);
             CustomerRepository = new CustomerRepository(_db);
             CategoryRepository = new BaseRepository<Category>(_db);
+            InvoiceHistoryRepository = new BaseRepository<InvoiceHistory>(_db);
+            TaxMessageCodeRepository = new BaseRepository<TaxMessageCode>(_db);
+            TaxApiLogRepository = new BaseRepository<TaxApiLog>(_db);
+            TaxApiStatusRepository = new BaseRepository<TaxApiStatus>(_db);
         }
         public async Task SaveChanges()
         {

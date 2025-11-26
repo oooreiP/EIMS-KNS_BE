@@ -9,6 +9,10 @@ namespace EIMS.Application.Commons.Interfaces
         ICustomerRepository CustomerRepository { get; }
         IInvoicesRepository InvoicesRepository { get; }
         IBaseRepository<Category> CategoryRepository { get; }
+        IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; }
+        IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; }
+        IBaseRepository<TaxApiLog> TaxApiLogRepository { get; }
+        IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();
