@@ -16,6 +16,8 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<SerialStatus> SerialStatusRepository { get; }
         IInvoiceStatementRepository InvoiceStatementRepository { get; }
         IUserRepository UserRepository { get; }
+        ITemplateFrameRepository TemplateFrameRepository { get; }
+
 
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();

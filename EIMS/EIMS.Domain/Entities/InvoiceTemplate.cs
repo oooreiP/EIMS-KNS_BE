@@ -14,6 +14,11 @@ namespace EIMS.Domain.Entities
         public int TemplateTypeID { get; set; }
         [ForeignKey("SerialID")]
         public int SerialID { get; set; }
+        [ForeignKey("TemplateFrameID")]
+        public int TemplateFrameID { get; set; }
+        [StringLength(500)]
+        public string? LogoUrl { get; set; } // Nullable, stores Cloudinary URL for the logo
+        [Column(TypeName = "jsonb")]
         public string? LayoutDefinition { get; set; }
         public bool IsActive { get; set; } = true;
         [ForeignKey("CreatedByUserID")]
@@ -28,5 +33,7 @@ namespace EIMS.Domain.Entities
         public virtual User CreatedBy { get; set; }
         [InverseProperty("InvoiceTemplates")]
         public virtual Serial Serial { get; set; }
+        [InverseProperty("InvoiceTemplates")]
+        public virtual TemplateFrame? TemplateFrame { get; set; }
     }
 }

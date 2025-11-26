@@ -33,6 +33,8 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<User, UserResponse>()
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.RoleName));
             CreateMap<GenerateStatementRequest, CreateStatementCommand>();
+            CreateMap<UpdateTemplateRequest, UpdateTemplateCommand>();
+            CreateMap<UpdateTemplateCommand, InvoiceTemplate>();
         }
 
     }

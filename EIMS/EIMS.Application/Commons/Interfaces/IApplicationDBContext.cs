@@ -30,6 +30,8 @@ namespace EIMS.Application.Commons.Interfaces
         DbSet<User> Users { get; set; }
         DbSet<RefreshToken> RefreshTokens { get; set; }
         DbSet<PaymentStatus> PaymentStatuses { get; set; }
+        DbSet<TemplateFrame> TemplateFrames { get; set; }
+
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

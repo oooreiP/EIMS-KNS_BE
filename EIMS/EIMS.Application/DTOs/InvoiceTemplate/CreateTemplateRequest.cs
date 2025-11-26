@@ -13,12 +13,14 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         public string TemplateName { get; set; } = string.Empty;
 
         [Required]
-        public int SerialID { get; set; } 
+        public int SerialID { get; set; }
 
         [Required]
-        public int TemplateTypeID { get; set; } 
-
+        public int TemplateTypeID { get; set; }
         [Required]
-        public string LayoutDefinition { get; set; } = string.Empty; 
+        public string LayoutDefinition { get; set; } = string.Empty;
+        [Required]
+        public int TemplateFrameID { get; set; } 
+        public string? LogoUrl { get; set; }    
     }
 }

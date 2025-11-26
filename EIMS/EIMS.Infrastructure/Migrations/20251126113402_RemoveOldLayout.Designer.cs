@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126113402_RemoveOldLayout")]
+    partial class RemoveOldLayout
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,7 +99,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 1,
                             CategoryType = "Goods",
                             Code = "HH",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5508),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4182),
                             Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
                             IsActive = true,
                             IsTaxable = true,
@@ -108,7 +111,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 2,
                             CategoryType = "Service",
                             Code = "DV",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5559),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4193),
                             Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
                             IsActive = true,
                             IsTaxable = true,
@@ -120,7 +123,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 3,
                             CategoryType = "Software",
                             Code = "SW",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5563),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4196),
                             Description = "Sản phẩm phần mềm và bản quyền",
                             IsActive = true,
                             IsTaxable = false,
@@ -513,17 +516,10 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LayoutDefinition")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("LogoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<int>("SerialID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TemplateFrameID")
+                    b.Property<int?>("TemplateFrameFrameID")
                         .HasColumnType("integer");
 
                     b.Property<string>("TemplateName")
@@ -540,7 +536,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("SerialID");
 
-                    b.HasIndex("TemplateFrameID");
+                    b.HasIndex("TemplateFrameFrameID");
 
                     b.HasIndex("TemplateTypeID");
 
@@ -856,7 +852,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 23000m,
                             CategoryID = 1,
                             Code = "HH0001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5609),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4256),
                             Description = "Xăng RON95 chịu thuế GTGT 10%",
                             IsActive = true,
                             Name = "Xăng RON95",
@@ -869,7 +865,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 500000m,
                             CategoryID = 2,
                             Code = "DV001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5613),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4260),
                             Description = "Dịch vụ hosting thuế suất 8%",
                             IsActive = true,
                             Name = "Dịch vụ cho thuê máy chủ (Hosting)",
@@ -882,7 +878,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 10000000m,
                             CategoryID = 3,
                             Code = "SW001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5616),
+                            CreatedDate = new DateTime(2025, 11, 26, 11, 34, 0, 897, DateTimeKind.Utc).AddTicks(4263),
                             Description = "Phần mềm không chịu thuế GTGT",
                             IsActive = true,
                             Name = "Phần mềm kế toán bản quyền",
@@ -1155,85 +1151,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("FrameID");
 
                     b.ToTable("TemplateFrames");
-
-                    b.HasData(
-                        new
-                        {
-                            FrameID = 1,
-                            FrameName = "Frame 1",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156291/khunghoadon11_kqjill.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 2,
-                            FrameName = "Frame 2",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156289/khunghoadon3_utka5u.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 3,
-                            FrameName = "Frame 3",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156287/khunghoadon10_pjapiv.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 4,
-                            FrameName = "Frame 4",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon7_shsqte.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 5,
-                            FrameName = "Frame 5",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon4_o9xatr.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 6,
-                            FrameName = "Frame 6",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon9_smq1lj.pngg",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 7,
-                            FrameName = "Frame 7",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon5_tveg16.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 8,
-                            FrameName = "Frame 8",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon6_mp5fh1.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 9,
-                            FrameName = "Frame 9",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon8_d5ho2y.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 10,
-                            FrameName = "Frame 10",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156284/khunghoadon2_vamivw.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 11,
-                            FrameName = "Frame 11",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156219/khunghoadon1_urc2b5.png",
-                            IsActive = true
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TemplateType", b =>
@@ -1338,12 +1255,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 45, 788, DateTimeKind.Utc).AddTicks(1471),
+                            CreatedAt = new DateTime(2025, 11, 26, 11, 34, 1, 54, DateTimeKind.Utc).AddTicks(2458),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$1052QeF7p5.7fATd0G2U3eui1f4l4xrAhDd4MgqK1maUqkjZFUTnm",
+                            PasswordHash = "$2a$11$yd1LbmjAbxwRmoBgU92q2eXV9Jjms/yWlazzC2dMTRLEE5qsEB5Ya",
                             PhoneNumber = "0101010101",
                             RoleID = 1,
                             Status = 2
@@ -1351,12 +1268,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 45, 945, DateTimeKind.Utc).AddTicks(6562),
+                            CreatedAt = new DateTime(2025, 11, 26, 11, 34, 1, 208, DateTimeKind.Utc).AddTicks(3182),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$jGM7VUweX837rEImPq2yGOj/hQDyWrbWq8EeLWVGjaUcGkpo8hFnS",
+                            PasswordHash = "$2a$11$W1dTIwU1ZUp2MyHZ0AZCzeFDARCW/aQLMn3OU.nPKg4ToaBylLlhm",
                             PhoneNumber = "0202020202",
                             RoleID = 2,
                             Status = 2
@@ -1364,12 +1281,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 103, DateTimeKind.Utc).AddTicks(1227),
+                            CreatedAt = new DateTime(2025, 11, 26, 11, 34, 1, 364, DateTimeKind.Utc).AddTicks(7234),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$2b2kaOELIG8A3pnIA03bfudN6SpdD151PHvvkyYm9MEUaehAmvNBS",
+                            PasswordHash = "$2a$11$MP4S2259QtjlNLPDQ/6K1./.Yuxu4eIl3qYVSDRXjkwlU3kP5UqXy",
                             PhoneNumber = "0303030303",
                             RoleID = 3,
                             Status = 2
@@ -1377,12 +1294,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 261, DateTimeKind.Utc).AddTicks(4851),
+                            CreatedAt = new DateTime(2025, 11, 26, 11, 34, 1, 524, DateTimeKind.Utc).AddTicks(2775),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$xQQYwKtc/70/RFuCH1xjhu8wajVPHYy.j6kUKcWAJ8MgatOxzEmPy",
+                            PasswordHash = "$2a$11$7m5jxs8H3SYqU4LnWWgY6eThuN6g5WfcZ.ayJ4qzOHYQC00xdDSw6",
                             PhoneNumber = "0404040404",
                             RoleID = 4,
                             Status = 2
@@ -1390,12 +1307,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 422, DateTimeKind.Utc).AddTicks(7570),
+                            CreatedAt = new DateTime(2025, 11, 26, 11, 34, 1, 681, DateTimeKind.Utc).AddTicks(9407),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$XCpiZ1H5fFNWpLi2nudfK..mxQLwbRHUrd7q4Yh0QCaPkXJNKL/Ze",
+                            PasswordHash = "$2a$11$Zpb.LwqGsgonJB2IZOkY4eOhhDY8TPKRhfiT3GE3SQ00D3Un3VEZC",
                             PhoneNumber = "0505050505",
                             RoleID = 5,
                             Status = 2
@@ -1568,11 +1485,9 @@ namespace EIMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EIMS.Domain.Entities.TemplateFrame", "TemplateFrame")
+                    b.HasOne("EIMS.Domain.Entities.TemplateFrame", null)
                         .WithMany("InvoiceTemplates")
-                        .HasForeignKey("TemplateFrameID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TemplateFrameFrameID");
 
                     b.HasOne("EIMS.Domain.Entities.TemplateType", "TemplateType")
                         .WithMany("InvoiceTemplates")
@@ -1583,8 +1498,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Serial");
-
-                    b.Navigation("TemplateFrame");
 
                     b.Navigation("TemplateType");
                 });
