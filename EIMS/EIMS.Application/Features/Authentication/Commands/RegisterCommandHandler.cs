@@ -1,5 +1,4 @@
 using EIMS.Application.Commons.Interfaces;
-using EIMS.Application.DTOs.Mails;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -12,7 +11,6 @@ namespace EIMS.Application.Features.Authentication.Commands
         private readonly IApplicationDBContext _context;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
-
 
         private const string DEFAULT_ROLE_NAME = "Accountant";
 
@@ -99,7 +97,7 @@ namespace EIMS.Application.Features.Authentication.Commands
             <p>Please log in and change your password immediately.</p>
             <a href='http://your-frontend-url/login'>Click here to Login</a>";
 
-            var mailRequest = new MailRequest
+            var mailRequest = new DTOs.Mails.MailRequest
             {
                 Email = request.Email,
                 Subject = "Welcome to EIMS - Your Account is Pending Activation",
