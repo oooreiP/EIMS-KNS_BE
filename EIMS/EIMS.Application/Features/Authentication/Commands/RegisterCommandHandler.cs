@@ -13,6 +13,7 @@ namespace EIMS.Application.Features.Authentication.Commands
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
 
+
         private const string DEFAULT_ROLE_NAME = "Accountant";
 
         public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailService emailService)
