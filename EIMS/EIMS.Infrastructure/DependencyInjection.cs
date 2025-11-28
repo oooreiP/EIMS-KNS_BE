@@ -32,6 +32,7 @@ namespace EIMS.Infrastructure
             services.AddHttpClient<IEmailService, MailerSendService>();
             services.AddScoped<ITaxApiClient, MockTaxApiClient>();
             services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
+            services.AddScoped<IPdfService, PdfService>();
             return services;
 
         }

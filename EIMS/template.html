@@ -1,107 +1,287 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>{{InvoiceTitle}}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      margin: 15mm;
-      color: #000;
-    }
-    h1 {
-      color: #004aad;
-      text-align: center;
-    }
-    .header, .seller, .buyer, .footer {
-      margin-bottom: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 5px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    .right {
-      text-align: right;
-    }
-    .signature {
-      margin-top: 40px;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
+            color: #000;
+        }
+
+        /* This container simulates the A4 Page */
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm;
+            margin: auto;
+            position: relative;
+            box-sizing: border-box;
+            /* If you have a Frame URL from the DB, it sets it as the background */
+            background-image: url('{{FrameUrl}}'); 
+            background-size: 100% 100%; /* Stretch frame to fit page */
+            background-repeat: no-repeat;
+        }
+
+        /* LOGO Styling */
+        .logo-img {
+            height: 80px;
+            margin-bottom: 10px;
+        }
+
+        /* HEADER: Title and Serial Number */
+        .header-section {
+            text-align: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #5b9bd5; /* The Blue color from your screenshot */
+            text-transform: uppercase;
+            margin: 5px 0;
+        }
+        .serial-info {
+            position: absolute;
+            top: 0;
+            right: 0;
+            text-align: right;
+            font-size: 11px;
+        }
+
+        /* SELLER & BUYER INFO Grid */
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .seller-col {
+            width: 70%;
+        }
+        .qr-col {
+            width: 25%;
+            text-align: right;
+        }
+        .qr-box {
+            border: 1px dashed #ccc;
+            padding: 5px;
+            display: inline-block;
+        }
+        .info-row {
+            margin-bottom: 4px;
+        }
+        .label {
+            font-weight: bold;
+        }
+
+        /* TABLE Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th {
+            border: 1px solid #000;
+            padding: 5px;
+            background-color: #fff;
+            text-align: center;
+            font-weight: bold;
+        }
+        td {
+            border: 1px solid #000;
+            padding: 5px;
+            vertical-align: middle;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        /* Fixed height for rows to ensure cosmetic spacing works */
+        .item-row td {
+            height: 25px; 
+        }
+
+        /* FOOTER & SIGNATURES */
+        .footer-section {
+            margin-top: 15px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .signatures-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .sig-box {
+            width: 45%;
+        }
+        .sig-title {
+            font-weight: bold;
+        }
+        .sig-note {
+            font-style: italic;
+            font-size: 11px;
+        }
+        
+    </style>
 </head>
 <body>
 
-  <div class="header">
-    <img src="{{LogoPath}}" alt="Logo" style="height:50px;">
-    <h1>{{InvoiceTitle}}</h1>
-    <p><b>Mẫu số:</b> {{InvoiceForm}} | <b>Ký hiệu:</b> {{InvoiceSerial}}</p>
-    <p><b>Ngày phát hành:</b> {{IssueDate}}</p>
-  </div>
+<div class="page-container">
 
-  <div class="seller">
-    <h3>Bên bán hàng</h3>
-    <p>Đơn vị: {{SellerName}}</p>
-    <p>Mã số thuế: {{SellerTaxCode}}</p>
-    <p>Địa chỉ: {{SellerAddress}}</p>
-  </div>
+    <div class="header-section">
+        <div class="serial-info">
+            <div>Ký hiệu: <b>{{Serial}}</b></div>
+            <div>Số: <span style="color:red"><b>{{InvoiceNumber}}</b></span></div>
+        </div>
 
-  <div class="buyer">
-    <h3>Bên mua hàng</h3>
-    <p>Người mua: {{BuyerName}}</p>
-    <p>Đơn vị: {{BuyerCompany}}</p>
-    <p>Địa chỉ: {{BuyerAddress}}</p>
-    <p>Mã số thuế: {{BuyerTaxCode}}</p>
-  </div>
+        <div class="invoice-title">HÓA ĐƠN GIÁ TRỊ GIA TĂNG</div>
+        
+        <div>Ngày {{Day}} tháng {{Month}} năm {{Year}}</div>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>STT</th>
-        <th>Tên hàng hóa, dịch vụ</th>
-        <th>Đơn vị tính</th>
-        <th class="right">Số lượng</th>
-        <th class="right">Đơn giá</th>
-        <th class="right">Thành tiền</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each Items}}
-      <tr>
-        <td>{{@index}}</td>
-        <td>{{Description}}</td>
-        <td>{{Unit}}</td>
-        <td class="right">{{Quantity}}</td>
-        <td class="right">{{UnitPrice}}</td>
-        <td class="right">{{Total}}</td>
-      </tr>
-      {{/each}}
-    </tbody>
-  </table>
+    <div class="info-grid">
+        <div class="seller-col">
+            {{#if Config.DisplaySettings.ShowLogo}}
+                {{#if LogoUrl}}
+                    <img src="{{LogoUrl}}" class="logo-img" alt="Logo" />
+                {{/if}}
+            {{/if}}
 
-  <div class="footer">
-    <p><b>Tổng tiền trước thuế:</b> {{TotalAmount}}</p>
-    <p><b>Thuế suất:</b> {{VatRate}}</p>
-    <p><b>Tiền thuế:</b> {{VatAmount}}</p>
-    <p><b>Tổng cộng:</b> {{GrandTotal}}</p>
-    <p><b>Bằng chữ:</b> {{AmountInWords}}</p>
-    <p><b>Hình thức thanh toán:</b> {{PaymentMethod}}</p>
-  </div>
+            {{#if Config.DisplaySettings.ShowCompanyName}}
+                <div class="info-row"><span class="label">Đơn vị bán:</span> <b>{{SellerName}}</b></div>
+            {{/if}}
 
-  <div class="signature">
-    <p><b>Người bán hàng</b></p>
-    <br><br><br>
-    <p>(Ký, ghi rõ họ tên)</p>
-  </div>
+            {{#if Config.DisplaySettings.ShowTaxCode}}
+                <div class="info-row"><span class="label">Mã số thuế:</span> {{SellerTaxCode}}</div>
+            {{/if}}
+
+            {{#if Config.DisplaySettings.ShowAddress}}
+                <div class="info-row"><span class="label">Địa chỉ:</span> {{SellerAddress}}</div>
+            {{/if}}
+
+            {{#if Config.DisplaySettings.ShowPhone}}
+                <div class="info-row"><span class="label">Điện thoại:</span> {{SellerPhone}}</div>
+            {{/if}}
+
+            {{#if Config.DisplaySettings.ShowBankAccount}}
+                <div class="info-row"><span class="label">Số tài khoản:</span> {{SellerBankAccount}}</div>
+            {{/if}}
+        </div>
+
+        <div class="qr-col">
+            {{#if Config.DisplaySettings.ShowQrCode}}
+                <div class="qr-box">
+                    <img src="data:image/png;base64,{{QrCodeBase64}}" width="80" height="80" />
+                </div>
+            {{/if}}
+        </div>
+    </div>
+
+    <hr style="border-top: 1px solid #ccc;" />
+
+    <div class="buyer-section">
+        {{#if Config.CustomerSettings.ShowName}}
+            <div class="info-row"><span class="label">Họ tên người mua hàng:</span> {{BuyerName}}</div>
+        {{/if}}
+        
+        <div class="info-row"><span class="label">Tên đơn vị:</span> {{BuyerCompany}}</div>
+        
+        {{#if Config.CustomerSettings.ShowAddress}}
+            <div class="info-row"><span class="label">Địa chỉ:</span> {{BuyerAddress}}</div>
+        {{/if}}
+
+        {{#if Config.CustomerSettings.ShowTaxCode}}
+            <div class="info-row"><span class="label">Mã số thuế:</span> {{BuyerTaxCode}}</div>
+        {{/if}}
+        
+        {{#if Config.CustomerSettings.ShowPaymentMethod}}
+            <div class="info-row"><span class="label">Hình thức thanh toán:</span> {{PaymentMethod}}</div>
+        {{/if}}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Tên hàng hóa, dịch vụ</th>
+                <th style="width: 60px;">ĐVT</th>
+                <th style="width: 70px;">Số lượng</th>
+                <th style="width: 100px;">Đơn giá</th>
+                <th style="width: 100px;">Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each Items}}
+            <tr class="item-row">
+                <td class="text-center">{{increment @index}}</td>
+                <td>{{ProductName}}</td>
+                <td class="text-center">{{Unit}}</td>
+                <td class="text-right">{{Quantity}}</td>
+                <td class="text-right">{{formatNumber UnitPrice}}</td>
+                <td class="text-right">{{formatNumber TotalAmount}}</td>
+            </tr>
+            {{/each}}
+
+            {{#each FillerRows}}
+            <tr class="item-row">
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <div class="footer-section">
+        <div class="total-row">
+            <span>Cộng tiền hàng: </span>
+            <b style="margin-left: 20px;">{{formatNumber SubTotal}}</b>
+        </div>
+        <div class="total-row">
+            <span>Tiền thuế GTGT ({{VatRate}}%): </span>
+            <b style="margin-left: 20px;">{{formatNumber VatAmount}}</b>
+        </div>
+        <div class="total-row">
+            <span>Tổng tiền thanh toán: </span>
+            <b style="margin-left: 20px; font-size: 16px;">{{formatNumber GrandTotal}}</b>
+        </div>
+        <div class="info-row">
+            <span class="label">Số tiền viết bằng chữ: </span>
+            <i>{{AmountInWords}}</i>
+        </div>
+    </div>
+
+    <div class="signatures-grid">
+        <div class="sig-box">
+            <div class="sig-title">Người mua hàng</div>
+            <div class="sig-note">(Ký, ghi rõ họ tên)</div>
+        </div>
+        
+        <div class="sig-box">
+            <div class="sig-title">Người bán hàng</div>
+            <div class="sig-note">(Ký điện tử, đóng dấu)</div>
+            
+            {{#if Config.DisplaySettings.ShowSignature}}
+                <div style="margin-top: 30px; color: blue; border: 2px solid blue; display:inline-block; padding: 5px;">
+                    Signature Valid<br/>
+                    Signed by: {{SellerName}}<br/>
+                    Date: {{SignDate}}
+                </div>
+            {{/if}}
+        </div>
+    </div>
+
+</div>
 
 </body>
 </html>
