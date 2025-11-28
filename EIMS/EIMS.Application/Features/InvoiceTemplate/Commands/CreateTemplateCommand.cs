@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.InvoiceTemplate;
 using FluentResults;
 using MediatR;
 
@@ -18,7 +19,7 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
 
         public int TemplateFrameID { get; set; } 
         public string? LogoUrl { get; set; }  
-        public string LayoutDefinition { get; set; }
+        public TemplateConfig LayoutDefinition { get; set; }
         public int AuthenticatedUserId { get; set; }
     }
 }
