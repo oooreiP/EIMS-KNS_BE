@@ -8,7 +8,7 @@ using MediatR;
 
 namespace EIMS.Application.Features.InvoiceTemplate.Queries
 {
-    public class GetTemplatesQuery : IRequest<Result<List<TemplateSummaryResponse>>>
+    public class GetTemplatesQuery : IRequest<Result<List<TemplateDetailResponse>>>
     {
 
     }
