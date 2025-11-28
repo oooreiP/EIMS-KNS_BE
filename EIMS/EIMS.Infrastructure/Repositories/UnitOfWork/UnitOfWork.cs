@@ -17,6 +17,10 @@ namespace EIMS.Application.Commons.UnitOfWork
         public ICustomerRepository CustomerRepository { get; set; }
         public ISerialRepository SerialRepository { get; set; }
         public IBaseRepository<Category> CategoryRepository { get; set; }
+        public IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; set; }
+        public IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; set; }
+        public IBaseRepository<TaxApiLog> TaxApiLogRepository { get; set; }
+        public IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; set; }
         public IInvoiceTemplateRepository InvoiceTemplateRepository { get; set; }
         public IBaseRepository<Prefix> PrefixRepository { get; set; }
         public IBaseRepository<InvoiceType> InvoiceTypeRepository { get; set; }
@@ -34,6 +38,10 @@ namespace EIMS.Application.Commons.UnitOfWork
             CustomerRepository = new CustomerRepository(_db);
             SerialRepository = new SerialRepository(_db);
             CategoryRepository = new BaseRepository<Category>(_db);
+            InvoiceHistoryRepository = new BaseRepository<InvoiceHistory>(_db);
+            TaxMessageCodeRepository = new BaseRepository<TaxMessageCode>(_db);
+            TaxApiLogRepository = new BaseRepository<TaxApiLog>(_db);
+            TaxApiStatusRepository = new BaseRepository<TaxApiStatus>(_db);
             InvoiceTemplateRepository = new InvoiceTemplateRepository(_db);
             PrefixRepository = new BaseRepository<Prefix>(_db);
             InvoiceTypeRepository = new BaseRepository<InvoiceType>(_db);

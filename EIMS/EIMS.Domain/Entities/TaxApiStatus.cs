@@ -11,6 +11,9 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int TaxApiStatusID { get; set; }
+        [Required]
+        [StringLength(50)]
+        public string Code { get; set; } = string.Empty;
         [StringLength(255)]
         public string? StatusName { get; set; }
 

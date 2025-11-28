@@ -19,6 +19,10 @@ namespace EIMS.Application.Commons.Interfaces
         ITemplateFrameRepository TemplateFrameRepository { get; }
 
 
+        IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; }
+        IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; }
+        IBaseRepository<TaxApiLog> TaxApiLogRepository { get; }
+        IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();

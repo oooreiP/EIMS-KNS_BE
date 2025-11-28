@@ -16,9 +16,11 @@ namespace EIMS.Domain.Entities
         [Required]
         public string RequestPayload { get; set; } = string.Empty;
         public string? ResponsePayload { get; set; }
-        public int TaxApiStatusID { get; set; }
+        public string? MTDiep { get; set; }
+        public string? MCCQT { get; set; }
+        public string? SoTBao { get; set; }
         [ForeignKey("TaxApiStatusID")]
-
+        public int TaxApiStatusID { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         //Navigation
         [InverseProperty("TaxApiLogs")]

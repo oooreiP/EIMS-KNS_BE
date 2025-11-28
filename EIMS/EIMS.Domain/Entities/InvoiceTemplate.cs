@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EIMS.Domain.Entities
 {
@@ -27,6 +28,7 @@ namespace EIMS.Domain.Entities
         // --- Navigation Properties ---
         [InverseProperty("InvoiceTemplates")]
         public virtual TemplateType TemplateType { get; set; }
+        [JsonIgnore]
         [InverseProperty("Template")]
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
         [InverseProperty("CreatedTemplates")]
