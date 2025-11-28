@@ -30,6 +30,8 @@ namespace EIMS.Infrastructure
             // services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddHttpClient<IEmailService, MailerSendService>();
+            services.AddScoped<ITaxApiClient, MockTaxApiClient>();
+            services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
             return services;
 
         }

@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251122181519_AddTaxMessageCode")]
+    partial class AddTaxMessageCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,7 +99,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 1,
                             CategoryType = "Goods",
                             Code = "HH",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5508),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4555),
                             Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
                             IsActive = true,
                             IsTaxable = true,
@@ -108,7 +111,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 2,
                             CategoryType = "Service",
                             Code = "DV",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5559),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4562),
                             Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
                             IsActive = true,
                             IsTaxable = true,
@@ -120,7 +123,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 3,
                             CategoryType = "Software",
                             Code = "SW",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5563),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4564),
                             Description = "Sản phẩm phần mềm và bản quyền",
                             IsActive = true,
                             IsTaxable = false,
@@ -207,9 +210,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasKey("CustomerID");
 
-                    b.HasIndex("TaxCode")
-                        .IsUnique();
-
                     b.ToTable("Customers");
                 });
 
@@ -243,10 +243,7 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int>("InvoiceStatusID")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("IssuedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("IssuerID")
+                    b.Property<int>("IssuerID")
                         .HasColumnType("integer");
 
                     b.Property<string>("MCCQT")
@@ -259,9 +256,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<DateTime?>("PaymentDueDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("PaymentStatusID")
-                        .HasColumnType("integer");
-
                     b.Property<string>("QRCodeData")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -269,7 +263,7 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int?>("SalesID")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("SignDate")
+                    b.Property<DateTime>("SignDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("SubtotalAmount")
@@ -310,8 +304,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasIndex("IssuerID");
 
-                    b.HasIndex("PaymentStatusID");
-
                     b.HasIndex("SalesID");
 
                     b.HasIndex("TemplateID");
@@ -336,10 +328,10 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int>("InvoiceID")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("PerformedBy")
+                    b.Property<int>("PerformedBy")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("PerformerUserID")
+                    b.Property<int>("PerformerUserID")
                         .HasColumnType("integer");
 
                     b.Property<int?>("ReferenceInvoiceID")
@@ -440,29 +432,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.ToTable("InvoiceStatements");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatementDetail", b =>
-                {
-                    b.Property<int>("DetailID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetailID"));
-
-                    b.Property<int>("InvoiceID")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StatementID")
-                        .HasColumnType("integer");
-
-                    b.HasKey("DetailID");
-
-                    b.HasIndex("InvoiceID");
-
-                    b.HasIndex("StatementID");
-
-                    b.ToTable("InvoiceStatementDetails");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatus", b =>
                 {
                     b.Property<int>("InvoiceStatusID")
@@ -479,33 +448,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("InvoiceStatusID");
 
                     b.ToTable("InvoiceStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            InvoiceStatusID = 1,
-                            StatusName = "Draft"
-                        },
-                        new
-                        {
-                            InvoiceStatusID = 2,
-                            StatusName = "Issued"
-                        },
-                        new
-                        {
-                            InvoiceStatusID = 3,
-                            StatusName = "Cancelled"
-                        },
-                        new
-                        {
-                            InvoiceStatusID = 4,
-                            StatusName = "Adjusted"
-                        },
-                        new
-                        {
-                            InvoiceStatusID = 5,
-                            StatusName = "Replaced"
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceTemplate", b =>
@@ -519,20 +461,22 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int>("CreatedByUserID")
                         .HasColumnType("integer");
 
+                    b.Property<long>("CurrentInvoiceNumber")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("InvoiceTypeID")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LayoutDefinition")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("LogoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<int>("SerialID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TemplateFrameID")
+                    b.Property<int>("SerialStatusID")
                         .HasColumnType("integer");
 
                     b.Property<string>("TemplateName")
@@ -548,8 +492,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("CreatedByUserID");
 
                     b.HasIndex("SerialID");
-
-                    b.HasIndex("TemplateFrameID");
 
                     b.HasIndex("TemplateTypeID");
 
@@ -702,46 +644,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.ToTable("NotificationTypes");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.PaymentStatus", b =>
-                {
-                    b.Property<int>("PaymentStatusID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentStatusID"));
-
-                    b.Property<string>("StatusName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("PaymentStatusID");
-
-                    b.ToTable("PaymentStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            PaymentStatusID = 1,
-                            StatusName = "Unpaid"
-                        },
-                        new
-                        {
-                            PaymentStatusID = 2,
-                            StatusName = "Partially Paid"
-                        },
-                        new
-                        {
-                            PaymentStatusID = 3,
-                            StatusName = "Paid"
-                        },
-                        new
-                        {
-                            PaymentStatusID = 4,
-                            StatusName = "Overdue"
-                        });
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.Prefix", b =>
                 {
                     b.Property<int>("PrefixID")
@@ -865,7 +767,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 23000m,
                             CategoryID = 1,
                             Code = "HH0001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5609),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4596),
                             Description = "Xăng RON95 chịu thuế GTGT 10%",
                             IsActive = true,
                             Name = "Xăng RON95",
@@ -878,7 +780,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 500000m,
                             CategoryID = 2,
                             Code = "DV001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5613),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4600),
                             Description = "Dịch vụ hosting thuế suất 8%",
                             IsActive = true,
                             Name = "Dịch vụ cho thuê máy chủ (Hosting)",
@@ -891,7 +793,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 10000000m,
                             CategoryID = 3,
                             Code = "SW001",
-                            CreatedDate = new DateTime(2025, 11, 26, 11, 47, 45, 633, DateTimeKind.Utc).AddTicks(5616),
+                            CreatedDate = new DateTime(2025, 11, 22, 18, 15, 16, 357, DateTimeKind.Utc).AddTicks(4602),
                             Description = "Phần mềm không chịu thuế GTGT",
                             IsActive = true,
                             Name = "Phần mềm kế toán bản quyền",
@@ -981,9 +883,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SerialID"));
 
-                    b.Property<long>("CurrentInvoiceNumber")
-                        .HasColumnType("bigint");
-
                     b.Property<int>("InvoiceTypeID")
                         .HasColumnType("integer");
 
@@ -1063,28 +962,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("StatusID");
 
                     b.ToTable("StatementStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            StatusID = 1,
-                            StatusName = "Draft"
-                        },
-                        new
-                        {
-                            StatusID = 2,
-                            StatusName = "Sent"
-                        },
-                        new
-                        {
-                            StatusID = 3,
-                            StatusName = "Paid"
-                        },
-                        new
-                        {
-                            StatusID = 4,
-                            StatusName = "Overdue"
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TaxApiLog", b =>
@@ -1768,114 +1645,6 @@ namespace EIMS.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.TemplateFrame", b =>
-                {
-                    b.Property<int>("FrameID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FrameID"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FrameName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("FrameID");
-
-                    b.ToTable("TemplateFrames");
-
-                    b.HasData(
-                        new
-                        {
-                            FrameID = 1,
-                            FrameName = "Frame 1",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156291/khunghoadon11_kqjill.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 2,
-                            FrameName = "Frame 2",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156289/khunghoadon3_utka5u.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 3,
-                            FrameName = "Frame 3",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156287/khunghoadon10_pjapiv.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 4,
-                            FrameName = "Frame 4",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon7_shsqte.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 5,
-                            FrameName = "Frame 5",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon4_o9xatr.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 6,
-                            FrameName = "Frame 6",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156286/khunghoadon9_smq1lj.pngg",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 7,
-                            FrameName = "Frame 7",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon5_tveg16.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 8,
-                            FrameName = "Frame 8",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon6_mp5fh1.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 9,
-                            FrameName = "Frame 9",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156285/khunghoadon8_d5ho2y.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 10,
-                            FrameName = "Frame 10",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156284/khunghoadon2_vamivw.png",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            FrameID = 11,
-                            FrameName = "Frame 11",
-                            ImageUrl = "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156219/khunghoadon1_urc2b5.png",
-                            IsActive = true
-                        });
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.TemplateType", b =>
                 {
                     b.Property<int>("TemplateTypeID")
@@ -1897,26 +1666,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasKey("TemplateTypeID");
 
                     b.ToTable("TemplateTypes");
-
-                    b.HasData(
-                        new
-                        {
-                            TemplateTypeID = 1,
-                            TypeCategory = "New",
-                            TypeName = "Hóa đơn mới"
-                        },
-                        new
-                        {
-                            TemplateTypeID = 2,
-                            TypeCategory = "Adjustment",
-                            TypeName = "Hóa đơn điều chỉnh"
-                        },
-                        new
-                        {
-                            TemplateTypeID = 3,
-                            TypeCategory = "Replacement",
-                            TypeName = "Hóa đơn thay thế"
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.User", b =>
@@ -1930,16 +1679,10 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("CustomerID")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<string>("EvidenceStoragePath")
-                        .HasColumnType("text");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -1947,9 +1690,6 @@ namespace EIMS.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPasswordChangeRequired")
                         .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
@@ -1963,12 +1703,7 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int>("RoleID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
                     b.HasKey("UserID");
-
-                    b.HasIndex("CustomerID");
 
                     b.HasIndex("RoleID");
 
@@ -1978,67 +1713,57 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 45, 788, DateTimeKind.Utc).AddTicks(1471),
+                            CreatedAt = new DateTime(2025, 11, 22, 18, 15, 16, 469, DateTimeKind.Utc).AddTicks(497),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
-                            IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$1052QeF7p5.7fATd0G2U3eui1f4l4xrAhDd4MgqK1maUqkjZFUTnm",
+                            PasswordHash = "$2a$11$uo5aQNwVXfcQzOT47OSGJuFoEPE3dbq2vZMOhyuOaVjc/qYWPboTO",
                             PhoneNumber = "0101010101",
-                            RoleID = 1,
-                            Status = 2
+                            RoleID = 1
                         },
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 45, 945, DateTimeKind.Utc).AddTicks(6562),
+                            CreatedAt = new DateTime(2025, 11, 22, 18, 15, 16, 580, DateTimeKind.Utc).AddTicks(7399),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
-                            IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$jGM7VUweX837rEImPq2yGOj/hQDyWrbWq8EeLWVGjaUcGkpo8hFnS",
+                            PasswordHash = "$2a$11$rVgZaCfX1j9.G8fjG1VtLOPxsrrz7CCgkK.vWDTAIxz.7xixVGmGW",
                             PhoneNumber = "0202020202",
-                            RoleID = 2,
-                            Status = 2
+                            RoleID = 2
                         },
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 103, DateTimeKind.Utc).AddTicks(1227),
+                            CreatedAt = new DateTime(2025, 11, 22, 18, 15, 16, 694, DateTimeKind.Utc).AddTicks(2809),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
-                            IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$2b2kaOELIG8A3pnIA03bfudN6SpdD151PHvvkyYm9MEUaehAmvNBS",
+                            PasswordHash = "$2a$11$uxZpXX0Y0BoFCrREPvwB4O1v7hdSVPhGaDK6OqXJtuUhPsb3qtHgC",
                             PhoneNumber = "0303030303",
-                            RoleID = 3,
-                            Status = 2
+                            RoleID = 3
                         },
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 261, DateTimeKind.Utc).AddTicks(4851),
+                            CreatedAt = new DateTime(2025, 11, 22, 18, 15, 16, 806, DateTimeKind.Utc).AddTicks(7035),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
-                            IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$xQQYwKtc/70/RFuCH1xjhu8wajVPHYy.j6kUKcWAJ8MgatOxzEmPy",
+                            PasswordHash = "$2a$11$.aJZpgGSa2DDbAc3.cn5p.IhRE.zeIjh14QuEfWpKtMW55iIpRXa.",
                             PhoneNumber = "0404040404",
-                            RoleID = 4,
-                            Status = 2
+                            RoleID = 4
                         },
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2025, 11, 26, 11, 47, 46, 422, DateTimeKind.Utc).AddTicks(7570),
+                            CreatedAt = new DateTime(2025, 11, 22, 18, 15, 16, 924, DateTimeKind.Utc).AddTicks(1706),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
-                            IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$XCpiZ1H5fFNWpLi2nudfK..mxQLwbRHUrd7q4Yh0QCaPkXJNKL/Ze",
+                            PasswordHash = "$2a$11$bHr1kyZA9NSuEQijhqcic.9zbTUoZDgZg7qM5c1SzL3IMUwBUlFAG",
                             PhoneNumber = "0505050505",
-                            RoleID = 5,
-                            Status = 2
+                            RoleID = 5
                         });
                 });
 
@@ -2071,11 +1796,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasOne("EIMS.Domain.Entities.User", "Issuer")
                         .WithMany("IssuedInvoices")
-                        .HasForeignKey("IssuerID");
-
-                    b.HasOne("EIMS.Domain.Entities.PaymentStatus", "PaymentStatus")
-                        .WithMany("Invoices")
-                        .HasForeignKey("PaymentStatusID")
+                        .HasForeignKey("IssuerID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2097,8 +1818,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Navigation("Issuer");
 
-                    b.Navigation("PaymentStatus");
-
                     b.Navigation("Sales");
 
                     b.Navigation("Template");
@@ -2114,7 +1833,9 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.HasOne("EIMS.Domain.Entities.User", "Performer")
                         .WithMany("HistoryActions")
-                        .HasForeignKey("PerformerUserID");
+                        .HasForeignKey("PerformerUserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("EIMS.Domain.Entities.Invoice", "ReferenceInvoice")
                         .WithMany("ReferencedByHistory")
@@ -2171,25 +1892,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("StatementStatus");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatementDetail", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
-                        .WithMany("StatementDetails")
-                        .HasForeignKey("InvoiceID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.InvoiceStatement", "Statement")
-                        .WithMany("StatementDetails")
-                        .HasForeignKey("StatementID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("Statement");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceTemplate", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.User", "CreatedBy")
@@ -2204,12 +1906,6 @@ namespace EIMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EIMS.Domain.Entities.TemplateFrame", "TemplateFrame")
-                        .WithMany("InvoiceTemplates")
-                        .HasForeignKey("TemplateFrameID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("EIMS.Domain.Entities.TemplateType", "TemplateType")
                         .WithMany("InvoiceTemplates")
                         .HasForeignKey("TemplateTypeID")
@@ -2219,8 +1915,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Serial");
-
-                    b.Navigation("TemplateFrame");
 
                     b.Navigation("TemplateType");
                 });
@@ -2322,17 +2016,11 @@ namespace EIMS.Infrastructure.Migrations
 
             modelBuilder.Entity("EIMS.Domain.Entities.User", b =>
                 {
-                    b.HasOne("EIMS.Domain.Entities.Customer", "Customer")
-                        .WithMany("Users")
-                        .HasForeignKey("CustomerID");
-
                     b.HasOne("EIMS.Domain.Entities.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Customer");
 
                     b.Navigation("Role");
                 });
@@ -2352,8 +2040,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("Invoices");
 
                     b.Navigation("Statements");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Invoice", b =>
@@ -2364,14 +2050,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Navigation("ReferencedByHistory");
 
-                    b.Navigation("StatementDetails");
-
                     b.Navigation("TaxApiLogs");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
-                {
-                    b.Navigation("StatementDetails");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatus", b =>
@@ -2397,11 +2076,6 @@ namespace EIMS.Infrastructure.Migrations
             modelBuilder.Entity("EIMS.Domain.Entities.NotificationType", b =>
                 {
                     b.Navigation("Notifications");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.PaymentStatus", b =>
-                {
-                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Prefix", b =>
@@ -2437,11 +2111,6 @@ namespace EIMS.Infrastructure.Migrations
             modelBuilder.Entity("EIMS.Domain.Entities.TaxApiStatus", b =>
                 {
                     b.Navigation("TaxApiLogs");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.TemplateFrame", b =>
-                {
-                    b.Navigation("InvoiceTemplates");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.TemplateType", b =>
