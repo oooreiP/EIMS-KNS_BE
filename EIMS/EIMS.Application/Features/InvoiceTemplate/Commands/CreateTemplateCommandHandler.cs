@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using FluentResults;
@@ -23,7 +24,7 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
                 SerialID = command.SerialID,
                 TemplateTypeID = command.TemplateTypeID,
                 CreatedByUserID = command.AuthenticatedUserId,
-                LayoutDefinition = command.LayoutDefinition,
+                LayoutDefinition = JsonSerializer.Serialize(request.LayoutDefinition),
                 TemplateFrameID = command.TemplateFrameID,
                 LogoUrl = command.LogoUrl,
                 IsActive = true, // Set default
