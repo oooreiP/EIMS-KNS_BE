@@ -17,6 +17,7 @@ namespace EIMS.Application.Commons.Interfaces
         IInvoiceStatementRepository InvoiceStatementRepository { get; }
         IUserRepository UserRepository { get; }
         ITemplateFrameRepository TemplateFrameRepository { get; }
+        ICompanyRepository CompanyRepository { get; }
 
 
         IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; }
