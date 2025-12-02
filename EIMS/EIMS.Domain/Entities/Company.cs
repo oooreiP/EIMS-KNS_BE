@@ -1,30 +1,30 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+    using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EIMS.Domain.Entities
-{
-    public class Company
+    namespace EIMS.Domain.Entities
     {
-        [Key]
-        public int CompanyID { get; set; }
-        [Required]
-        [StringLength(255)]
-        public string CompanyName { get; set; } = string.Empty;
-        [Required]
-        [StringLength(255)]
-        public string Address { get; set; } = string.Empty;
-        [Required]
-        [StringLength(20)]
-        public string TaxCode { get; set; } = string.Empty;
-        [StringLength(20)]
-        public string? ContactPhone { get; set; }
-        [StringLength(20)]
-        public string? AccountNumber { get; set; }
-        [StringLength(255)]
-        public string? BankName { get; set; }
-        // --- Navigation Properties ---
-        [InverseProperty("Company")]
-        public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public class Company
+        {
+            [Key]
+            public int CompanyID { get; set; }
+            [Required]
+            [StringLength(255)]
+            public string CompanyName { get; set; } = string.Empty;
+            [Required]
+            [StringLength(255)]
+            public string Address { get; set; } = string.Empty;
+            [Required]
+            [StringLength(20)]
+            public string TaxCode { get; set; } = string.Empty;
+            [StringLength(20)]
+            public string? ContactPhone { get; set; }
+            [StringLength(20)]
+            public string? AccountNumber { get; set; }
+            [StringLength(255)]
+            public string? BankName { get; set; }
+            // --- Navigation Properties ---
+            [InverseProperty("Company")]
+            public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
+        }
     }
-}

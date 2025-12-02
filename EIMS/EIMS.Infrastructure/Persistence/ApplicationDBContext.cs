@@ -350,6 +350,18 @@ namespace EIMS.Infrastructure.Persistence
                 new StatementStatus { StatusID = 3, StatusName = "Paid" },  // Khách đã thanh toán hết
                 new StatementStatus { StatusID = 4, StatusName = "Overdue" } // Quá hạn (Optional)
             );
+            modelBuilder.Entity<Company>().HasData(
+        new Company
+        {
+            CompanyID = 1,
+            CompanyName = "CÔNG TY CỔ PHẦN GIẢI PHÁP TỔNG THỂ KỶ NGUYÊN SỐ",
+            TaxCode = "0311357436",
+            Address = "26 Nguyễn Đình Khơi, Phường Tân Sơn Nhất, TP Hồ Chí Minh, Việt Nam",
+            ContactPhone = "02873000789", // Example phone
+            AccountNumber = "1012148510", // Example Account Number
+            BankName = "Vietcombank - CN Tan Son Nhat" // Example Bank
+        }
+    );
             modelBuilder.Entity<TaxMessageCode>().HasData(
     // ---- Đăng ký ----
     new TaxMessageCode { Id = 1, MessageCode = "100", MessageName = "Thông điệp gửi tờ khai đăng ký/thay đổi thông tin sử dụng hóa đơn điện tử", Category = "Đăng ký", FlowType = 1 },
