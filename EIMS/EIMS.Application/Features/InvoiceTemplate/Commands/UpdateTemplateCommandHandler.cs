@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EIMS.Application.Commons.Interfaces;
 using FluentResults;
@@ -29,9 +30,9 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
 
             // Update fields
             template.TemplateName = request.TemplateName;
-            template.LayoutDefinition = request.LayoutDefinition; 
-            template.TemplateFrameID = request.TemplateFrameID;   
-            template.LogoUrl = request.LogoUrl;                   
+            template.LayoutDefinition = JsonSerializer.Serialize(request.LayoutDefinition);
+            template.TemplateFrameID = request.TemplateFrameID;
+            template.LogoUrl = request.LogoUrl;
             template.IsActive = request.IsActive;
             await _uow.InvoiceTemplateRepository.UpdateAsync(template);
             await _uow.SaveChanges();

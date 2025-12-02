@@ -12,7 +12,7 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
     {
         public int TemplateID { get; set; }
         public string TemplateName { get; set; } = string.Empty;
-        public string LayoutDefinition { get; set; } = string.Empty;
+        public object LayoutDefinition { get; set; }
         public int TemplateFrameID { get; set; }
         public string? LogoUrl { get; set; }
         public bool IsActive { get; set; }

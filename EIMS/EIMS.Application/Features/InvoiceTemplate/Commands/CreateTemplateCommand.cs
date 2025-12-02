@@ -12,14 +12,12 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
     public class CreateTemplateCommand : IRequest<Result<int>>, IAuthenticatedCommand
     {
         public string TemplateName { get; set; } = string.Empty;
-
         public int SerialID { get; set; }
-
         public int TemplateTypeID { get; set; }
 
-        public int TemplateFrameID { get; set; } 
-        public string? LogoUrl { get; set; }  
-        public TemplateConfig LayoutDefinition { get; set; }
+        public int TemplateFrameID { get; set; }
+        public string? LogoUrl { get; set; }
+        public object LayoutDefinition { get; set; }
         public int AuthenticatedUserId { get; set; }
     }
 }
