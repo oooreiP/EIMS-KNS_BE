@@ -22,7 +22,7 @@ namespace EIMS.Application.Features.InvoiceTemplate.Queries
             {
                 return Result.Fail(new Error($"Template with ID {request.Id} not found.").WithMetadata("TemplateID", "InvoiceTemplate.GetTemplateById"));
             }
-
+            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
             var response = new TemplateDetailResponse
             {
                 TemplateID = template.TemplateID,
@@ -35,7 +35,16 @@ namespace EIMS.Application.Features.InvoiceTemplate.Queries
                 LayoutDefinition = template.LayoutDefinition ?? string.Empty,
                 LogoUrl = template.LogoUrl,
                 TemplateFrameID = template.TemplateFrameID,
-                FrameUrl = template.TemplateFrame?.ImageUrl
+                FrameUrl = template.TemplateFrame?.ImageUrl,
+                Seller = new SellerInfo
+                {
+                    CompanyName = company?.CompanyName ?? "N/A",
+                    TaxCode = company?.TaxCode ?? "N/A",
+                    Address = company?.Address ?? "N/A",
+                    Phone = company?.ContactPhone ?? "",
+                    BankAccount = company?.AccountNumber ?? "",
+                    BankName = company?.BankName ?? ""
+                }
             };
             return Result.Ok(response);
         }
