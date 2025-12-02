@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -87,7 +88,39 @@ namespace EIMS.Application.Features.InvoiceTemplate.Queries
             if (!File.Exists(templatePath)) return Result.Fail("Template HTML file missing on server");
 
             string htmlTemplate = await File.ReadAllTextAsync(templatePath, cancellationToken);
-            var templateFunc = Handlebars.Compile(htmlTemplate);
+            // Create an isolated instance of Handlebars to register helpers safely
+            var handlebars = Handlebars.Create();
+
+            // Register 'increment' helper (Used for Row Index: 0 -> 1)
+            handlebars.RegisterHelper("increment", (writer, context, arguments) =>
+            {
+                if (arguments.Length > 0 && int.TryParse(arguments[0].ToString(), out int index))
+                {
+                    writer.WriteSafeString(index + 1);
+                }
+                else
+                {
+                    writer.WriteSafeString(arguments[0]);
+                }
+            });
+
+            // Register 'formatNumber' helper (Used for Currency formatting: 1000000 -> 1.000.000)
+            handlebars.RegisterHelper("formatNumber", (writer, context, arguments) =>
+            {
+                if (arguments.Length > 0 && decimal.TryParse(arguments[0].ToString(), out decimal number))
+                {
+                    // Use Vietnamese culture for dot (.) as thousand separator
+                    var culture = new CultureInfo("vi-VN");
+                    writer.WriteSafeString(number.ToString("N0", culture));
+                }
+                else
+                {
+                    writer.WriteSafeString(arguments[0]);
+                }
+            });
+
+            // Compile using the instance with registered helpers
+            var templateFunc = handlebars.Compile(htmlTemplate);
             string finalHtml = templateFunc(viewModel);
 
             return Result.Ok(finalHtml);
