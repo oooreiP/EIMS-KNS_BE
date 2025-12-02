@@ -78,7 +78,7 @@ namespace EIMS.API.Controllers
         public async Task<IActionResult> UpdateTemplate(int id, [FromBody] UpdateTemplateRequest request)
         {
             if (id != request.TemplateID)
-                return BadRequest("ID mismatch.");        
+                return BadRequest("ID mismatch.");
             var command = _mapper.Map<UpdateTemplateCommand>(request);
 
             var result = await _sender.Send(command);
@@ -87,6 +87,18 @@ namespace EIMS.API.Controllers
                 return BadRequest(result.Errors.FirstOrDefault()?.Message);
 
             return Ok(new { Message = "Template updated successfully" });
+        }
+        [HttpGet("{id}/view")]
+        public async Task<IActionResult> ViewTemplate(int id)
+        {
+            var query = new ViewTemplateQuery(id);
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+                return NotFound(result.Errors.FirstOrDefault()?.Message);
+
+            // Return HTML directly so the browser/frontend can render it
+            return Content(result.Value, "text/html");
         }
     }
 }

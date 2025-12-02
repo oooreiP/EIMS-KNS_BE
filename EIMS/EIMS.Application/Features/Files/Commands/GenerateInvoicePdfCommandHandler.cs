@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Files.Commands
         public async Task<Result<byte[]>> Handle(GenerateInvoicePdfCommand request, CancellationToken cancellationToken)
         {
             // 1. Get Data from Database
-            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId);
+            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, includeProperties: "InvoiceItems,Customer");
             if (invoice == null)
                 return Result.Fail(new Error("Invoice not found").WithMetadata("ErrorCode", "Invoice.NotFound"));
 
@@ -41,8 +41,11 @@ namespace EIMS.Application.Features.Files.Commands
 
             // A. Parse the JSON Config from the Template
             // We need this to know "MinRows" (e.g., 5)
-            var config = JsonSerializer.Deserialize<TemplateConfig>(template.LayoutDefinition);
-            int minRows = config.TableSettings.MinRows;
+            TemplateConfig? config = null;
+            if (!string.IsNullOrEmpty(template.LayoutDefinition))
+            {
+                config = JsonSerializer.Deserialize<TemplateConfig>(template.LayoutDefinition);
+            }
 
             // B. Map the basic data
             var viewModel = new InvoiceViewModel
@@ -50,19 +53,25 @@ namespace EIMS.Application.Features.Files.Commands
                 InvoiceNumber = invoice.InvoiceNumber.ToString(),
                 SellerName = "My Company Name", // Or from Company Table
                 BuyerName = invoice.Customer.CustomerName,
+                BuyerAddress = invoice.Customer?.Address ?? "",
+                BuyerTaxCode = invoice.Customer?.TaxCode ?? "",
                 Items = _mapper.Map<List<InvoiceItemDto>>(invoice.InvoiceItems),
                 LogoUrl = template.LogoUrl,
                 FrameUrl = template.TemplateFrame?.ImageUrl,
-                Config = config
+                Config = config,
+                GrandTotal = invoice.TotalAmount,
+                AmountInWords = invoice.TotalAmountInWords,
+                SignDate = invoice.SignDate.ToString(),
             };
 
             // C. *** CALCULATE FILLER ROWS *** // This is the specific logic you asked about
-            int currentItems = viewModel.Items.Count; // e.g., Customer bought 1 item
+            int targetMinRows = invoice.MinRows;
+            int currentItems = viewModel.Items.Count;
             int rowsToAdd = 0;
 
-            if (currentItems < minRows)
+            if (currentItems < targetMinRows)
             {
-                rowsToAdd = minRows - currentItems; // 5 - 1 = 4 empty rows needed
+                rowsToAdd = targetMinRows - currentItems;
             }
 
             // Create an empty list of integers [0, 1, 2, 3] just so the HTML {{each}} loop runs 4 times
@@ -70,7 +79,12 @@ namespace EIMS.Application.Features.Files.Commands
 
             // 3. Generate HTML
             // Load template.html text
-            string htmlTemplate = File.ReadAllText("template.html");
+            string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "template.html");
+
+            if (!File.Exists(templatePath))
+                return Result.Fail("Template HTML file is missing on server.");
+
+            string htmlTemplate = await File.ReadAllTextAsync(templatePath, cancellationToken);
 
             // Compile with Handlebars
             var templateFunc = Handlebars.Compile(htmlTemplate);
