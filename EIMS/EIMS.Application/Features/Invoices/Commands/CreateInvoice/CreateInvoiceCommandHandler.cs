@@ -53,6 +53,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
                 if (template == null)
                     return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+                var user = _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
+                if (user == null)
+                    return Result.Fail(new Error($"User {request.SalesID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
                 var serial = await _unitOfWork.SerialRepository.GetByIdAndLockAsync(template.SerialID);
                 if (serial == null)
                     return Result.Fail(new Error($"Template {serial.SerialID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
@@ -77,6 +80,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
+                    SalesID = request.SalesID,
                     SubtotalAmount = request.Amount,
                     VATAmount = request.TaxAmount,
                     VATRate = vatRate,
@@ -100,7 +104,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var history = new InvoiceHistory
                 {
                     InvoiceID = invoice.InvoiceID,
-                    ActionType = "Created",         
+                    ActionType = "Created",
                     ReferenceInvoiceID = null,
                     Date = DateTime.UtcNow,
                     PerformedBy = request.SignedBy,
@@ -138,15 +142,16 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     CustomerID = fullInvoice.CustomerID,
                     TotalAmount = fullInvoice.TotalAmount,
                     TotalAmountInWords = fullInvoice.TotalAmountInWords,
-                    Status = "Draft", 
+                    Status = "Draft",
                     XMLPath = fullInvoice.XMLPath
                 };
-                return Result.Ok(response);            }
+                return Result.Ok(response);
+            }
             catch (Exception ex)
             {
                 // If anything fails, roll back everything.
                 await _unitOfWork.RollbackAsync();
-                
+
                 Console.WriteLine(ex.ToString());
 
                 return Result.Fail(new Error($"Failed to create invoice: {ex.Message}").WithMetadata("ErrorCode", "Invoice.Create.Exception").CausedBy(ex));

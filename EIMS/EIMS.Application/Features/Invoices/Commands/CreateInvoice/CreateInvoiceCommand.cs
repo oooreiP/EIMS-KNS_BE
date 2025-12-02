@@ -1,13 +1,8 @@
-﻿using EIMS.Application.DTOs;
+﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Invoices;
-using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 {
@@ -24,6 +19,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public decimal TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public int? SignedBy { get; set; }
-        public int? MinRows { get; set; } 
+        public int? MinRows { get; set; }
+        public int  SalesID { get; set; }
     }
 }

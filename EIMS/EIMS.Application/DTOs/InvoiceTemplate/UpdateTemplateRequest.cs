@@ -15,8 +15,7 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         public string TemplateName { get; set; } = string.Empty;
 
         [Required]
-        public string LayoutDefinition { get; set; } = string.Empty; // JSON config
-
+        public object LayoutDefinition { get; set; }
         public int TemplateFrameID { get; set; } // ID of the background frame
         public string? LogoUrl { get; set; }      // Cloudinary URL
         public bool IsActive { get; set; }
