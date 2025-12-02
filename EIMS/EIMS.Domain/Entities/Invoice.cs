@@ -71,6 +71,7 @@ namespace EIMS.Domain.Entities
         public string? FilePath { get; set; }
         [StringLength(500)]
         public string? XMLPath { get; set; }
+        public int MinRows { get; set; } = 5; 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---
