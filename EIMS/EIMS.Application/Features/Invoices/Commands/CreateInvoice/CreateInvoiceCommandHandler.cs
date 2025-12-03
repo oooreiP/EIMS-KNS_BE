@@ -85,10 +85,11 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     SubtotalAmount = request.Amount,
                     VATAmount = request.TaxAmount,
                     VATRate = vatRate,
+                    PaymentMethod = request.PaymentMethod,
                     TotalAmount = request.TotalAmount,
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(request.TotalAmount),
                     InvoiceStatusID = 1,
-                    PaymentStatusID = request.PaymentStatusID,
+                    PaymentStatusID = 1,
                     IssuerID = request.SignedBy ?? 1,
                     MinRows = request.MinRows ?? 5,
                     InvoiceItems = request.Items.Select(i => new InvoiceItem
@@ -143,6 +144,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     CustomerID = fullInvoice.CustomerID,
                     TotalAmount = fullInvoice.TotalAmount,
                     TotalAmountInWords = fullInvoice.TotalAmountInWords,
+                    PaymentMethod = fullInvoice.PaymentMethod,
                     Status = "Draft",
                     XMLPath = fullInvoice.XMLPath
                 };

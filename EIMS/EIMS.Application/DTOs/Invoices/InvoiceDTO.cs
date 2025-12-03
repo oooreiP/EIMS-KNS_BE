@@ -44,7 +44,7 @@ namespace EIMS.Application.DTOs.Invoices
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal TotalAmount { get; set; }
-
+        public string PaymentMethod { get; set; }
         [Required]
         [StringLength(1000)]
         public string TotalAmountInWords { get; set; } = string.Empty;

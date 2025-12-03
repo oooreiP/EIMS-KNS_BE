@@ -10,6 +10,7 @@ namespace EIMS.Application.DTOs.Invoices
         public int InvoiceID { get; set; }
         public long InvoiceNumber { get; set; }
         public int CustomerID { get; set; }
+        public string PaymentMethod { get; set; }
         public decimal TotalAmount { get; set; }
         public string TotalAmountInWords { get; set; }
         public string XMLPath { get; set; }

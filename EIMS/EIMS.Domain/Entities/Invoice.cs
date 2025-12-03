@@ -33,7 +33,7 @@ namespace EIMS.Domain.Entities
 
         public int? IssuerID { get; set; }
         public string? MCCQT { get; set; }
-
+        public string? PaymentMethod { get; set; }
         public DateTime? SignDate { get; set; }
         public DateTime? IssuedDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
@@ -66,12 +66,12 @@ namespace EIMS.Domain.Entities
         public string? Notes { get; set; }
         [ForeignKey("SalesID")]
         public int? SalesID { get; set; }
-        
+
         [StringLength(500)]
         public string? FilePath { get; set; }
         [StringLength(500)]
         public string? XMLPath { get; set; }
-        public int MinRows { get; set; } = 5; 
+        public int MinRows { get; set; } = 5;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // --- Navigation Properties ---
@@ -108,6 +108,6 @@ namespace EIMS.Domain.Entities
         [InverseProperty("Invoices")]
         public virtual PaymentStatus PaymentStatus { get; set; }
         [InverseProperty("Invoice")]
-    public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
+        public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
     }
 }

@@ -23,7 +23,8 @@ namespace EIMS.Application.Features.Invoices.Queries
 
         public async Task<InvoiceDTO?> Handle(GetInvoiceByIdQuery request, CancellationToken cancellationToken)
         {
-            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.Id, "InvoiceItems.Product"); var invoiceDTO = _mapper.Map<InvoiceDTO>(invoice);
+            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.Id, "InvoiceItems.Product");
+            var invoiceDTO = _mapper.Map<InvoiceDTO>(invoice);
             return invoiceDTO;
         }
     }
