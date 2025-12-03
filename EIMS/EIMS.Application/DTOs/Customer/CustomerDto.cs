@@ -15,5 +15,7 @@ namespace EIMS.Application.DTOs.Customer
         public string ContactEmail { get; set; } = string.Empty;
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
+        public bool IsActive { get; set; }
+
     }
 }
