@@ -12,18 +12,18 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
         public int CompanyID { get; set; } = 1;
-        public int PaymentStatusID { get; set; }
         public string? CustomerName { get; set; }
         public string? Address { get; set; }
+        public string PaymentMethod { get; set; }
         public List<InvoiceItemDto>? Items { get; set; }
         public decimal Amount { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public int? SignedBy { get; set; }
         public int? MinRows { get; set; }
-        public int  SalesID { get; set; }
-        public string?  ContactEmail { get; set; }
-        public string?  ContactPerson { get; set; }
-        public string?  ContactPhone { get; set; }
+        public int SalesID { get; set; }
+        public string? ContactEmail { get; set; }
+        public string? ContactPerson { get; set; }
+        public string? ContactPhone { get; set; }
     }
 }
