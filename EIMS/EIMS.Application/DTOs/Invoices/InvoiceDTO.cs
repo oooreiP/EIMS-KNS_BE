@@ -66,5 +66,6 @@ namespace EIMS.Application.DTOs.Invoices
         public string? FilePath { get; set; }
         public string? XMLPath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public List<InvoiceItemDto> InvoiceItems { get; set; } = new List<InvoiceItemDto>();
     }
 }

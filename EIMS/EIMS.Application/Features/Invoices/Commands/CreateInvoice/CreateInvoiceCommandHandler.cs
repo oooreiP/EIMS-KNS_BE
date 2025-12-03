@@ -88,7 +88,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TotalAmount = request.TotalAmount,
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(request.TotalAmount),
                     InvoiceStatusID = 1,
-                    PaymentStatusID = 1,
+                    PaymentStatusID = request.PaymentStatusID,
                     IssuerID = request.SignedBy ?? 1,
                     MinRows = request.MinRows ?? 5,
                     InvoiceItems = request.Items.Select(i => new InvoiceItem

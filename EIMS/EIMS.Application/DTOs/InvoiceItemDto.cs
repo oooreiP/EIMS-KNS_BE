@@ -9,6 +9,8 @@ namespace EIMS.Application.DTOs
     public class InvoiceItemDto
     {
         public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? Unit { get; set; }
         public decimal Quantity { get; set; }
         public decimal Amount { get; set; }
         public decimal VATAmount { get; set; }
