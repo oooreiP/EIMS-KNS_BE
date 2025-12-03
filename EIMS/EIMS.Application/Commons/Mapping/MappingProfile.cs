@@ -13,6 +13,7 @@ using EIMS.Domain.Entities;
 using EIMS.Application.DTOs.User;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.Features.InvoiceStatements.Commands;
+using EIMS.Application.DTOs;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -35,6 +36,12 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<GenerateStatementRequest, CreateStatementCommand>();
             CreateMap<UpdateTemplateRequest, UpdateTemplateCommand>();
             CreateMap<UpdateTemplateCommand, InvoiceTemplate>();
+            CreateMap<InvoiceItem, InvoiceItemDto>()
+    //Map Product.Name to ProductName
+    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+    //Map Product.Unit to Unit
+    .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Product.Unit))
+    .ReverseMap();
         }
 
     }

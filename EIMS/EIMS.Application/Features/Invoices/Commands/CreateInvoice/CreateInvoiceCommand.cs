@@ -12,6 +12,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
         public int CompanyID { get; set; } = 1;
+        public int PaymentStatusID { get; set; }
         public string? CustomerName { get; set; }
         public string? Address { get; set; }
         public List<InvoiceItemDto>? Items { get; set; }
