@@ -64,8 +64,8 @@ namespace EIMS.Domain.Entities
 
         [StringLength(2000)]
         public string? Notes { get; set; }
-        [ForeignKey("SalesID")]
-        public int? SalesID { get; set; }
+        // [ForeignKey("SalesID")]
+        // public int? SalesID { get; set; }
 
         [StringLength(500)]
         public string? FilePath { get; set; }
@@ -84,9 +84,9 @@ namespace EIMS.Domain.Entities
         [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Company Company { get; set; }
-        [JsonIgnore]
-        [InverseProperty("SalesInvoices")]
-        public virtual User? Sales { get; set; }
+        // [JsonIgnore]
+        // [InverseProperty("SalesInvoices")]
+        // public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }

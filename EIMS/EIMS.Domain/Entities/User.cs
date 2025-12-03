@@ -45,8 +45,8 @@ namespace EIMS.Domain.Entities
         [InverseProperty("Issuer")]
         public virtual ICollection<Invoice> IssuedInvoices { get; set; } = new List<Invoice>();
 
-        [InverseProperty("Sales")]
-        public virtual ICollection<Invoice> SalesInvoices { get; set; } = new List<Invoice>();
+        // [InverseProperty("Sales")]
+        // public virtual ICollection<Invoice> SalesInvoices { get; set; } = new List<Invoice>();
 
         [InverseProperty("User")]
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
