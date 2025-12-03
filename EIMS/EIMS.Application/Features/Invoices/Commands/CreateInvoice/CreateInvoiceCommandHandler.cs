@@ -40,12 +40,12 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 {
                     customer = new Customer
                     {
-                        CustomerName = request.CustomerName ?? request.Name ?? "Khách hàng chưa đặt tên",
+                        CustomerName = request.CustomerName ?? "Khách hàng chưa đặt tên",
                         TaxCode = request.TaxCode ?? "",
                         Address = request.Address ?? "Chưa cập nhật",
-                        ContactEmail = "noemail@system.local",
-                        ContactPerson = request.Name,
-                        ContactPhone = ""
+                        ContactEmail = request.ContactEmail ?? "noemail@system.local",
+                        ContactPerson = request.ContactPerson,
+                        ContactPhone = request.ContactPhone ?? ""
                     };
                     customer = await _unitOfWork.CustomerRepository.CreateCustomerAsync(customer);
                 }
@@ -81,6 +81,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
                     SalesID = request.SalesID,
+                    CompanyId = request.CompanyID,
                     SubtotalAmount = request.Amount,
                     VATAmount = request.TaxAmount,
                     VATRate = vatRate,
