@@ -27,6 +27,7 @@ namespace EIMS.Domain.Entities
         public string? ContactPerson { get; set; }
         [StringLength(20)]
         public string? ContactPhone { get; set; }
+        public bool IsActive { get; set; } = true;
         // --- Navigation Properties ---
         [JsonIgnore]
         [InverseProperty("Customer")]

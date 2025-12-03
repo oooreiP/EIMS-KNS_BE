@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Features.Customers.Queries;
+﻿using EIMS.Application.Features.Customers.Commands;
+using EIMS.Application.Features.Customers.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,92 @@ namespace EIMS.API.Controllers
                 return BadRequest(result.Errors);
 
             return Ok(result.Value);
+        }
+        [HttpPost]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                // Return a clear error message
+                return BadRequest(new
+                {
+                    message = "Failed to create customer",
+                    errors = result.Errors.Select(e => e.Message)
+                });
+            }
+
+            return Ok(new { CustomerID = result.Value });
+        }
+        /// <summary>
+        /// Gets a paginated list of customers with optional search.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAllCustomers([FromQuery] GetCustomersQuery query)
+        {
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(new
+                {
+                    message = "Failed to retrieve customers",
+                    errors = result.Errors.Select(e => e.Message)
+                });
+            }
+            return Ok(result.Value);
+        }
+        /// <summary>
+        /// Activates a customer account.
+        /// </summary>
+        [HttpPut("{id}/active")]
+        public async Task<IActionResult> ActivateCustomer(int id)
+        {
+            var command = new UpdateCustomerStatusCommand
+            {
+                CustomerId = id,
+                IsActive = true
+            };
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Customer.Status.NotFound"))
+                    return NotFound(new { message = result.Errors.First().Message });
+
+                return BadRequest(new { message = result.Errors.First().Message });
+            }
+
+            return Ok(new { message = "Customer activated successfully." });
+        }
+
+        /// <summary>
+        /// Deactivates a customer account.
+        /// </summary>
+        [HttpPut("{id}/inactive")]
+        public async Task<IActionResult> DeactivateCustomer(int id)
+        {
+            var command = new UpdateCustomerStatusCommand
+            {
+                CustomerId = id,
+                IsActive = false
+            };
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Customer.Status.NotFound"))
+                    return NotFound(new { message = result.Errors.First().Message });
+
+                return BadRequest(new { message = result.Errors.First().Message });
+            }
+
+            return Ok(new { message = "Customer deactivated successfully." });
         }
     }
 }
