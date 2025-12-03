@@ -53,7 +53,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
                 if (template == null)
                     return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-                var user = _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
                 if (user == null)
                     return Result.Fail(new Error($"User {request.SalesID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
                 var serial = await _unitOfWork.SerialRepository.GetByIdAndLockAsync(template.SerialID);
