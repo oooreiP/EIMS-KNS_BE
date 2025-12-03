@@ -60,8 +60,8 @@ namespace EIMS.Application.DTOs.Invoices
         [StringLength(2000)]
         public string? Notes { get; set; }
 
-        public int? SalesID { get; set; }
-        [ForeignKey("SalesID")]
+        // public int? SalesID { get; set; }
+        // [ForeignKey("SalesID")]
         [StringLength(500)]
         public string? FilePath { get; set; }
         public string? XMLPath { get; set; }

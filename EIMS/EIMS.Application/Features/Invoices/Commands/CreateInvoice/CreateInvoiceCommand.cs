@@ -21,7 +21,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public decimal TotalAmount { get; set; }
         public int? SignedBy { get; set; }
         public int? MinRows { get; set; }
-        public int SalesID { get; set; }
+        // public int SalesID { get; set; }
         public string? ContactEmail { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
