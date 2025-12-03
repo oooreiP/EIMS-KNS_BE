@@ -11,5 +11,6 @@ namespace EIMS.Application.Commons.Interfaces
     {
         Task<Customer> CreateCustomerAsync(Customer customer);
         Task<Customer?> GetByTaxCodeAsync(string taxCode);
+        Task<List<Customer>> SearchAsync(string searchTerm);
     }
 }
