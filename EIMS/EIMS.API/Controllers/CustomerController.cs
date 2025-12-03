@@ -26,5 +26,18 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpGet("find")]
+        public async Task<IActionResult> FindCustomers([FromQuery] string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return BadRequest("Search term is required.");
+
+            var result = await _mediator.Send(new SearchCustomerQuery(q));
+
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+
+            return Ok(result.Value);
+        }
     }
 }
