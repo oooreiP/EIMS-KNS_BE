@@ -53,7 +53,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             var signedXmlContent = XmlHelpers.SignInvoiceXml(xmlDoc.OuterXml, signingCert);
 
             // Convert lại sang XmlDocument để upload
-            var signedXmlDoc = new System.Xml.XmlDocument();
+            var signedXmlDoc = new XmlDocument();
             signedXmlDoc.PreserveWhitespace = true;
             signedXmlDoc.LoadXml(signedXmlContent.SignedXml);
 

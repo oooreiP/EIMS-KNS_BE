@@ -14,17 +14,17 @@ namespace EIMS.Infrastructure.Service
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _settings;
+        private readonly IUnitOfWork _uow;
         private readonly ILogger<EmailService> _logger;
         private readonly HttpClient _httpClient;
 
-        public EmailService(IOptions<EmailSettings> options, ILogger<EmailService> logger, HttpClient httpClient)
+        public EmailService(IOptions<EmailSettings> options, ILogger<EmailService> logger, HttpClient httpClient, IUnitOfWork uow)
         {
             _settings = options.Value;
             _logger = logger;
             _httpClient = httpClient;
+            _uow = uow;
         }
-
-        // ✅ Gửi mail chung (hỗ trợ đính kèm file IFormFile hoặc byte[])
         public async Task<Result> SendMailAsync(MailRequest mailRequest)
         {
             try
@@ -38,8 +38,6 @@ namespace EIMS.Infrastructure.Service
                 {
                     HtmlBody = mailRequest.EmailBody
                 };
-
-                // Tự động tải file từ Cloudinary nếu có URL
                 if (mailRequest.CloudinaryUrls != null && mailRequest.CloudinaryUrls.Any())
                 {
                     foreach (var url in mailRequest.CloudinaryUrls)
@@ -74,30 +72,31 @@ namespace EIMS.Infrastructure.Service
                 return Result.Fail(new Error("Failed to send invoice email").CausedBy(ex));
             }
         }
-
-        // ✅ Hàm gửi email hóa đơn (sử dụng Cloudinary URLs)
         public async Task<Result> SendInvoiceEmailAsync(
             string recipientEmail,
-            string customerName,
-            string invoiceNumber,
-            decimal totalAmount,
-            string message,
-            List<string> cloudinaryUrls)
+            int invoiceId,
+            string message)
         {
+            var invoice = await _uow.InvoicesRepository.GetByIdAsync(invoiceId, includeProperties: "Customer");
+            string? pdfUrl = invoice.FilePath;
+            string? xmlUrl = invoice.XMLPath;
+            var attachmentUrls = new List<string>();
+            if (!string.IsNullOrEmpty(pdfUrl)) attachmentUrls.Add(pdfUrl);
+            if (!string.IsNullOrEmpty(xmlUrl)) attachmentUrls.Add(xmlUrl);
             var emailBody = $@"
 <div style='font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#333; line-height:1.6;'>
-    <h2 style='color:#007BFF;'>Xin chào {customerName},</h2>
+    <h2 style='color:#007BFF;'>Xin chào {invoice.Customer.CustomerName},</h2>
 
     <p>{message}</p>
 
     <table style='margin:15px 0; border-collapse:collapse;'>
         <tr>
             <td style='padding:5px 10px; font-weight:bold;'>Mã hóa đơn:</td>
-            <td style='padding:5px 10px; color:#000;'>{invoiceNumber}</td>
+            <td style='padding:5px 10px; color:#000;'>{invoice.InvoiceNumber}</td>
         </tr>
         <tr>
             <td style='padding:5px 10px; font-weight:bold;'>Tổng tiền:</td>
-            <td style='padding:5px 10px; color:#D63384;'>{totalAmount:n0} VND</td>
+            <td style='padding:5px 10px; color:#D63384;'>{invoice.TotalAmount:n0} VND</td>
         </tr>
     </table>
 
@@ -107,7 +106,7 @@ namespace EIMS.Infrastructure.Service
     </p>
 
     <ul>
-        {string.Join("", cloudinaryUrls.Select(u => $"<li><a href='{u}'>{Path.GetFileName(u)}</a></li>"))}
+        {string.Join("", attachmentUrls.Select(u => $"<li><a href='{u}'>{Path.GetFileName(u)}</a></li>"))}
     </ul>
 
     <p style='margin-top:20px;'>Trân trọng,<br/>
@@ -118,9 +117,9 @@ namespace EIMS.Infrastructure.Service
             var mailRequest = new MailRequest
             {
                 Email = recipientEmail,
-                Subject = $"[Hóa đơn điện tử] #{invoiceNumber}",
+                Subject = $"[Hóa đơn điện tử] #{invoice.InvoiceNumber}",
                 EmailBody = emailBody,
-                CloudinaryUrls = cloudinaryUrls
+                CloudinaryUrls = attachmentUrls
             };
 
             return await SendMailAsync(mailRequest);

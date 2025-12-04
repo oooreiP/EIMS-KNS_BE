@@ -10,6 +10,7 @@ namespace EIMS.Application.DTOs.Results
     {
         public bool IsSuccess { get; set; }
         public string MTDiep { get; set; } = string.Empty;
+        public string? MTDThamChieu { get; set; } = string.Empty;
         public string MLTDiep { get; set; } = string.Empty;
         public string? SoTBao { get; set; }
         public string? MCCQT { get; set; }

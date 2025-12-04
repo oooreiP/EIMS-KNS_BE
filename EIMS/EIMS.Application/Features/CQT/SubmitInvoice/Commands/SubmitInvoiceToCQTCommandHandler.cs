@@ -29,18 +29,18 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         }
 
         public async Task<Result<SubmitInvoiceToCQTResult>> Handle(
-     SubmitInvoiceToCQTCommand request,
-     CancellationToken cancellationToken)
+        SubmitInvoiceToCQTCommand request,
+        CancellationToken cancellationToken)
         {
             // 1. Lấy dữ liệu và kiểm tra
-            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.SubmitInvoiceRequest.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
-            var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(request.SubmitInvoiceRequest.MessageCodeId);
+            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
+            var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
             if (invoice == null)
                 return Result.Fail("Invoice not found");
 
             // 2. Map và Serialize
-            var tDiep = InvoiceXmlMapper.MapThongDiepToXmlModel(invoice, messageCode, request.SubmitInvoiceRequest.DataCount, null);
+            var tDiep = InvoiceXmlMapper.MapThongDiepToXmlModel(invoice, messageCode,1, null);
             var referenceId = tDiep.TtinChung.MaThongDiep;
             var xmlPayload = XmlHelpers.Serialize(tDiep);
 
@@ -55,7 +55,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
 
             await _uow.TaxApiLogRepository.CreateAsync(log);
             await _uow.SaveChanges();
-            var taxResponse = await _taxClient.SendInvoiceAsync(xmlPayload, referenceId);
+            var taxResponse = await _taxClient.SendTaxMessageAsync(xmlPayload, referenceId);
             string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
                        taxResponse.MLTDiep == "204" ? "TBxx" :
                        "TB01"; 
@@ -65,8 +65,8 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 MTDiep = taxResponse.MTDiep,
                 SoTBao = taxResponse.SoTBao, // Chứa mã TBxx/KQxx chi tiết
                 MCCQT = taxResponse.MCCQT,
-                InvoiceID = request.SubmitInvoiceRequest.InvoiceId,
-                TaxApiStatusID = MapApiCodeToSystemStatusId(apiStatusCode)
+                InvoiceID = request.invoiceId,
+                TaxApiStatusID = XmlHelpers.MapApiCodeToStatusId(apiStatusCode)
             };
             // Ánh xạ mã TB/KQ (trong SoTBao) về TaxApiStatusID logic của hệ thống (1-7)
             // Giả định hàm này lấy mã TBxx/KQxx từ taxResponse.SoTBao để tra cứu

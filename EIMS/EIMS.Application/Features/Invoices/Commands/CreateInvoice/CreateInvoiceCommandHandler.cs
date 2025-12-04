@@ -33,12 +33,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         {
             try
             {
-                // ✅ 1️⃣ Validate input
                 if (request.Items == null || !request.Items.Any())
                     return Result.Fail("Invoice must contain at least one item.");
-
-                // ✅ 2️⃣ Create or reuse Customer
-                Domain.Entities.Customer? customer = null;
+                Customer? customer = null;
                 if (request.CustomerID == null || request.CustomerID == 0)
                 {
                     customer = new Customer
