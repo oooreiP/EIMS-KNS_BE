@@ -12,12 +12,9 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IEmailService
     {
         Task<Result> SendInvoiceEmailAsync(
-             string recipientEmail,
-             string customerName,
-             string invoiceNumber,
-             decimal totalAmount,
-             string message,
-             List<string> cloudinaryUrls);
+            string recipientEmail,
+            int invoiceId,
+            string message);
         Task<Result> SendMailAsync(MailRequest mailRequest);
     }
 }

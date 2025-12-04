@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
 
             // 2. KIỂM TRA ĐIỀU KIỆN TRONG DB (Nhanh và Hiệu quả)
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
-            bool hasMccqt = !string.IsNullOrEmpty(invoice.MCCQT);
+            bool hasMccqt = !string.IsNullOrEmpty(invoice.TaxAuthorityCode);
 
             if (!hasSignature)
                 return Result.Fail("Hóa đơn chưa có chữ ký số.");

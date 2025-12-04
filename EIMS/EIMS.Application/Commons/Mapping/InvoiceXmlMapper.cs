@@ -1,5 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.XMLModels;
+using EIMS.Application.DTOs.XMLModels.TB01;
+using EIMS.Application.DTOs.XMLModels.TB04;
 using EIMS.Application.DTOs.XMLModels.ThongDiep;
 using EIMS.Domain.Entities;
 using System;
@@ -41,7 +43,7 @@ namespace EIMS.Application.Commons.Mapping
                             {
                                 PBan = "2.1.0",
                                 THDon = "Hóa đơn giá trị gia tăng",
-                                KHMSHDon = khmsHDon,                       // Ký hiệu mẫu số hóa đơn (bạn có thể cấu hình)
+                                KHMSHDon = khmsHDon,                       // Ký hiệu mẫu số hóa đơn 
                                 KHHDon = khHDon,                      // Ký hiệu hóa đơn
                                 SHDon = invoice.InvoiceNumber.ToString("0000000"),  // Số hóa đơn
                                 NLap = invoice.SignDate?.ToString("yyyy-MM-dd"),
@@ -58,9 +60,9 @@ namespace EIMS.Application.Commons.Mapping
                                     MST = "0311357436",
                                     DChi = "26 Nguyễn Đình Khơi, Phường Tân Sơn Nhất, TP Hồ Chí Minh, Việt Nam",
                                     DCTDTu = "support@einvoice.vn",
-                                    SDThoai = "",
-                                    TNHang = "",
-                                    STKNHang = ""
+                                    SDThoai = "0382502857",
+                                    TNHang = "Ngân Hàng TMCP Ngoại Thương Việt Nam - Chi Nhánh Tân Bình",
+                                    STKNHang = "0441000627320"
                                 },
                                 // ---- Người mua ----
                                 NMua = new Party
@@ -82,15 +84,10 @@ namespace EIMS.Application.Commons.Mapping
                                     SLuong = item.Quantity,
                                     DGia = item.UnitPrice,
                                     ThTien = item.Amount,
-                                    TSuat = invoice.VATRate switch
-                                    {
-                                        5 => "5%",
-                                        8 => "8%",
-                                        10 => "10%",
-                                        _ => "0%"
-                                    }
+                                    TSuat = XmlHelpers.ToXmlValue(
+                                    item.Product?.VATRate ?? invoice.VATRate,
+                                    appendPercentSymbol: false),
                                 }).ToList(),
-                                // ---- Tổng tiền thanh toán ----
                                 TToan = new TToan
                                 {
                                     TgTCThue = invoice.SubtotalAmount,
@@ -114,7 +111,30 @@ namespace EIMS.Application.Commons.Mapping
                             Value = String.Empty                
                 }
             };
+            if ((invoice.InvoiceType == 2 || invoice.InvoiceType == 3) && invoice.OriginalInvoice != null)
+            {
+                var orgInv = invoice.OriginalInvoice;
+                string orgKhms = khmsHDon;
+                string orgKh = khHDon;
+                if (orgInv.Template?.Serial != null)
+                {
+                    var s = orgInv.Template.Serial;
+                    orgKhms = s.Prefix.PrefixID.ToString();
+                    orgKh = $"{s.SerialStatus.Symbol}{s.Year}{s.Tail}{s.InvoiceType.Symbol}";
+                }
 
+                model.DLHDon.TTChung.TTHDLQuan = new TTHDLQuan
+                {
+                    TCHDon = (invoice.InvoiceType == 3) ? 1 : 2,
+                    LHDCLQuan = 1, // 1: Hóa đơn điện tử
+                    KHMSHDCLQuan = orgKhms, // Ký hiệu mẫu số gốc
+                    KHHDCLQuan = orgKh,     // Ký hiệu hóa đơn gốc
+                    SHDCLQuan = orgInv.InvoiceNumber.ToString("D7"), // Số hóa đơn gốc
+                    NLHDCLQuan = (orgInv.IssuedDate ?? orgInv.CreatedAt).ToString("yyyy-MM-dd"),
+
+                    Gchu = invoice.AdjustmentReason ?? invoice.Notes 
+                };
+            }
             return model;
         }
         public static TDiep MapThongDiepToXmlModel(Invoice invoice, TaxMessageCode messageCode, int dataCount, string? referenceMessageId = null)
@@ -168,6 +188,245 @@ namespace EIMS.Application.Commons.Mapping
                 NgayLap = DateTime.Now.ToString("yyyy-MM-dd"),
                 ThoiDiemLap = DateTime.Now.ToString("HH:mm:ss"),
             };
+        }
+        /// <summary>
+        /// Chuyển đổi từ Thông điệp 300 (TB04 - NNT gửi) sang Thông điệp 301 (TB01 - CQT phản hồi)
+        /// </summary>
+        /// <param name="requestMsg">Object TB04 đã deserialize từ XML gửi lên</param>
+        /// <returns>Object TB01 sẵn sàng để serialize trả về</returns>
+        public static TDiepTB01 CreateResponse301FromRequest300(TDiepTB04 requestMsg)
+        {
+            // 1. Lấy các thông tin cốt lõi từ Request
+            var reqTTChung = requestMsg.TTChung;
+            var reqDLTBao = requestMsg.DLieu.TBao.DLTBao;
+            string mtDiepPhanHoi = "TCT" + Guid.NewGuid().ToString("N").ToUpper();
+            string mtDiepGoc = reqTTChung.MaThongDiep;
+            string soThongBaoCqt = $"TB/SS/{DateTime.Now.Year}/{new Random().Next(10000, 99999)}";
+
+            // 3. Khởi tạo Object Phản hồi (TB01)
+            var response = new TDiepTB01
+            {
+                TTChung = new TtinChung
+                {
+                    PhienBan = "2.1.0",
+                    MaNguoiGui = "TCT", 
+                    MaNguoiNhan = reqDLTBao.MST,
+                    MaLoaiThongDiep = "301",
+                    MaThongDiep = mtDiepPhanHoi,
+                    MaThongDiepDoiChieu = mtDiepGoc, 
+                    NgayLap = DateTime.Now.ToString("yyyy-MM-dd"),
+                    ThoiDiemLap = DateTime.Now.ToString("HH:mm:ss")
+                },
+                DLieu = new DLieuTB01
+                {
+                    TBao = new TBao01
+                    {
+                        DLTBao = new DLTBao01
+                        {
+                            PBan = "2.1.0",
+                            MSo = "01/TB-SSĐT",
+                            Ten = "Thông báo về việc tiếp nhận và kết quả xử lý về việc hóa đơn điện tử đã lập có sai sót",
+                            DDanh = reqDLTBao.DDanh, // Lấy địa danh của DN
+                            TNNT = "CÔNG TY ...",
+                            MST = reqDLTBao.MST,     
+                            TCQTCTren = "Tổng cục Thuế",
+                            TCQT = "Cục Thuế quản lý",
+                            MGDDTu = Guid.NewGuid().ToString().ToUpper(), 
+                            TGNhan = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            NTBNNT = reqDLTBao.NTBao, 
+                            STTThe = 1,
+                            HThuc = "Chữ ký số",
+                            CDanh = "Thủ trưởng cơ quan thuế",
+                            DSHDon = MapInvoiceListFromRequest(reqDLTBao.DSHDon)
+                        },
+
+                        STBao = new STBao
+                        {
+                            So = soThongBaoCqt,
+                            NTBao = DateTime.Now.ToString("yyyy-MM-dd")
+                        },
+
+                        DSCKS = new DSCKS_CQT
+                        {
+                            CQT = new SignatureWrapper
+                            {
+                                SignedInfo = new SignedInfo
+                                {
+                                    CanonicalizationMethod = new AlgorithmMethod { Algorithm = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" },
+                                    SignatureMethod = new AlgorithmMethod { Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1" },
+                                    Reference = new Reference
+                                    {
+                                        URI = "",
+                                        DigestValue = "MOCK_HASH_VALUE_BASE64..."
+                                    }
+                                },
+                                SignatureValue = "MOCK_SIGNATURE_VALUE_BASE64_VERY_LONG_STRING...",
+                                KeyInfo = new KeyInfo
+                                {
+                                    X509Data = new X509Data { X509Certificate = "MOCK_PUBLIC_KEY_CERTIFICATE..." }
+                                },
+                                Object = new List<SignatureObject>
+                                {
+                                    new SignatureObject
+                                    {
+                                        SignatureProperties = new SignatureProperties
+                                        {
+                                            SignatureProperty = new SignatureProperty
+                                            {
+                                                Target = "",
+                                                SigningTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            return response;
+        }
+        public static TDiepTB01 CreateRejectResponse301(TDiepTB04 requestMsg, string errorCode, string errorDesc)
+        {
+            var reqTTChung = requestMsg.TTChung;
+            var reqDLTBao = requestMsg.DLieu.TBao.DLTBao;
+            string mtDiepPhanHoi = "TCT" + Guid.NewGuid().ToString("N").ToUpper();
+            string mtDiepGoc = reqTTChung.MaThongDiep;
+            string soThongBaoCqt = $"TB/SS/{DateTime.Now.Year}/{new Random().Next(10000, 99999)}";
+            var response = new TDiepTB01
+            {
+                TTChung = new TtinChung
+                {
+                    PhienBan = "2.1.0",
+                    MaNguoiGui = "TCT",
+                    MaNguoiNhan = reqDLTBao.MST,
+                    MaLoaiThongDiep = "301",
+                    MaThongDiep = mtDiepPhanHoi,
+                    MaThongDiepDoiChieu = mtDiepGoc,
+                    NgayLap = DateTime.Now.ToString("yyyy-MM-dd"),
+                    ThoiDiemLap = DateTime.Now.ToString("HH:mm:ss")
+                },
+                DLieu = new DLieuTB01
+                {
+                    TBao = new TBao01
+                    {
+                        DLTBao = new DLTBao01
+                        {
+                            PBan = "2.1.0",
+                            MSo = "01/TB-SSĐT",
+                            Ten = "Thông báo về việc tiếp nhận và kết quả xử lý về việc hóa đơn điện tử đã lập có sai sót",
+                            DDanh = reqDLTBao.DDanh, // Lấy địa danh của DN
+                            TNNT = "CÔNG TY ...",
+                            MST = reqDLTBao.MST,
+                            TCQTCTren = "Tổng cục Thuế",
+                            TCQT = "Cục Thuế quản lý",
+                            MGDDTu = Guid.NewGuid().ToString().ToUpper(),
+                            TGNhan = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            NTBNNT = reqDLTBao.NTBao,
+                            STTThe = 1,
+                            HThuc = "Chữ ký số",
+                            CDanh = "Thủ trưởng cơ quan thuế",
+                            DSHDon = new DSHDonWrapper01
+                            {
+                                HDon = requestMsg.DLieu.TBao.DLTBao.DSHDon.HDon.Select(reqInv => new HDonTB01
+                                {
+                                    STT = reqInv.STT,
+                                    MCQTCap = reqInv.MCCQT,
+                                    KHMSHDon = reqInv.KHMSHDon,
+                                    KHHDon = reqInv.KHHDon,
+                                    SHDon = reqInv.SHDon,
+                                    NLap = reqInv.Ngay,
+                                    LADHDDT = reqInv.LADHDDT,
+                                    TCTBao = reqInv.TCTBao,
+                                    TTTNCCQT = 2,
+                                    DSLDKTNhan = new DSLDKTNhan
+                                    {
+                                        LDo = new List<LDoError>
+                                {
+                                    new LDoError
+                                    {
+                                        MLoi = errorCode,
+                                        MTLoi = errorDesc, // VD: "Mã CQT không tồn tại trong hệ thống"
+                                        HDXLy = "Kiểm tra lại Mã CQT trên hóa đơn gốc"
+                                    }
+                                }
+                                    }
+                                }).ToList()
+                            }
+                        },
+                        STBao = new STBao
+                        {
+                            So = soThongBaoCqt,
+                            NTBao = DateTime.Now.ToString("yyyy-MM-dd")
+                        },
+
+                        DSCKS = new DSCKS_CQT
+                        {
+                            CQT = new SignatureWrapper
+                            {
+                                SignedInfo = new SignedInfo
+                                {
+                                    CanonicalizationMethod = new AlgorithmMethod { Algorithm = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" },
+                                    SignatureMethod = new AlgorithmMethod { Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1" },
+                                    Reference = new Reference
+                                    {
+                                        URI = "",
+                                        DigestValue = "MOCK_HASH_VALUE_BASE64..."
+                                    }
+                                },
+                                SignatureValue = "MOCK_SIGNATURE_VALUE_BASE64_VERY_LONG_STRING...",
+                                KeyInfo = new KeyInfo
+                                {
+                                    X509Data = new X509Data { X509Certificate = "MOCK_PUBLIC_KEY_CERTIFICATE..." }
+                                },
+                                Object = new List<SignatureObject>
+                                {
+                                    new SignatureObject
+                                    {
+                                        SignatureProperties = new SignatureProperties
+                                        {
+                                            SignatureProperty = new SignatureProperty
+                                            {
+                                                Target = "",
+                                                SigningTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            return response;
+        }
+        private static DSHDonWrapper01 MapInvoiceListFromRequest(DSHDonWrapper requestList)
+        {
+            var resultList = new List<HDonTB01>();
+
+            if (requestList?.HDon != null)
+            {
+                foreach (var reqInv in requestList.HDon)
+                {
+                    var respInv = new HDonTB01
+                    {
+                        STT = reqInv.STT,
+                        MCQTCap = reqInv.MCCQT,     // Mã CQT gốc
+                        KHMSHDon = reqInv.KHMSHDon, // Ký hiệu mẫu
+                        KHHDon = reqInv.KHHDon,     // Ký hiệu
+                        SHDon = reqInv.SHDon,       // Số hóa đơn
+                        NLap = reqInv.Ngay,         // Ngày lập
+                        LADHDDT = reqInv.LADHDDT,
+                        TCTBao = reqInv.TCTBao,     // Tính chất (Hủy/ĐC...)
+                        TTTNCCQT = 1
+                    };
+
+                    resultList.Add(respInv);
+                }
+            }
+
+            return new DSHDonWrapper01 { HDon = resultList };
         }
     }
 }

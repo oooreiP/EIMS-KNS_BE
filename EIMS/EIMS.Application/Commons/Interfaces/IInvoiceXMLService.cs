@@ -16,5 +16,6 @@ namespace EIMS.Application.Commons.Interfaces
         Result<X509Certificate2> GetCertificate(string? serialNumber = null);
         void EmbedMccqtIntoXml(XmlDocument xmlDoc, string mccqtValue);
         Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl);
+        Task<string> GenerateNextNotificationNumberAsync();
     }
 }
