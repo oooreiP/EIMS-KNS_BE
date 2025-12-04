@@ -35,7 +35,7 @@ WORKDIR /app
 COPY --from=build-env /app/out .
 
 # [FIX] Copy the template.html file explicitly from the build environment
-COPY --from=build-env /app/template.html .
+# COPY --from=build-env /app/template.html .
 
 # Expose the port the application will listen on (ASP.NET Core defaults to 8080 in containers)
 EXPOSE 8080

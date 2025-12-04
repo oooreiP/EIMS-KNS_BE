@@ -108,7 +108,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                         Quantity = itemDto.Quantity,
                         Amount = itemDto.Amount,
                         VATAmount = itemDto.VATAmount,
-                        UnitPrice = itemDto.Quantity > 0 ? (itemDto.Amount / itemDto.Quantity) : 0
+                        UnitPrice = itemDto.Quantity > 0 ? (itemDto.Amount /  (decimal)itemDto.Quantity) : 0
                     });
                 }
 

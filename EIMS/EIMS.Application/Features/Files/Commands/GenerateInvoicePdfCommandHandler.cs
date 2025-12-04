@@ -28,10 +28,10 @@ namespace EIMS.Application.Features.Files.Commands
         public async Task<Result<byte[]>> Handle(GenerateInvoicePdfCommand request, CancellationToken cancellationToken)
         {
             // 1. Get Data from Database
-            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, includeProperties: "InvoiceItems,Customer");
+            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, includeProperties: "InvoiceItems.Product,Customer");
             if (invoice == null)
                 return Result.Fail(new Error("Invoice not found").WithMetadata("ErrorCode", "Invoice.NotFound"));
-
+            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
             var template = await _unitOfWork.InvoiceTemplateRepository.GetTemplateDetailsAsync(invoice.TemplateID);
             if (template == null)
                 return Result.Fail(new Error("Template not found").WithMetadata("ErrorCode", "Template.NotFound"));
@@ -51,7 +51,11 @@ namespace EIMS.Application.Features.Files.Commands
             var viewModel = new InvoiceViewModel
             {
                 InvoiceNumber = invoice.InvoiceNumber.ToString(),
-                SellerName = "My Company Name", // Or from Company Table
+                SellerName = company.CompanyName,
+                SellerTaxCode = company.TaxCode,
+                SellerAddress = company.Address,
+                SellerPhone = company.ContactPhone,
+                SellerBankAccount = company.AccountNumber, // Or from Company Table
                 BuyerName = invoice.Customer.CustomerName,
                 BuyerAddress = invoice.Customer?.Address ?? "",
                 BuyerTaxCode = invoice.Customer?.TaxCode ?? "",
@@ -85,7 +89,23 @@ namespace EIMS.Application.Features.Files.Commands
                 return Result.Fail("Template HTML file is missing on server.");
 
             string htmlTemplate = await File.ReadAllTextAsync(templatePath, cancellationToken);
+            Handlebars.RegisterHelper("increment", (writer, context, parameters) =>
+                        {
+                            // @index is an int (0, 1, 2...), so we just add 1 to it
+                            if (parameters.Length > 0 && parameters[0] is int index)
+                            {
+                                writer.WriteSafeString(index + 1);
+                            }
+                        });
 
+            Handlebars.RegisterHelper("formatNumber", (writer, context, parameters) =>
+            {
+                if (parameters.Length > 0 && decimal.TryParse(parameters[0].ToString(), out decimal value))
+                {
+                    // Formats as 1,000,000 (standard format)
+                    writer.WriteSafeString(value.ToString("N0"));
+                }
+            });
             // Compile with Handlebars
             var templateFunc = Handlebars.Compile(htmlTemplate);
             string finalHtml = templateFunc(viewModel); // <--- Inject ViewModel into HTML

@@ -11,7 +11,7 @@ namespace EIMS.Application.DTOs.XMLModels
         public int STT { get; set; }
         public string THHDVu { get; set; } = "";
         public string DVTinh { get; set; } = "";
-        public decimal SLuong { get; set; }
+        public double SLuong { get; set; }
         public decimal DGia { get; set; }
         public decimal ThTien { get; set; }
         public string TSuat { get; set; } = "8%";

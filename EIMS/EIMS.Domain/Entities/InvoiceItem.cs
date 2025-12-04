@@ -15,7 +15,7 @@ namespace EIMS.Domain.Entities
         public int ProductID { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal Quantity { get; set; }
+        public double Quantity { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal UnitPrice { get; set; }
