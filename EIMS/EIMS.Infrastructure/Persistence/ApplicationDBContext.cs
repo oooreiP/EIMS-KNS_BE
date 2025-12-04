@@ -335,7 +335,9 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceStatus { InvoiceStatusID = 2, StatusName = "Issued" }, // Đã phát hành
                 new InvoiceStatus { InvoiceStatusID = 3, StatusName = "Cancelled" }, // Đã hủy
                 new InvoiceStatus { InvoiceStatusID = 4, StatusName = "Adjusted" }, // Bị điều chỉnh
-                new InvoiceStatus { InvoiceStatusID = 5, StatusName = "Replaced" }  // Bị thay thế
+                new InvoiceStatus { InvoiceStatusID = 5, StatusName = "Replaced" },  // Bị thay thế
+                new InvoiceStatus { InvoiceStatusID = 6, StatusName = "Pending Approval" },  // Đã thanh toán
+                new InvoiceStatus { InvoiceStatusID = 7, StatusName = "Pending Sign" } // Quá hạn (Optional)
             );
 
             modelBuilder.Entity<PaymentStatus>().HasData(

@@ -30,6 +30,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 return Result.Fail(new Error("Invoice must has at least one item").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.TemplateID == null || request.TemplateID == 0)
                 return Result.Fail(new Error("Invoice must has a valid template id").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            var invoiceStatus = _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
+            if (invoiceStatus == null)
+                return Result.Fail(new Error ("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             string? xmlPath = null;
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
@@ -81,6 +84,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
                     // SalesID = request.SalesID,
+                    Notes = request.Notes,
                     CompanyId = request.CompanyID,
                     SubtotalAmount = request.Amount,
                     VATAmount = request.TaxAmount,
@@ -88,7 +92,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentMethod = request.PaymentMethod,
                     TotalAmount = request.TotalAmount,
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(request.TotalAmount),
-                    InvoiceStatusID = 1,
+                    InvoiceStatusID = request.InvoiceStatusID,
                     PaymentStatusID = 1,
                     IssuerID = request.SignedBy ?? 1,
                     MinRows = request.MinRows ?? 5,

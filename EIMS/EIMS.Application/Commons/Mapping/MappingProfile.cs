@@ -38,12 +38,12 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<UpdateTemplateRequest, UpdateTemplateCommand>();
             CreateMap<UpdateTemplateCommand, InvoiceTemplate>();
             CreateMap<InvoiceItem, InvoiceItemDto>()
-                //Map Product.Name to ProductName
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                //Map Product.Unit to Unit
-                .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Product.Unit))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src =>
+                    src.Product != null ? src.Product.Name : "Unknown Product"))
+                .ForMember(dest => dest.Unit, opt => opt.MapFrom(src =>
+                    src.Product != null ? src.Product.Unit : ""))
                 .ReverseMap();
-                CreateMap<Customer, CustomerDto>();
+            CreateMap<Customer, CustomerDto>();
 
         }
 
