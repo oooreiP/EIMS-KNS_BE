@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Domain.Entities;
 using MediatR;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Invoices.Queries
 {
-    public class GetAllInvoicesQueryHandler : IRequestHandler<GetAllInvoicesQuery, IEnumerable<InvoiceDTO>>
+    public class GetAllInvoicesQueryHandler : IRequestHandler<GetAllInvoicesQuery, PaginatedList<InvoiceDTO>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -22,11 +23,49 @@ namespace EIMS.Application.Features.Invoices.Queries
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<InvoiceDTO>> Handle(GetAllInvoicesQuery request, CancellationToken cancellationToken)
+        public async Task<PaginatedList<InvoiceDTO>> Handle(GetAllInvoicesQuery request, CancellationToken cancellationToken)
         {
-            var invoices =  await _unitOfWork.InvoicesRepository.GetAllAsync(includeProperties: "InvoiceItems");
-            var invoiceDTOs = _mapper.Map<IEnumerable<InvoiceDTO>>(invoices);
-            return invoiceDTOs;
+            // 1. Get Queryable from Repository including necessary navigation properties
+            // Ensure these property names match your Entity navigation properties strictly
+            var query = _unitOfWork.InvoicesRepository.GetAllQueryable(includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product");
+
+            // 2. Filter by Status
+            if (request.StatusId.HasValue)
+            {
+                query = query.Where(x => x.InvoiceStatusID == request.StatusId.Value);
+            }
+
+            // 3. Filter by Search Term
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                string term = request.SearchTerm.ToLower();
+                // Note: .ToString() in LINQ to Entities can sometimes be restricted depending on the provider.
+                // It is safer to search strictly on string columns.
+                query = query.Where(x =>
+                    x.InvoiceNumber.ToString().Contains(term) ||
+                    x.Customer.CustomerName.ToLower().Contains(term) ||
+                    x.Customer.TaxCode.Contains(term)
+                );
+            }
+
+            // 4. Order by created date descending
+            query = query.OrderByDescending(x => x.CreatedAt);
+
+            // 5. Create PaginatedList of Entities
+            var paginatedInvoices = await PaginatedList<Invoice>.CreateAsync(query, request.PageIndex, request.PageSize);
+
+            // 6. Map to DTOs
+            var invoiceDtos = _mapper.Map<List<InvoiceDTO>>(paginatedInvoices.Items);
+
+            // 7. Return PaginatedList of DTOs
+            return new PaginatedList<InvoiceDTO>(
+                invoiceDtos,
+                paginatedInvoices.TotalCount,
+                paginatedInvoices.PageIndex,
+                request.PageSize // CORRECTION: Use request.PageSize here
+            );
         }
     }
 }
+
+
