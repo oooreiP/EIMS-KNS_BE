@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.Features.Invoices.Commands.ChangeInvoiceStatus;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Commands.IssueInvoice;
 using EIMS.Application.Features.Invoices.Commands.SignInvoice;
@@ -28,7 +29,7 @@ namespace EIMS.API.Controllers
         public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceCommand command)
         {
             var result = await _mediator.Send(command);
-            if(result.IsFailed)
+            if (result.IsFailed)
             {
                 var firstError = result.Errors.FirstOrDefault();
                 return BadRequest(new ProblemDetails
@@ -42,9 +43,9 @@ namespace EIMS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] GetAllInvoicesQuery query)
         {
-            var invoices = await _mediator.Send(new GetAllInvoicesQuery());
+            var invoices = await _mediator.Send(query);
             return Ok(invoices);
         }
 
@@ -106,6 +107,24 @@ namespace EIMS.API.Controllers
                 message = "Không thể phát hành hóa đơn.",
                 errors = result.Errors.Select(e => e.Message)
             });
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateInvoiceStatus(int id, int statusId)
+        {
+            var command = new UpdateInvoiceStatusCommand { InvoiceId = id, InvoiceStatusId = statusId };
+            var result = await _mediator.Send(command);
+            {
+                if (result.IsFailed)
+                {
+                    return BadRequest(new ProblemDetails
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = "Update Invoice Status Failed",
+                        Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
+                    });
+                }
+                return Ok(result.Value);
+            }
         }
     }
 }
