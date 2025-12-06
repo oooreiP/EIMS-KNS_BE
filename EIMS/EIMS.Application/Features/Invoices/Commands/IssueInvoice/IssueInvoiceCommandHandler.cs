@@ -13,11 +13,13 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
     {
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _xmlService;
+        private readonly IEmailService _emailService;
 
-        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService)
+        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService)
         {
             _uow = uow;
             _xmlService = xmlService;
+            _emailService = emailService;
         }
 
         public async Task<Result> Handle(IssueInvoiceCommand request, CancellationToken cancellationToken)
@@ -35,19 +37,15 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
 
             if (!hasMccqt)
                 return Result.Fail("Hóa đơn chưa được cấp Mã CQT.");
-
-            // 3. Nếu đủ điều kiện -> CHUYỂN TRẠNG THÁI PHÁT HÀNH
-            // (Lúc này không cần thao tác file nữa vì file trên Cloud đã được cập nhật ở các bước trước rồi)
-
             if (invoice.InvoiceStatusID != 6) // Nếu chưa phải là Issued
             {
-                invoice.InvoiceStatusID = 6; // Issued
-                invoice.IssuedDate = DateTime.Now;
-
+                invoice.InvoiceStatusID = 6;
+                invoice.IssuedDate = DateTime.UtcNow;
+                invoice.IssuerID = request.IssuerId;
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
-
+            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 6);
             return Result.Ok();
         }
     }

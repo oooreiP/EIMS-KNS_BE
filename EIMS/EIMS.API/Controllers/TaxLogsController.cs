@@ -33,7 +33,7 @@ namespace EIMS.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var result = await _mediator.Send(new GetTaxLogByIdQuery { Id = id });
+            var result = await _mediator.Send(new GetTaxLogByIdQuery { TaxLogID = id });
 
             if (result.IsFailed)
                 return NotFound(new { message = "Không tìm thấy log." });

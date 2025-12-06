@@ -86,9 +86,9 @@ namespace EIMS.API.Controllers
             }
         }
         [HttpPost("{id}/issue")]
-        public async Task<IActionResult> IssueInvoice(int id)
+        public async Task<IActionResult> IssueInvoice(int id, int issuerId)
         {
-            var command = new IssueInvoiceCommand { InvoiceId = id };
+            var command = new IssueInvoiceCommand { InvoiceId = id, IssuerId = issuerId };
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)

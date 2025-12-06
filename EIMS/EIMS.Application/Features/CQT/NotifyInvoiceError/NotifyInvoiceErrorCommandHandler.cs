@@ -45,8 +45,6 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 {
                     return validationResult;
                 }
-                // Quy tắc: Chỉ gửi TB04 cho hóa đơn ĐÃ ĐƯỢC CẤP MÃ (đã Issued - Status 6)
-                // Hoặc hóa đơn đã gửi nhưng bị sai sót (Status 7, 8...)
                 if (string.IsNullOrEmpty(invoice.TaxAuthorityCode))
                     return Result.Fail("Hóa đơn chưa được cấp mã CQT. Không thể gửi thông báo sai sót (Mẫu 04/SS).");
                 var template = invoice.Template;
@@ -61,15 +59,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 // =========================================================================
                 // BƯỚC 2: TẠO MODEL XML TB04 (Theo cấu trúc chuẩn Image_30be13.png)
                 // =========================================================================
-
-                // Lấy cấu hình Mã thông điệp 300
-                // var msgConfig = await _uow.TaxMessageCodeRepository.GetByCodeAsync("300"); 
-                // Giả lập object messageCode nếu chưa query DB
                 var messageCode = new TaxMessageCode { MessageCode = "300", FlowType = 1 };
-
-                // 2.1 Tạo Header (TTChung)
-                // Sử dụng hàm Helper tạo TTChung đã sửa ở các bước trước
-                // Lưu ý: MNGui của DN gửi đi
                 string mnGui = "K0311357436";
                 var ttChung = InvoiceXmlMapper.GenerateTTChung(messageCode, 1, mnGui);
                 var referenceId = ttChung.MaThongDiep;
@@ -83,13 +73,11 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     MCQT = "10925",
                     TCQT = "Cục Thuế TP. Hồ Chí Minh",
                     So = await _invoiceXmlService.GenerateNextNotificationNumberAsync(), // Số thông báo: TB/001...
-                    NTBCCQT = DateTime.Now.ToString("yyyy-MM-dd"), // Ngày thông báo CQT
-
-                    // Cấu trúc lồng DLTBao (QUAN TRỌNG)
+                    NTBCCQT = DateTime.Now.ToString("yyyy-MM-dd"), 
                     DLTBao = new DLTBao
                     {
                         MST = "0311357436",
-                        MDVQHNSach = "", // Thường để trống
+                        MDVQHNSach = "", 
                         DDanh = "Hồ Chí Minh",
                         NTBao = DateTime.Now.ToString("yyyy-MM-dd"),
 
@@ -100,10 +88,10 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                                 new HDonTB04
                                 {
                                     STT = 1,
-                                    MCCQT = invoice.TaxAuthorityCode, // Mã CQT của hóa đơn sai (34 ký tự)
-                                    KHMSHDon = khmsHDon, // 1C22...
-                                    KHHDon = khHDon,         // C22...
-                                    SHDon = invoice.InvoiceNumber.ToString("D7"), // 0000123
+                                    MCCQT = invoice.TaxAuthorityCode, 
+                                    KHMSHDon = khmsHDon, 
+                                    KHHDon = khHDon,         
+                                    SHDon = invoice.InvoiceNumber.ToString("D7"),
                                     Ngay = invoice.IssuedDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"),
                                     LADHDDT = 1, // 1: Có mã theo NĐ123
                                     TCTBao = request.ErrorType, // 1: Hủy, 2: ĐC, 3: TT, 4: GT
@@ -119,10 +107,6 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     TTChung = ttChung,
                     DLieu = new DLieuTB04 { TBao = tBao }
                 };
-
-                // =========================================================================
-                // BƯỚC 3: SERIALIZE & KÝ SỐ
-                // =========================================================================
                 string rawXml = XmlHelpers.Serialize(tDiep);
                 var certResult = _invoiceXmlService.GetCertificate();
                 if (certResult.IsFailed) return Result.Fail(certResult.Errors);
@@ -159,11 +143,6 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 await _uow.SaveChanges();
                 if (taxResponse.IsSuccess) // Nếu CQT nhận thành công (Thường trả về 301 hoặc 204 OK)
                 {
-                    // =====================================================================
-                    // BƯỚC 5: CẬP NHẬT TRẠNG THÁI HÓA ĐƠN
-                    // =====================================================================
-
-                    // Dựa vào tính chất sai sót (ErrorType) để cập nhật trạng thái
                     switch (request.ErrorType)
                     {
                         case 1: // Hủy (Cancel)
@@ -171,7 +150,6 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                             break;
 
                         case 2: // Điều chỉnh (Adjustment)
-                            // Đánh dấu hóa đơn gốc là đang bị điều chỉnh
                             invoice.InvoiceStatusID = 11; // Adjustment_In_Progress
                             break;
 
@@ -180,9 +158,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                             invoice.InvoiceStatusID = 10; // Replacement_In_Progress
                             break;
 
-                        case 4: // Giải trình (Explanation)
-                            // Có thể giữ nguyên trạng thái Issued hoặc thêm cờ (flag)
-                            // invoice.HasExplanation = true;
+                        case 4:
                             break;
                     }
 

@@ -276,16 +276,11 @@ namespace EIMS.Application.Commons
 
             byte[] signatureBytes = signedXml.Signature.SignatureValue;
             string signatureBase64 = Convert.ToBase64String(signatureBytes);
-
-            // --- ĐIỂM KHÁC BIỆT: VỊ TRÍ CHÈN CHỮ KÝ ---
             var signatureElement = signedXml.GetXml();
-
-            // Tìm thẻ TBao (thay vì HDon)
             var tBaoNode = xmlDoc.SelectSingleNode("//*[local-name()='TBao']");
 
             if (tBaoNode != null)
             {
-                // Tạo thẻ DSCKS bên trong TBao
                 var dscksNode = xmlDoc.CreateElement("DSCKS");
                 dscksNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
                 tBaoNode.AppendChild(dscksNode);
@@ -294,8 +289,6 @@ namespace EIMS.Application.Commons
             {
                 throw new Exception("Không tìm thấy thẻ <TBao> trong XML để chèn chữ ký.");
             }
-            // -------------------------------------------
-
             return new InvoiceSigningResult
             {
                 SignedXml = xmlDoc.OuterXml,

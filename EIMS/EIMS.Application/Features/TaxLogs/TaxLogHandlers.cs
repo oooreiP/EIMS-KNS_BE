@@ -47,9 +47,11 @@ namespace EIMS.Application.Features.TaxLogs
         }
         public async Task<Result<TaxApiLogDetailDto>> Handle(GetTaxLogByIdQuery request, CancellationToken cancellationToken)
         {
-            var log = await _uow.TaxApiLogRepository.GetByIdAsync(request.Id, includeProperties: "TaxApiStatus");
+            var logs = await _uow.TaxApiLogRepository.GetAllAsync(
+         filter: x => x.TaxLogID == request.TaxLogID,
+         includeProperties: "TaxApiStatus");
+            var log = logs.FirstOrDefault();
             if (log == null) return Result.Fail("Log not found");
-
             // Format XML cho đẹp trước khi trả về
             string formattedRequest = TryFormatXml(log.RequestPayload);
             string formattedResponse = TryFormatXml(log.ResponsePayload);

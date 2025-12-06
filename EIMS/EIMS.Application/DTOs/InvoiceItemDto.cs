@@ -10,7 +10,7 @@ namespace EIMS.Application.DTOs
     {
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
-        public decimal Amount { get; set; }
-        public decimal VATAmount { get; set; }
+        public decimal? Amount { get; set; } = 0;
+        public decimal? VATAmount { get; set; } = 0;
     }
 }
