@@ -18,13 +18,14 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
     {
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IEmailService _emailService;
 
-        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService)
+        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, IEmailService emailService)
         {
             _uow = uow;
             _fileStorageService = fileStorageService;
+            _emailService = emailService;
         }
-
         public async Task<Result<int>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
         {
             // =========================================================================
@@ -155,16 +156,14 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 serializer.Serialize(fs, xmlModel);
             }
-
             await using var xmlStream = File.OpenRead(xmlPath);
             var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
-
             if (uploadResult.IsFailed)
                 return Result.Fail(uploadResult.Errors);
-
             fullInvoice.XMLPath = uploadResult.Value.Url;
             await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
             await _uow.SaveChanges();
+            await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 11);
             return Result.Ok(adjInvoice.InvoiceID);
         }
     }

@@ -61,17 +61,12 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             // Đặt tên file mới để phân biệt
             var newFileName = $"Invoice_{invoice.InvoiceNumber}_Signed.xml";
             var newUrl = await _invoiceXmlService.UploadXmlAsync(signedXmlDoc, newFileName);
-
             // BƯỚC 6: CẬP NHẬT DB
             invoice.XMLPath = newUrl; // Cập nhật đường dẫn mới
             invoice.InvoiceStatusID = 5; // Trạng thái: Signed (Đã ký)
             invoice.SignDate = DateTime.UtcNow;
             invoice.DigitalSignature = signedXmlContent.SignatureValue;
-
-            // (Tùy chọn) Lưu thông tin người ký, thời điểm ký vào Audit Log hoặc bảng Invoice
-            // invoice.SignedDate = DateTime.UtcNow;
-            // invoice.SignedBy = _currentUserService.UserId;
-
+            invoice.SignDate = DateTime.UtcNow;
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
             await _unitOfWork.SaveChanges();
 

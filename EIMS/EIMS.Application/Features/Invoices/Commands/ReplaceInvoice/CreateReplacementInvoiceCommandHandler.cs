@@ -13,10 +13,12 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
     public class CreateReplacementInvoiceCommandHandler : IRequestHandler<CreateReplacementInvoiceCommand, Result<int>>
     {
         private readonly IUnitOfWork _uow;
+        private readonly IEmailService _emailService;
 
-        public CreateReplacementInvoiceCommandHandler(IUnitOfWork uow)
+        public CreateReplacementInvoiceCommandHandler(IUnitOfWork uow, IEmailService emailService)
         {
             _uow = uow;
+            _emailService = emailService;
         }
 
         public async Task<Result<int>> Handle(CreateReplacementInvoiceCommand request, CancellationToken cancellationToken)
@@ -134,7 +136,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             });
 
             await _uow.SaveChanges();
-
+            await _emailService.SendStatusUpdateNotificationAsync(newInvoice.InvoiceID, 10);
             return Result.Ok(newInvoice.InvoiceID);
         }
     }

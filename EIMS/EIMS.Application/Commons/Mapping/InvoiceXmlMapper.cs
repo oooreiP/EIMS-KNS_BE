@@ -160,7 +160,6 @@ namespace EIMS.Application.Commons.Mapping
                 string? referenceMessageId = null)
         {
             string providerCode = "K0311357436"; 
-            // 1. Xác định nơi gửi và nơi nhận
             string mnGui, mnNhan;
 
             if (messageCode.FlowType == 1)

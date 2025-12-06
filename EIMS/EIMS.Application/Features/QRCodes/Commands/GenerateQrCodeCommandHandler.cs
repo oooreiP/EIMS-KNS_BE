@@ -30,7 +30,9 @@ namespace EIMS.Application.Features.QRCodes.Commands
                 var lookUpCode = GenerateLookupCode();
                 string targetUrl = $"{request.PortalBaseUrl.TrimEnd('/')}/view?code={lookUpCode}";
                 string base64Image = GenerateQrImageBase64(targetUrl);
-                invoice.QRCodeData = base64Image;
+                invoice.QRCodeData = lookUpCode;
+                await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
+                await _unitOfWork.SaveChanges();
                 return Result.Ok(base64Image);
             }
             catch (Exception ex)

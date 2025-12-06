@@ -15,7 +15,7 @@ namespace EIMS.Application.Features.TaxLogs
     }
     public class GetTaxLogByIdQuery : IRequest<Result<TaxApiLogDetailDto>>
     {
-        public int Id { get; set; }
+        public int TaxLogID { get; set; }
     }
     public class GetAllTaxLogsQuery : IRequest<Result<List<TaxApiLogSummaryDto>>>
     {

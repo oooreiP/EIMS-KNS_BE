@@ -11,5 +11,6 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
     public class IssueInvoiceCommand : IRequest<Result>
     {
         public int InvoiceId { get; set; }
+        public int IssuerId { get; set; }
     }
 }

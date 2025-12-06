@@ -19,9 +19,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public string? CompanyName { get; set; }
         public string? Address { get; set; }
         public List<InvoiceItemDto>? Items { get; set; }
-        public decimal Amount { get; set; }
-        public decimal TaxAmount { get; set; }
-        public decimal TotalAmount { get; set; }
+        public decimal? Amount { get; set; }
+        public decimal? TaxAmount { get; set; }
+        public decimal? TotalAmount { get; set; }
         public int? SignedBy { get; set; }
     }
 }
