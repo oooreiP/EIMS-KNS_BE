@@ -29,10 +29,6 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IUserRepository UserRepository { get; set; }
         public ITemplateFrameRepository TemplateFrameRepository { get; set; }
         public ICompanyRepository CompanyRepository { get; set; }
-        public IInvoiceStatusRepository InvoiceStatusRepository { get; set; }
-
-
-
         public IBaseRepository<InvoiceStatus> InvoiceStatusRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {

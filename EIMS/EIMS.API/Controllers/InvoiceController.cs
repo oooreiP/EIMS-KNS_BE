@@ -116,7 +116,7 @@ namespace EIMS.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInvoiceStatus(int id, int statusId)
         {
-            var command = new UpdateInvoiceStatusCommand { InvoiceId = id, InvoiceStatusId = statusId };
+            var command = new Application.Features.Invoices.Commands.ChangeInvoiceStatus.UpdateInvoiceStatusCommand { InvoiceId = id, InvoiceStatusId = statusId };
             var result = await _mediator.Send(command);
             {
                 if (result.IsFailed)
@@ -130,6 +130,7 @@ namespace EIMS.API.Controllers
                 }
                 return Ok(result.Value);
             }
+        }
         /// <summary>
         /// Tạo hóa đơn điều chỉnh (Adjustment Invoice).
         /// </summary>
@@ -205,7 +206,7 @@ namespace EIMS.API.Controllers
         /// Cập nhật trạng thái hóa đơn thủ công (Dành cho Admin/Xử lý sự cố)
         /// </summary>
         [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateInvoiceStatusCommand command)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] Application.Features.Invoices.Commands.UpdateStatus.UpdateInvoiceStatusCommand command)
         {
             if (id != command.InvoiceId)
             {

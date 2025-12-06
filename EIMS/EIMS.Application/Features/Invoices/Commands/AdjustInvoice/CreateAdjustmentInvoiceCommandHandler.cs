@@ -57,8 +57,14 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
 
                 targetCustomerId = request.NewCustomerId.Value;
             }
-            var nextInvoiceNumber = await _uow.InvoicesRepository.GetNextInvoiceNumberAsync(originalInvoice.TemplateID);
-            // =========================================================================
+            var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(originalInvoice.TemplateID);
+            if (template == null)
+                return Result.Fail(new Error($"Template {originalInvoice.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            var serial = await _uow.SerialRepository.GetByIdAndLockAsync(template.SerialID);
+            if (serial == null)
+                return Result.Fail(new Error($"Template {serial.SerialID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            serial.CurrentInvoiceNumber += 1;
+            long nextInvoiceNumber = serial.CurrentInvoiceNumber;            // =========================================================================
             // BƯỚC 3: KHỞI TẠO HÓA ĐƠN ĐIỀU CHỈNH (HEADER)
             // =========================================================================
             var adjInvoice = new Invoice
@@ -74,12 +80,13 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 IssuedDate = null,
                 TemplateID = originalInvoice.TemplateID,
                 CompanyId = originalInvoice.CompanyId,
-                IssuerID = originalInvoice.IssuerID, 
-                CustomerID = targetCustomerId, 
-                InvoiceStatusID = 1, 
+                IssuerID = originalInvoice.IssuerID,
+                CustomerID = targetCustomerId,
+                InvoiceStatusID = 1,
                 CreatedAt = DateTime.UtcNow,
-                PaymentDueDate = DateTime.UtcNow.AddDays(30), 
-                InvoiceNumber = long.Parse(nextInvoiceNumber)
+                PaymentDueDate = DateTime.UtcNow.AddDays(30),
+                // InvoiceNumber = long.Parse(nextInvoiceNumber)
+                InvoiceNumber = nextInvoiceNumber,
             };
             decimal totalSubtotal = 0;
             decimal totalVAT = 0;
@@ -93,7 +100,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     if (product == null) return Result.Fail($"Sản phẩm ID {itemDto.ProductID} không tồn tại.");
 
                     // Tính toán: Chấp nhận số ÂM cho điều chỉnh giảm
-                    decimal amount = itemDto.Quantity * itemDto.UnitPrice ?? 0;
+                    decimal amount = (decimal)itemDto.Quantity * itemDto.UnitPrice ?? 0;
                     decimal vatRate = itemDto.OverrideVATRate ?? product.VATRate ?? 0;
                     // Tính tiền thuế
                     decimal vatAmount = amount * (vatRate / 100m);
@@ -128,7 +135,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // =========================================================================
             // BƯỚC 6: XỬ LÝ LOGIC TRẠNG THÁI & LƯU DB
             // =========================================================================
-            if (originalInvoice.InvoiceStatusID == 6) 
+            if (originalInvoice.InvoiceStatusID == 6)
             {
                 originalInvoice.InvoiceStatusID = 11;
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);

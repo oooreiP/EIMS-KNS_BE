@@ -4,6 +4,7 @@ using System.Text.Json;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Mails;
+using EIMS.Domain.Entities;
 using FluentResults;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -131,6 +132,21 @@ namespace EIMS.Infrastructure.Service
             };
 
             return await SendMailAsync(request);
+        }
+
+        public Task<Result> SendEmailCoreAsync(Invoice invoice, string subjectPrefix, string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> SendInvoiceEmailAsync(string recipientEmail, int invoiceId, string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> SendStatusUpdateNotificationAsync(int invoiceId, int newStatusId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

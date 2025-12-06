@@ -12,7 +12,7 @@ namespace EIMS.Application.DTOs
         public string ProductName { get; set; } = string.Empty;
         public string? Unit { get; set; }
         public double Quantity { get; set; }
-        public decimal? Amount { get; set; } = 0
-        public decimal? VATAmount { get; set; } = 0
+        public decimal? Amount { get; set; } = 0 ;
+        public decimal? VATAmount { get; set; } = 0;
     }
 }

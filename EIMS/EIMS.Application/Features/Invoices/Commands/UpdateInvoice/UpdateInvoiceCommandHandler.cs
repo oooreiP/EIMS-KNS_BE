@@ -106,15 +106,15 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                         InvoiceID = invoice.InvoiceID,
                         ProductID = itemDto.ProductId,
                         Quantity = itemDto.Quantity,
-                        Amount = itemDto.Amount,
-                        VATAmount = itemDto.VATAmount,
-                        UnitPrice = itemDto.Quantity > 0 ? (itemDto.Amount /  (decimal)itemDto.Quantity) : 0
+                        Amount = itemDto.Amount ?? 0,
+                        VATAmount = itemDto.VATAmount ?? 0,
+                        UnitPrice = itemDto.Quantity > 0 ? (itemDto.Amount /  (decimal)itemDto.Quantity) ?? 0 : 0
                     });
                 }
 
                 // 4. Update Totals
-                decimal subtotal = request.Items.Sum(i => i.Amount);
-                decimal vatAmount = request.Items.Sum(i => i.VATAmount);
+                decimal subtotal = request.Items.Sum(i => i.Amount) ?? 0;
+                decimal vatAmount = request.Items.Sum(i => i.VATAmount) ?? 0;
                 invoice.SubtotalAmount = subtotal;
                 invoice.VATAmount = vatAmount;
                 invoice.TotalAmount = request.TotalAmount > 0 ? request.TotalAmount : (subtotal + vatAmount);
