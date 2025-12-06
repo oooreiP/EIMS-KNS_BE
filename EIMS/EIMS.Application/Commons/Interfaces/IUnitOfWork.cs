@@ -25,6 +25,7 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; }
         IBaseRepository<TaxApiLog> TaxApiLogRepository { get; }
         IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; }
+        IBaseRepository<InvoiceStatus> InvoiceStatusRepository { get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();

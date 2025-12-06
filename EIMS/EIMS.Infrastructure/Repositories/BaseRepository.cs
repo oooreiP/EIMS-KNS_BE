@@ -25,7 +25,7 @@ namespace EIMS.Infrastructure.Repositories
             dbSet.Remove(entity);
         }
 
-        public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
+        public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null)
         {
             IQueryable<T> query = dbSet;
 
@@ -40,8 +40,15 @@ namespace EIMS.Infrastructure.Repositories
                     query = query.Include(includeProp.Trim());
                 }
             }
-
-            return await query.ToListAsync();
+            if (orderBy != null)
+            {
+                
+                return await orderBy(query).ToListAsync();
+            }
+            else
+            {
+                return await query.ToListAsync();
+            }
         }
 
         public virtual async Task<T> GetByIdAsync(int id)

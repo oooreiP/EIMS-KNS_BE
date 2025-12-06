@@ -33,6 +33,8 @@ namespace EIMS.Domain.Entities
 
         public int? IssuerID { get; set; }
         public string? MCCQT { get; set; }
+        public int InvoiceType { get; set; } = 1;
+        public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
         public DateTime? SignDate { get; set; }
         public DateTime? IssuedDate { get; set; }
@@ -73,6 +75,7 @@ namespace EIMS.Domain.Entities
         public string? XMLPath { get; set; }
         public int MinRows { get; set; } = 5;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? AdjustmentReason { get; set; }
 
         // --- Navigation Properties ---
         [JsonIgnore]
@@ -105,6 +108,8 @@ namespace EIMS.Domain.Entities
         [JsonIgnore]
         [InverseProperty("ReferenceInvoice")]
         public virtual ICollection<InvoiceHistory> ReferencedByHistory { get; set; } = new List<InvoiceHistory>();
+        [ForeignKey("OriginalInvoiceID")]
+        public virtual Invoice? OriginalInvoice { get; set; }
         [InverseProperty("Invoices")]
         public virtual PaymentStatus PaymentStatus { get; set; }
         [InverseProperty("Invoice")]

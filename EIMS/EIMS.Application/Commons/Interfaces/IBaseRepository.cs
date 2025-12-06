@@ -12,7 +12,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<T> CreateAsync(T entity);
         Task<T> UpdateAsync(T entity);
         Task DeleteAsync(T entity);
-        Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null);
+        Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null);
         Task<T?> GetByIdAsync(int id, string? includeProperties = null);
         Task<T> GetByIdAsync(int id);
         Task<bool> ExistsAsync(int id);

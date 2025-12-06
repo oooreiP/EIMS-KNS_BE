@@ -15,13 +15,15 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileStorageService = fileStorageService;
+            _emailService = emailService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -37,7 +39,8 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // 1️ Xử lý Customer
+                if (request.Items == null || !request.Items.Any())
+                    return Result.Fail("Invoice must contain at least one item.");
                 Customer? customer = null;
                 if (request.CustomerID == null || request.CustomerID == 0)
                 {
@@ -68,14 +71,56 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 
                 decimal subtotal = request.Items.Sum(i => i.Amount);
                 decimal vatAmount = request.Items.Sum(i => i.VATAmount);
+                // var nextInvoiceNumber = await _unitOfWork.InvoicesRepository.GetNextInvoiceNumberAsync(request.TemplateID ?? 1);
+                var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+                var processedItems = new List<InvoiceItem>();
+                foreach (var itemReq in request.Items)
+                {
+                    var productInfo = await _unitOfWork.ProductRepository.GetByIdAsync(itemReq.ProductId);
+
+                    if (productInfo == null)
+                    {
+                        throw new Exception($"Không tìm thấy sản phẩm có ID: {itemReq.ProductId}");
+                    }
+                    decimal finalAmount;
+                    if ((itemReq.Amount ?? 0) > 0)
+                    {
+                        finalAmount = itemReq.Amount!.Value;
+                    }
+                    else
+                    {
+                        finalAmount = productInfo.BasePrice * itemReq.Quantity;
+                    }
+                    decimal finalVatAmount;
+                    if ((itemReq.VATAmount ?? 0) > 0)
+                    {
+                        finalVatAmount = itemReq.VATAmount!.Value;
+                    }
+                    else
+                    {
+                        decimal vatRate = productInfo.VATRate ?? 0;
+                        finalVatAmount = Math.Round(finalAmount * (vatRate / 100m), 2);
+                    }
+
+                    processedItems.Add(new InvoiceItem
+                    {
+                        ProductID = itemReq.ProductId,
+                        Quantity = itemReq.Quantity,
+                        Amount = finalAmount,
+                        VATAmount = finalVatAmount
+                    });
+                }
+                decimal subtotal = processedItems.Sum(i => i.Amount);
+                decimal vatAmount = processedItems.Sum(i => i.VATAmount);
+                decimal totalAmount = subtotal + vatAmount;
 
                 if (request.Amount <= 0) request.Amount = subtotal;
                 if (request.TaxAmount <= 0) request.TaxAmount = vatAmount;
                 if (request.TotalAmount <= 0) request.TotalAmount = request.Amount + request.TaxAmount;
 
-                decimal vatRate = (request.Amount > 0 && request.TaxAmount > 0)
-                    ? Math.Round((request.TaxAmount / request.Amount) * 100, 2)
-                    : 0;
+                decimal invoiceVatRate = (subtotal > 0)
+                ? Math.Round((vatAmount / subtotal) * 100, 2)
+                : 0;
 
                 var invoice = new Invoice
                 {
@@ -103,10 +148,17 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                         Amount = i.Amount,
                         VATAmount = i.VATAmount
                     }).ToList()
+                    SubtotalAmount = subtotal,
+                    VATAmount = vatAmount,
+                    VATRate = invoiceVatRate,
+                    TotalAmount = totalAmount,
+                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
+                    InvoiceStatusID = 1,
+                    IssuerID = request.SignedBy,
+                    InvoiceItems = processedItems
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
                 await _unitOfWork.SaveChanges();
-
                 var history = new InvoiceHistory
                 {
                     InvoiceID = invoice.InvoiceID,
@@ -130,13 +182,11 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 {
                     serializer.Serialize(fs, xmlModel);
                 }
-
                 await using var xmlStream = File.OpenRead(xmlPath);
                 var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
 
                 if (uploadResult.IsFailed)
                     return Result.Fail(uploadResult.Errors);
-
                 fullInvoice.XMLPath = uploadResult.Value.Url;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _unitOfWork.SaveChanges();
@@ -152,7 +202,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     Status = "Draft",
                     XMLPath = fullInvoice.XMLPath
                 };
+                                await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
                 return Result.Ok(response);
+
             }
             catch (Exception ex)
             {

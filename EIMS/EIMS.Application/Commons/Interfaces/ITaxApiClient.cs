@@ -9,6 +9,6 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface ITaxApiClient
     {
-        Task<TaxApiResponse> SendInvoiceAsync(string xmlPayload, string referenceId);
+        Task<TaxApiResponse> SendTaxMessageAsync(string xmlPayload, string? referenceId);
     }
 }

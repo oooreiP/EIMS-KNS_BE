@@ -1,9 +1,14 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.DTOs.TaxAPIDTO;
+using EIMS.Application.Features.CQT.NotifyInvoiceError;
+using EIMS.Application.Features.Invoices.Commands.AdjustInvoice;
 using EIMS.Application.Features.Invoices.Commands.ChangeInvoiceStatus;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Commands.IssueInvoice;
+using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
 using EIMS.Application.Features.Invoices.Commands.SignInvoice;
+using EIMS.Application.Features.Invoices.Commands.UpdateStatus;
 using EIMS.Application.Features.Invoices.Queries;
 using EIMS.Domain.Entities;
 using MediatR;
@@ -92,9 +97,9 @@ namespace EIMS.API.Controllers
             }
         }
         [HttpPost("{id}/issue")]
-        public async Task<IActionResult> IssueInvoice(int id)
+        public async Task<IActionResult> IssueInvoice(int id, int issuerId)
         {
-            var command = new IssueInvoiceCommand { InvoiceId = id };
+            var command = new IssueInvoiceCommand { InvoiceId = id, IssuerId = issuerId };
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)
@@ -125,6 +130,96 @@ namespace EIMS.API.Controllers
                 }
                 return Ok(result.Value);
             }
+        /// <summary>
+        /// Tạo hóa đơn điều chỉnh (Adjustment Invoice).
+        /// </summary>
+        /// <remarks>
+        /// Lưu ý quan trọng:
+        /// - Nếu điều chỉnh GIẢM: Nhập Quantity là số ÂM (ví dụ: -2).
+        /// - Nếu điều chỉnh THÔNG TIN (MST/Tên): Để trống danh sách AdjustmentItems, điền NewCustomerId.
+        /// - Hóa đơn gốc phải ở trạng thái Đã phát hành (Issued).
+        /// </remarks>
+        /// <param name="command">Thông tin điều chỉnh</param>
+        /// <returns>ID của hóa đơn điều chỉnh vừa tạo</returns>
+        [HttpPost("adjustment")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateAdjustment([FromBody] CreateAdjustmentInvoiceCommand command)
+        {
+            // Gửi command sang Handler xử lý
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    invoiceId = result.Value,
+                    message = "Tạo hóa đơn điều chỉnh thành công."
+                });
+            }
+            return BadRequest(new
+            {
+                success = false,
+                message = result.Errors.FirstOrDefault()?.Message,
+                errors = result.Errors.Select(e => e.Message)
+            });
+        }
+        /// <summary>
+        /// Tạo hóa đơn thay thế (Replacement Invoice).
+        /// </summary>
+        /// <remarks>
+        /// **Cơ chế hoạt động:**
+        /// 1. Nếu `Items` có dữ liệu: Hệ thống sẽ dùng danh sách hàng hóa mới này.
+        /// 2. Nếu `Items` rỗng hoặc null: Hệ thống sẽ **tự động sao chép** toàn bộ hàng hóa từ hóa đơn gốc sang.
+        /// 3. Tương tự với `CustomerId`, `Note`: Nếu gửi null sẽ giữ nguyên thông tin cũ.
+        /// 
+        /// **Lưu ý:** Hóa đơn gốc phải ở trạng thái Đã phát hành (Issued - 6).
+        /// </remarks>
+        /// <param name="command">Thông tin thay thế</param>
+        /// <returns>ID hóa đơn mới vừa tạo</returns>
+        [HttpPost("replacement")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateReplacement([FromBody] CreateReplacementInvoiceCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    invoiceId = result.Value,
+                    message = "Tạo hóa đơn thay thế thành công. Vui lòng ký và phát hành."
+                });
+            }
+
+            return BadRequest(new
+            {
+                success = false,
+                errors = result.Errors.Select(e => e.Message)
+            });
+        }
+        /// <summary>
+        /// Cập nhật trạng thái hóa đơn thủ công (Dành cho Admin/Xử lý sự cố)
+        /// </summary>
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateInvoiceStatusCommand command)
+        {
+            if (id != command.InvoiceId)
+            {
+                return BadRequest("ID trên URL không khớp với ID trong body.");
+            }
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { message = "Cập nhật trạng thái thành công." });
+            }
+
+            return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
         }
     }
 }
