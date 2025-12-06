@@ -12,7 +12,6 @@ namespace EIMS.Application.Commons.Interfaces
     {
         Task<IEnumerable<Product>> GetAllAsync();
         Task<Product?> GetByIdAsync(int id);
-        Task<IEnumerable<Product>> GetByCodeAsync(string code);
         Task<Product> CreateProductAsync(CreateProductRequest request);
         Task<Product> UpdateAsync(int id, UpdateProductRequest request);
         Task<IEnumerable<Category>> GetAllCategoriesAsync();

@@ -14,14 +14,9 @@ namespace EIMS.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Product>> GetByCodeAsync(string code)
+        public async Task<Product?> GetByCodeAsync(string code)
         {
-            // USE Contains() for partial match
-            // We also include the Category for display purposes if needed
-            return await _context.Products
-                .Where(p => p.Code.Contains(code))
-                .Include(p => p.Category)
-                .ToListAsync();
+            return await _context.Products.FirstOrDefaultAsync(p => p.Name == code);
         }
         public async Task<IEnumerable<Product>> GetByCategoryAsync(int categoryId)
         {

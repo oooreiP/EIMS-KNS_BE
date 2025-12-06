@@ -53,12 +53,6 @@ namespace EIMS.API.Controllers
             var updated = await _productService.UpdateAsync(id, request);
             return Ok(new { message = "Updated successfully", data = updated });
         }
-        [HttpGet("code/{code}")]
-        public async Task<IActionResult> GetByCode(string code)
-        {
-            var products = await _productService.GetByCodeAsync(code);
-            return Ok(products);
-        }
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()
         {

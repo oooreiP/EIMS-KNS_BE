@@ -40,7 +40,7 @@ public class InvoiceViewModel
     public decimal SubTotal { get; set; }
     public decimal VatRate { get; set; }
     public decimal VatAmount { get; set; }
-    public decimal GrandTotal { get; set; } //
+    public decimal GrandTotal { get; set; }
     public string AmountInWords { get; set; }
     public string SignDate { get; set; }
 }
