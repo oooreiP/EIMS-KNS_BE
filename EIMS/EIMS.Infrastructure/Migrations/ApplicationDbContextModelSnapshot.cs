@@ -236,6 +236,9 @@ namespace EIMS.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InvoiceID"));
 
+                    b.Property<string>("AdjustmentReason")
+                        .HasColumnType("text");
+
                     b.Property<int?>("CompanyId")
                         .HasColumnType("integer");
 
@@ -258,6 +261,9 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<int>("InvoiceStatusID")
                         .HasColumnType("integer");
 
+                    b.Property<int>("InvoiceType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("IssuedDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -273,6 +279,9 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("OriginalInvoiceID")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("PaymentDueDate")
                         .HasColumnType("timestamp with time zone");
@@ -329,6 +338,9 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("IssuerID");
 
                     b.HasIndex("PaymentStatusID");
+                    b.HasIndex("OriginalInvoiceID");
+
+                    b.HasIndex("SalesID");
 
                     b.HasIndex("TemplateID");
 
@@ -2104,6 +2116,13 @@ namespace EIMS.Infrastructure.Migrations
                         .HasForeignKey("PaymentStatusID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                    b.HasOne("EIMS.Domain.Entities.Invoice", "OriginalInvoice")
+                        .WithMany()
+                        .HasForeignKey("OriginalInvoiceID");
+
+                    b.HasOne("EIMS.Domain.Entities.User", "Sales")
+                        .WithMany("SalesInvoices")
+                        .HasForeignKey("SalesID");
 
                     b.HasOne("EIMS.Domain.Entities.InvoiceTemplate", "Template")
                         .WithMany("Invoices")
@@ -2120,6 +2139,9 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("Issuer");
 
                     b.Navigation("PaymentStatus");
+                    b.Navigation("OriginalInvoice");
+
+                    b.Navigation("Sales");
 
                     b.Navigation("Template");
                 });

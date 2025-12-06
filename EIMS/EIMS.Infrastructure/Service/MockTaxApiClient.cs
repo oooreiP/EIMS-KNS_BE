@@ -1,6 +1,8 @@
 ﻿using EIMS.Application.Commons;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.Results;
+using EIMS.Application.DTOs.XMLModels.TB04;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +13,80 @@ namespace EIMS.Infrastructure.Service
 {
     public class MockTaxApiClient : ITaxApiClient
     {
-        public Task<TaxApiResponse> SendInvoiceAsync(string xmlPayload, string referenceId)
-        {           
+        public Task<TaxApiResponse> SendTaxMessageAsync(string xmlPayload, string? referenceId)
+        {
+            bool isInvoiceSubmission = xmlPayload.Contains("<MaLoaiThongDiep>200</MaLoaiThongDiep>") || xmlPayload.Contains("<MaLoaiThongDiep>201</MaLoaiThongDiep>");
+            bool isErrorNotification = xmlPayload.Contains("<MaLoaiThongDiep>300</MaLoaiThongDiep>"); // TB04
+            if (isInvoiceSubmission)
+            {
+                return GenerateResponse202(xmlPayload, referenceId);
+            }
+            if (isErrorNotification)
+            {
+                return GenerateResponse301(xmlPayload, referenceId);
+            }
+
+            return Task.FromResult(new TaxApiResponse { IsSuccess = false, SoTBao = "Unknown Message Type" });
+
+        }
+        private Task<TaxApiResponse> GenerateResponse301(string xmlPayload, string? referenceId)
+        {
+
+            try
+            {
+                var requestObj = XmlHelpers.Deserialize<TDiepTB04>(xmlPayload);
+                var dsHdon = requestObj.DLieu.TBao.DLTBao.DSHDon.HDon;
+                if (dsHdon.Any(h => string.IsNullOrWhiteSpace(h.LDo)))
+                {
+                    return GenerateRejectResponse(requestObj, "VAL01", "Lý do sai sót không được để trống");
+                }
+
+                if (dsHdon.Any(h => h.LDo.Contains("đã hủy", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return GenerateRejectResponse(requestObj, "ERR_STATUS", "Hóa đơn gốc đã bị hủy, không thể điều chỉnh");
+                }
+                if (dsHdon.Any(h => h.MCCQT.Contains("INVALID")))
+                {
+                    return GenerateRejectResponse(requestObj, "ERR_NOT_FOUND", "Không tìm thấy hóa đơn hoặc thông tin không khớp");
+                }
+                var responseObj = InvoiceXmlMapper.CreateResponse301FromRequest300(requestObj);
+                string responseXml = XmlHelpers.Serialize(responseObj);
+                var mtDiepPhanHoi = XmlHelpers.GenerateMTDiep("K", "0311357436");
+                return Task.FromResult(new TaxApiResponse
+                {
+                    IsSuccess = true,
+                    MLTDiep = "301",
+                    MTDiep = mtDiepPhanHoi,
+                    MTDThamChieu = responseObj.TTChung.MaThongDiep,
+                    SoTBao = "TB01",
+                    RawResponse = responseXml
+                });
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(new TaxApiResponse
+                {
+                    IsSuccess = false,
+                    SoTBao = "TB12",
+                    RawResponse = $"Lỗi khi xử lý Mock 301: {ex.Message}"
+                });
+            }
+        }
+        private Task<TaxApiResponse> GenerateRejectResponse(TDiepTB04 request, string errCode, string errMsg)
+        {
+            var responseObj = InvoiceXmlMapper.CreateRejectResponse301(request, errCode, errMsg);
+            string xml = XmlHelpers.Serialize(responseObj);
+
+            return Task.FromResult(new TaxApiResponse
+            {
+                IsSuccess = true, 
+                MLTDiep = "301",
+                SoTBao = "TB_REJECT",
+                RawResponse = xml
+            });
+        }
+        private Task<TaxApiResponse> GenerateResponse202(string xmlPayload, string? referenceId)
+        {
             var soThongBao = $"2025/{new Random().Next(100000000, 999999999)}";
             var error = XmlHelpers.Validate(xmlPayload);
             if (error.Any())
@@ -37,14 +111,15 @@ namespace EIMS.Infrastructure.Service
                     </DLieu>
                 </TDiep>";
 
-            return Task.FromResult(new TaxApiResponse
-            {
-                IsSuccess = false,
-                MTDiep = mtDiepPhanHoi,
-                MLTDiep = mlTDiepLoi,
-                RawResponse = errorResponseXml
-            });
-        }
+                return Task.FromResult(new TaxApiResponse
+                {
+                    IsSuccess = false,
+                    MTDiep = mtDiepPhanHoi,
+                    MTDThamChieu = referenceId,
+                    MLTDiep = mlTDiepLoi,
+                    RawResponse = errorResponseXml
+                });
+            }
             var mlTDiepThanhCong = "202";
             var mtDiepPhanHoiThanhCong = XmlHelpers.GenerateMTDiep("TCT");
             var mccqt = "A" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N").ToUpper();

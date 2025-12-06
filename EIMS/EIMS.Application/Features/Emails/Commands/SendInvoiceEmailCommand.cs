@@ -11,10 +11,7 @@ namespace EIMS.Application.Features.Emails.Commands
 {
     public record SendInvoiceEmailCommand(
     string RecipientEmail,
-    string CustomerName,
-    string InvoiceNumber,
-    decimal TotalAmount,
-    string Message,
-    List<string> CloudinaryUrls
+    int invoiceId,
+    string Message
 ) : IRequest<Result>;
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace EIMS.Application.DTOs.XMLModels
 {
@@ -17,5 +18,7 @@ namespace EIMS.Application.DTOs.XMLModels
         public string DVTTe { get; set; } = "VND";
         public string HTTToan { get; set; } = "TM/CK";
         public string MSTTCGP { get; set; } = "";
+        [XmlElement("TTHDLQuan")]
+        public TTHDLQuan? TTHDLQuan { get; set; }
     }
 }

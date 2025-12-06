@@ -22,6 +22,12 @@ namespace EIMS.API.Controllers
             var result = await _mediator.Send(command);
             return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Errors);
         }
+        [HttpPost("uploadXML")]
+        public async Task<IActionResult> UploadXML([FromForm] UploadXMLFileCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Errors);
+        }
         [HttpPost("convert-pdf-xml")]
         public async Task<IActionResult> ConvertPdfToXml([FromForm] ConvertPdfToXmlCommand pdfFile)
         {

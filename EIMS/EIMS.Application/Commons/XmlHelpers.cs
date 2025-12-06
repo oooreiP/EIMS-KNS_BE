@@ -21,6 +21,9 @@ namespace EIMS.Application.Commons
         // Tiền tố cho MTDiep của Người nộp thuế/TC truyền nhận (Ví dụ: V + MST + UUID)
         const string NntMTDiepPrefix = "K";
         const int MtDiepLength = 46;
+        public const decimal RATE_KHAC = -1;
+        public const decimal RATE_KCT = -2;
+        public const decimal RATE_KKNT = -3;
         public static string Serialize<T>(T obj, bool removeDeclaration = false)
         {
             if (obj == null)
@@ -44,6 +47,35 @@ namespace EIMS.Application.Commons
             xmlSerializer.Serialize(xmlWriter, obj, ns);
 
             return stringWriter.ToString();
+        }
+        /// <summary>
+        /// Chuyển đổi chuỗi XML thành Object (Deserialize)
+        /// </summary>
+        /// <typeparam name="T">Kiểu dữ liệu muốn chuyển đổi (VD: TDiepTB04)</typeparam>
+        /// <param name="xml">Chuỗi XML đầu vào</param>
+        /// <returns>Object chứa dữ liệu</returns>
+        public static T Deserialize<T>(string xml) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(xml))
+            {
+                return null;
+            }
+
+            try
+            {
+                var serializer = new XmlSerializer(typeof(T));
+
+                using (var reader = new StringReader(xml))
+                {
+                    // Hàm Deserialize trả về object, cần ép kiểu về T
+                    return (T)serializer.Deserialize(reader);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Ném lỗi ra ngoài để Handler biết mà xử lý (ví dụ: XML sai định dạng)
+                throw new InvalidOperationException($"Lỗi khi Deserialize XML sang {typeof(T).Name}: {ex.Message}", ex);
+            }
         }
         private static void LoadSchemas()
         {
@@ -203,6 +235,132 @@ namespace EIMS.Application.Commons
                 SignedXml = xmlDoc.OuterXml,
                 SignatureValue = signatureBase64
             };
+        }
+        /// <summary>
+        /// Ký số cho Thông báo sai sót (Mẫu 04/SS-HĐĐT)
+        /// Cấu trúc: TDiep -> DLieu -> TBao -> DSCKS -> Signature
+        /// </summary>
+        public static InvoiceSigningResult SignTB04Xml(string rawXml, X509Certificate2 signingCert)
+        {
+            var xmlDoc = new XmlDocument();
+            xmlDoc.PreserveWhitespace = true;
+            xmlDoc.LoadXml(rawXml);
+
+            var signedXml = new SignedXml(xmlDoc);
+            signedXml.SigningKey = signingCert.GetRSAPrivateKey();
+
+            var keyInfo = new KeyInfo();
+            keyInfo.AddClause(new KeyInfoX509Data(signingCert));
+            signedXml.KeyInfo = keyInfo;
+
+            var reference = new Reference { Uri = "" };
+            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
+            reference.AddTransform(new XmlDsigC14NTransform());
+            signedXml.AddReference(reference);
+
+            // Thêm Metadata (SigningTime)
+            var signatureProperty = xmlDoc.CreateElement("SignatureProperty");
+            signatureProperty.SetAttribute("Target", "");
+            var signingTimeElement = xmlDoc.CreateElement("SigningTime");
+            signingTimeElement.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+            signatureProperty.AppendChild(signingTimeElement);
+
+            var signatureProperties = xmlDoc.CreateElement("SignatureProperties");
+            signatureProperties.AppendChild(signatureProperty);
+            var xmlObject = xmlDoc.CreateElement("Object");
+            xmlObject.AppendChild(signatureProperties);
+            signedXml.AddObject(new DataObject { Data = xmlObject.ChildNodes });
+
+            // Compute Signature
+            signedXml.ComputeSignature();
+
+            byte[] signatureBytes = signedXml.Signature.SignatureValue;
+            string signatureBase64 = Convert.ToBase64String(signatureBytes);
+            var signatureElement = signedXml.GetXml();
+            var tBaoNode = xmlDoc.SelectSingleNode("//*[local-name()='TBao']");
+
+            if (tBaoNode != null)
+            {
+                var dscksNode = xmlDoc.CreateElement("DSCKS");
+                dscksNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
+                tBaoNode.AppendChild(dscksNode);
+            }
+            else
+            {
+                throw new Exception("Không tìm thấy thẻ <TBao> trong XML để chèn chữ ký.");
+            }
+            return new InvoiceSigningResult
+            {
+                SignedXml = xmlDoc.OuterXml,
+                SignatureValue = signatureBase64
+            };
+        }
+        public static int MapApiCodeToStatusId(string apiCode)
+        {
+            return apiCode?.ToUpper() switch
+            {
+                // === Nhóm Logic ===
+                "PENDING" => 1,
+                "RECEIVED" => 2,
+                "REJECTED" => 3,
+                "APPROVED" => 4,
+                "FAILED" => 5,
+                "PROCESSING" => 6,
+                "NOT_FOUND" => 7,
+
+                // === Nhóm TBxx (Tiếp nhận/Lỗi validation) ===
+                "TB01" => 10, // Tiếp nhận hợp lệ
+                "TB02" => 11, // Sai format XML
+                "TB03" => 12, // Sai chữ ký số
+                "TB04" => 13, // Sai MST
+                "TB05" => 14, // Thiếu thông tin
+                "TB06" => 15, // Sai dữ liệu
+                "TB07" => 16, // Trùng hóa đơn
+                "TB08" => 17, // Không được cấp mã
+                "TB09" => 18, // Không tìm thấy HĐ gốc
+                "TB10" => 19, // Hàng hóa sai
+                "TB11" => 20, // PDF lỗi
+                "TB12" => 21, // Lỗi kỹ thuật CQT
+
+                // === Nhóm KQxx (Kết quả xử lý) ===
+                "KQ01" => 30, // Đã cấp mã
+                "KQ02" => 31, // Từ chối cấp mã
+                "KQ03" => 32, // Chưa có KQ
+                "KQ04" => 33, // Không tìm thấy HĐ
+
+                // Mặc định nếu thành công nhưng không rõ mã
+                _ => 2 // RECEIVED (CQT đã tiếp nhận)
+            };
+        }
+        /// <summary>
+        /// Chuyển đổi VAT Rate sang chuỗi XML.
+        /// </summary>
+        /// <param name="vatRate">Giá trị rate</param>
+        /// <param name="appendPercentSymbol">
+        /// TRUE: Gửi "8%" (Giống XML bạn cung cấp).
+        /// FALSE: Gửi "8" (Chuẩn an toàn nhất).
+        /// </param>
+        public static string ToXmlValue(decimal vatRate, bool appendPercentSymbol = false)
+        {
+            string value = vatRate switch
+            {
+                RATE_KHAC => "KHAC",
+                RATE_KCT => "KCT",
+                RATE_KKNT => "KKNT",
+                _ => vatRate.ToString("G29") // G29 để bỏ số 0 thừa (8.00 -> 8)
+            };
+            if (appendPercentSymbol && IsNumericRate(vatRate))
+            {
+                return value + "%";
+            }
+
+            return value;
+        }
+
+        private static bool IsNumericRate(decimal rate)
+        {
+            // Kiểm tra xem có phải là các mã đặc biệt không
+            return rate != RATE_KHAC && rate != RATE_KCT && rate != RATE_KKNT;
         }
     }
 

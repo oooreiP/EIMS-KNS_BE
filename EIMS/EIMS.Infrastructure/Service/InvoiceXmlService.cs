@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using FluentResults;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -14,14 +15,16 @@ namespace EIMS.Infrastructure.Service
     public class InvoiceXmlService : IInvoiceXMLService
     {
         private readonly IFileStorageService _fileStorageService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
 
-        public InvoiceXmlService(IFileStorageService fileStorageService, HttpClient httpClient, IConfiguration config)
+        public InvoiceXmlService(IFileStorageService fileStorageService, HttpClient httpClient, IConfiguration config, IUnitOfWork unitOfWork)
         {
             _fileStorageService = fileStorageService;
             _httpClient = httpClient;
             _config = config;
+            _unitOfWork = unitOfWork;
         }
 
         // Hàm tải XML từ Cloudinary về XmlDocument
@@ -101,6 +104,33 @@ namespace EIMS.Infrastructure.Service
                     root.AppendChild(newMccqtElement);
                 }
             }
+        }
+        public async Task<string> GenerateNextNotificationNumberAsync()
+        {
+            int currentYear = DateTime.Now.Year;
+            string prefix = $"TB/{currentYear}/";
+
+            var lastLog = await _unitOfWork.TaxApiLogRepository.GetAllQueryable()
+                .Where(x => x.SoTBao != null && x.SoTBao.StartsWith(prefix))
+                .OrderByDescending(x => x.TaxLogID) // Hoặc x.Timestamp
+                .Select(x => x.SoTBao)
+                .FirstOrDefaultAsync();
+
+            long nextSequence = 1;
+            if (!string.IsNullOrEmpty(lastLog))
+            {
+                // lastLog dạng "TB/2025/000050"
+                // Cắt bỏ phần prefix "TB/2025/" để lấy "000050"
+                string numberPart = lastLog.Substring(prefix.Length);
+
+                if (long.TryParse(numberPart, out long lastSequence))
+                {
+                    nextSequence = lastSequence + 1;
+                }
+            }
+
+            // 4. Format số mới (PadZero 6 số: 000001)
+            return $"{prefix}{nextSequence:D6}";
         }
         public async Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl)
         {

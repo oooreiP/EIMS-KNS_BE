@@ -10,5 +10,5 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
 {
-    public record SubmitInvoiceToCQTCommand(SubmitInvoiceRequest SubmitInvoiceRequest ) : IRequest<Result<SubmitInvoiceToCQTResult>>;
+    public record SubmitInvoiceToCQTCommand(int invoiceId ) : IRequest<Result<SubmitInvoiceToCQTResult>>;
 }

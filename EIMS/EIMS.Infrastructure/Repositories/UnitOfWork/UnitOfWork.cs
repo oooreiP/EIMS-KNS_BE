@@ -33,6 +33,7 @@ namespace EIMS.Application.Commons.UnitOfWork
 
 
 
+        public IBaseRepository<InvoiceStatus> InvoiceStatusRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
             _db = db;
@@ -46,6 +47,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             TaxMessageCodeRepository = new BaseRepository<TaxMessageCode>(_db);
             TaxApiLogRepository = new BaseRepository<TaxApiLog>(_db);
             TaxApiStatusRepository = new BaseRepository<TaxApiStatus>(_db);
+            InvoiceStatusRepository = new BaseRepository<InvoiceStatus>(_db);
             InvoiceTemplateRepository = new InvoiceTemplateRepository(_db);
             PrefixRepository = new BaseRepository<Prefix>(_db);
             InvoiceTypeRepository = new BaseRepository<InvoiceType>(_db);
@@ -54,7 +56,6 @@ namespace EIMS.Application.Commons.UnitOfWork
             UserRepository = new UserRepository(_db);
             TemplateFrameRepository = new TemplateFrameRepository(_db);
             CompanyRepository = new CompanyRepository(_db);
-            InvoiceStatusRepository = new InvoiceStatusRepository(_db);
         }
         public async Task SaveChanges()
         {
