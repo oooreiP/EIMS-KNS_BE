@@ -32,7 +32,7 @@ namespace EIMS.Infrastructure.Service
             try
             {
                 var email = new MimeMessage();
-                email.Sender = MailboxAddress.Parse(_settings.Email);
+                // email.Sender = MailboxAddress.Parse(_settings.Email);
                 email.To.Add(MailboxAddress.Parse(mailRequest.Email));
                 email.Subject = mailRequest.Subject;
 

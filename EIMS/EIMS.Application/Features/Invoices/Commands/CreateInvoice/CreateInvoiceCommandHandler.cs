@@ -69,8 +69,8 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 long newInvoiceNumber = serial.CurrentInvoiceNumber;
                 await _unitOfWork.SerialRepository.UpdateAsync(serial);
 
-                decimal subtotal = request.Items.Sum(i => i.Amount);
-                decimal vatAmount = request.Items.Sum(i => i.VATAmount);
+                // decimal subtotal = request.Items.Sum(i => i.Amount);
+                // decimal vatAmount = request.Items.Sum(i => i.VATAmount);
                 // var nextInvoiceNumber = await _unitOfWork.InvoicesRepository.GetNextInvoiceNumberAsync(request.TemplateID ?? 1);
                 var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
                 var processedItems = new List<InvoiceItem>();
@@ -89,7 +89,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     }
                     else
                     {
-                        finalAmount = productInfo.BasePrice * itemReq.Quantity;
+                        finalAmount = productInfo.BasePrice * (decimal)itemReq.Quantity;
                     }
                     decimal finalVatAmount;
                     if ((itemReq.VATAmount ?? 0) > 0)
@@ -131,30 +131,30 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     // SalesID = request.SalesID,
                     Notes = request.Notes,
                     CompanyId = request.CompanyID,
-                    SubtotalAmount = request.Amount,
-                    VATAmount = request.TaxAmount,
-                    VATRate = vatRate,
+                    SubtotalAmount = subtotal,
+                    VATAmount = vatAmount,
+                    VATRate = invoiceVatRate,
                     PaymentMethod = request.PaymentMethod,
-                    TotalAmount = request.TotalAmount,
-                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(request.TotalAmount),
+                    TotalAmount = totalAmount,
+                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     InvoiceStatusID = request.InvoiceStatusID,
                     PaymentStatusID = 1,
                     IssuerID = request.SignedBy ?? 1,
                     MinRows = request.MinRows ?? 5,
-                    InvoiceItems = request.Items.Select(i => new InvoiceItem
-                    {
-                        ProductID = i.ProductId,
-                        Quantity = i.Quantity,
-                        Amount = i.Amount,
-                        VATAmount = i.VATAmount
-                    }).ToList()
-                    SubtotalAmount = subtotal,
-                    VATAmount = vatAmount,
-                    VATRate = invoiceVatRate,
-                    TotalAmount = totalAmount,
-                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
-                    InvoiceStatusID = 1,
-                    IssuerID = request.SignedBy,
+                    // InvoiceItems = request.Items.Select(i => new InvoiceItem
+                    // {
+                    //     ProductID = i.ProductId,
+                    //     Quantity = i.Quantity,
+                    //     Amount = i.Amount,
+                    //     VATAmount = i.VATAmount
+                    // }).ToList()
+                    // SubtotalAmount = subtotal,
+                    // VATAmount = vatAmount,
+                    // VATRate = invoiceVatRate,
+                    // TotalAmount = totalAmount,
+                    // TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
+                    // InvoiceStatusID = 1,
+                    // IssuerID = request.SignedBy,
                     InvoiceItems = processedItems
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
@@ -172,7 +172,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 await _unitOfWork.SaveChanges();
 
                 var fullInvoice = await _unitOfWork.InvoicesRepository
-                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
+                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
                 var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
 
                 var serializer = new XmlSerializer(typeof(HDon));
@@ -199,7 +199,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TotalAmount = fullInvoice.TotalAmount,
                     TotalAmountInWords = fullInvoice.TotalAmountInWords,
                     PaymentMethod = fullInvoice.PaymentMethod,
-                    Status = "Draft",
+                    Status = fullInvoice.InvoiceStatus.StatusName,
                     XMLPath = fullInvoice.XMLPath
                 };
                                 await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);

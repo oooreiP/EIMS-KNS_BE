@@ -11,7 +11,7 @@ namespace EIMS.Application.DTOs.Invoices
     {
         [Required]
         public int ProductID { get; set; }
-        public decimal Quantity { get; set; }
+        public double Quantity { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? OverrideVATRate { get; set; }
     }
