@@ -28,7 +28,7 @@ namespace EIMS.Infrastructure.Service
             return await _unitOfWork.ProductRepository.GetByIdAsync(id);
         }
 
-        public async Task<Product?> GetByCodeAsync(string code)
+        public async Task<IEnumerable<Product>> GetByCodeAsync(string code)
         {
             return await _unitOfWork.ProductRepository.GetByCodeAsync(code);
         }

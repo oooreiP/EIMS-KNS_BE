@@ -9,7 +9,7 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface IProductRepository : IBaseRepository<Product>
     {
-        Task<Product?> GetByCodeAsync(string code);
+        Task<IEnumerable<Product>> GetByCodeAsync(string code);
         Task<IEnumerable<Product>> GetByCategoryAsync(int categoryId);
     }
 }
