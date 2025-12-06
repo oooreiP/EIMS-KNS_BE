@@ -55,7 +55,7 @@ namespace EIMS.Application.Features.Files.Commands
                 SellerTaxCode = company.TaxCode,
                 SellerAddress = company.Address,
                 SellerPhone = company.ContactPhone,
-                SellerBankAccount = company.AccountNumber, // Or from Company Table
+                SellerBankAccount = company.AccountNumber,
                 BuyerName = invoice.Customer.CustomerName,
                 BuyerAddress = invoice.Customer?.Address ?? "",
                 BuyerTaxCode = invoice.Customer?.TaxCode ?? "",
