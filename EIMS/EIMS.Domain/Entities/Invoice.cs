@@ -32,7 +32,6 @@ namespace EIMS.Domain.Entities
         [ForeignKey("IssuerID")]
 
         public int? IssuerID { get; set; }
-        public string? MCCQT { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
@@ -66,9 +65,6 @@ namespace EIMS.Domain.Entities
 
         [StringLength(2000)]
         public string? Notes { get; set; }
-        // [ForeignKey("SalesID")]
-        // public int? SalesID { get; set; }
-
         [StringLength(500)]
         public string? FilePath { get; set; }
         [StringLength(500)]
@@ -89,7 +85,7 @@ namespace EIMS.Domain.Entities
         public virtual Company Company { get; set; }
         // [JsonIgnore]
         // [InverseProperty("SalesInvoices")]
-        // public virtual User? Sales { get; set; }
+         //public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }

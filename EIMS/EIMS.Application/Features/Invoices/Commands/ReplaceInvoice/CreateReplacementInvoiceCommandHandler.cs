@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 includeProperties: "InvoiceItems,InvoiceItems.Product"
             );
             if (originalInvoice == null) return Result.Fail("Không tìm thấy hóa đơn gốc.");
-            if (originalInvoice.InvoiceStatusID != 6 && originalInvoice.InvoiceStatusID != 10)
+            if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 10)
                 return Result.Fail("Chỉ được thay thế hóa đơn đã phát hành.");
             var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(originalInvoice.TemplateID);
             if (template == null)
@@ -54,7 +54,6 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 InvoiceStatusID = 1, // Draft
                 CreatedAt = DateTime.UtcNow,
                 InvoiceNumber = nextInvoiceNumber,
-                MCCQT = null,
                 SignDate = null,
                 IssuedDate = null,
                 DigitalSignature = null,
@@ -132,7 +131,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 // Ở đây ta gán -1 để biểu thị "Nhiều thuế suất"
                 newInvoice.VATRate = -1;
             }
-            originalInvoice.InvoiceStatusID = 10;
+            originalInvoice.InvoiceStatusID = 5;
             await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
             await _uow.InvoicesRepository.CreateAsync(newInvoice);
             await _uow.InvoiceHistoryRepository.CreateAsync(new InvoiceHistory
