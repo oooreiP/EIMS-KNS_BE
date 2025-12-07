@@ -28,10 +28,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn.");
-
-            // Kiểm tra trạng thái: Chỉ ký được khi đang ở trạng thái hợp lệ (VD: Valid, Signing_In_Progress)
-            // Không thể ký lại hóa đơn đã ký (Signed) hoặc đã gửi (Sent)
-            if (invoice.InvoiceStatusID != 4 && invoice.InvoiceStatusID != 3 && invoice.InvoiceStatusID != 1)
+            if (invoice.InvoiceStatusID != 1)
                 return Result.Fail($"Hóa đơn đang ở trạng thái {invoice.InvoiceStatusID}, không thể ký.");
 
             if (string.IsNullOrEmpty(invoice.XMLPath))
@@ -63,7 +60,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             var newUrl = await _invoiceXmlService.UploadXmlAsync(signedXmlDoc, newFileName);
             // BƯỚC 6: CẬP NHẬT DB
             invoice.XMLPath = newUrl; // Cập nhật đường dẫn mới
-            invoice.InvoiceStatusID = 5; // Trạng thái: Signed (Đã ký)
+            invoice.InvoiceStatusID = 8; // Trạng thái: Signed (Đã ký)
             invoice.SignDate = DateTime.UtcNow;
             invoice.DigitalSignature = signedXmlContent.SignatureValue;
             invoice.SignDate = DateTime.UtcNow;

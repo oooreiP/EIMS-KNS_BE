@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace EIMS.Infrastructure.Service
 {
-    public class MailerSendService : IEmailService
+    public class MailerSendService : IEmailSenderService
     {
         private readonly HttpClient _httpClient;
         private readonly EmailSettings _settings;

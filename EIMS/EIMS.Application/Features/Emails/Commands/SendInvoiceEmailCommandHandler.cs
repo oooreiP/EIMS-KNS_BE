@@ -30,7 +30,7 @@ namespace EIMS.Application.Features.Emails.Commands
             if (result.IsSuccess)
             {
               var invoice =  await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId);
-              invoice.InvoiceStatusID = 7;
+              invoice.InvoiceStatusID = 9;
               await _uow.InvoicesRepository.UpdateAsync(invoice);
               await _uow.InvoicesRepository.SaveChangesAsync();
             }

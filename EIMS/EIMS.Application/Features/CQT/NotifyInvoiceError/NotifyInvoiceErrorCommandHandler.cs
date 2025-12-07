@@ -146,16 +146,16 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     switch (request.ErrorType)
                     {
                         case 1: // Hủy (Cancel)
-                            invoice.InvoiceStatusID = 9; // Cancelled
+                            invoice.InvoiceStatusID = 3; // Cancelled
                             break;
 
                         case 2: // Điều chỉnh (Adjustment)
-                            invoice.InvoiceStatusID = 11; // Adjustment_In_Progress
+                            invoice.InvoiceStatusID = 10; // Adjustment_In_Progress
                             break;
 
                         case 3: // Thay thế (Replacement)
                             // Đánh dấu hóa đơn gốc là đang bị thay thế
-                            invoice.InvoiceStatusID = 10; // Replacement_In_Progress
+                            invoice.InvoiceStatusID = 11; // Replacement_In_Progress
                             break;
 
                         case 4:
@@ -190,7 +190,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
             switch (errorType)
             {
                 case 1: // Hủy (Cancel)
-                    if (invoice.InvoiceStatusID == 9) // 9 = Cancelled
+                    if (invoice.InvoiceStatusID == 3) // 3 = Cancelled
                     {
                         return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY trước đó. Không thể thực hiện hủy lần nữa.");
                     }
@@ -198,11 +198,11 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     break;
 
                 case 2: // Điều chỉnh (Adjustment)
-                    if (invoice.InvoiceStatusID == 9)
+                    if (invoice.InvoiceStatusID == 3)
                     {
                         return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Hóa đơn hủy không còn giá trị sử dụng nên KHÔNG THỂ ĐIỀU CHỈNH.");
                     }
-                    if (invoice.InvoiceStatusID == 10) // 10 = Replacement_In_Progress
+                    if (invoice.InvoiceStatusID == 11) 
                     {
                         return Result.Fail("Hóa đơn này đang trong quá trình Thay thế. Không nên thực hiện Điều chỉnh.");
                     }
@@ -210,13 +210,17 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     break;
 
                 case 3: // Thay thế (Replacement)
-                    if (invoice.InvoiceStatusID == 9)
+                    if (invoice.InvoiceStatusID == 3)
                     {
                         return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Vui lòng lập hóa đơn mới hoàn toàn thay vì dùng nghiệp vụ Thay thế.");
                     }
-                    if (invoice.InvoiceStatusID == 11)
+                    if (invoice.InvoiceStatusID == 10)
                     {
                         return Result.Fail("Hóa đơn này đang được Điều chỉnh. Không nên thực hiện Thay thế.");
+                    }
+                    if (invoice.InvoiceStatusID == 4 || invoice.InvoiceStatusID == 5)
+                    {
+                        return Result.Fail("Hóa đơn này đã được Điều chỉnh/ Thay thế từ trước. Không nên thực hiện Thay thế.");
                     }
                     break;
 
