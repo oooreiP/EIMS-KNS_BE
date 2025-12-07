@@ -13,13 +13,17 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
         public int InvoiceId { get; set; }
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
-        public string? Name { get; set; }
-        public string? CompanyName { get; set; }
+        public string? CustomerName { get; set; }
+        public string? ContactPerson { get; set; }
+        public string? ContactEmail { get; set; } 
+        public string? ContactPhone { get; set; } 
         public string? Address { get; set; }
+        public string? Notes { get; set; } 
+        public string? PaymentMethod { get; set; } 
         public List<InvoiceItemDto>? Items { get; set; }
-        public decimal Amount { get; set; } // Subtotal
-        public decimal TaxAmount { get; set; } // VAT Amount
-        public decimal TotalAmount { get; set; }
+        public decimal? Amount { get; set; } // Subtotal
+        public decimal? TaxAmount { get; set; } // VAT Amount
+        public decimal? TotalAmount { get; set; }
         public int? MinRows { get; set; }
         public int? SignedBy { get; set; } // User modifying the invoice
 
