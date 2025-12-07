@@ -7,6 +7,7 @@ using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
@@ -35,12 +36,13 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             var invoiceStatus = await _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
             if (invoiceStatus == null)
                 return Result.Fail(new Error ("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
+            if (template == null)
+                return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             string? xmlPath = null;
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                if (request.Items == null || !request.Items.Any())
-                    return Result.Fail("Invoice must contain at least one item.");
                 Customer? customer = null;
                 if (request.CustomerID == null || request.CustomerID == 0)
                 {
@@ -54,11 +56,15 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                         ContactPhone = request.ContactPhone ?? ""
                     };
                     customer = await _unitOfWork.CustomerRepository.CreateCustomerAsync(customer);
+                    await _unitOfWork.SaveChanges();
                 }
-
-                var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
-                if (template == null)
-                    return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+                var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+                var products = await _unitOfWork.ProductRepository.GetAllQueryable()
+                .Where(p => productIds.Contains(p.ProductID))
+                .ToListAsync(cancellationToken); 
+                var productDict = products.ToDictionary(p => p.ProductID);
+                if (products.Count != productIds.Count)
+                    return Result.Fail(new Error("One or more products not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
                 // var user = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
                 // if (user == null)
                 //     return Result.Fail(new Error($"User {request.SalesID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
@@ -68,29 +74,15 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 serial.CurrentInvoiceNumber += 1;
                 long newInvoiceNumber = serial.CurrentInvoiceNumber;
                 await _unitOfWork.SerialRepository.UpdateAsync(serial);
-
-                // decimal subtotal = request.Items.Sum(i => i.Amount);
-                // decimal vatAmount = request.Items.Sum(i => i.VATAmount);
-                // var nextInvoiceNumber = await _unitOfWork.InvoicesRepository.GetNextInvoiceNumberAsync(request.TemplateID ?? 1);
-                var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
                 var processedItems = new List<InvoiceItem>();
                 foreach (var itemReq in request.Items)
                 {
-                    var productInfo = await _unitOfWork.ProductRepository.GetByIdAsync(itemReq.ProductId);
+                    var productInfo = productDict[itemReq.ProductId];
 
-                    if (productInfo == null)
-                    {
-                        throw new Exception($"Không tìm thấy sản phẩm có ID: {itemReq.ProductId}");
-                    }
-                    decimal finalAmount;
-                    if ((itemReq.Amount ?? 0) > 0)
-                    {
-                        finalAmount = itemReq.Amount!.Value;
-                    }
-                    else
-                    {
-                        finalAmount = productInfo.BasePrice * (decimal)itemReq.Quantity;
-                    }
+                    decimal finalAmount = (itemReq.Amount ?? 0) > 0
+                        ? itemReq.Amount!.Value
+                        : productInfo.BasePrice * (decimal)itemReq.Quantity;
+
                     decimal finalVatAmount;
                     if ((itemReq.VATAmount ?? 0) > 0)
                     {
@@ -107,21 +99,17 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                         ProductID = itemReq.ProductId,
                         Quantity = itemReq.Quantity,
                         Amount = finalAmount,
-                        VATAmount = finalVatAmount
+                        VATAmount = finalVatAmount,
+                        UnitPrice = productInfo.BasePrice
                     });
                 }
                 decimal subtotal = processedItems.Sum(i => i.Amount);
                 decimal vatAmount = processedItems.Sum(i => i.VATAmount);
                 decimal totalAmount = subtotal + vatAmount;
-
                 if (request.Amount <= 0) request.Amount = subtotal;
                 if (request.TaxAmount <= 0) request.TaxAmount = vatAmount;
                 if (request.TotalAmount <= 0) request.TotalAmount = request.Amount + request.TaxAmount;
-
-                decimal invoiceVatRate = (subtotal > 0)
-                ? Math.Round((vatAmount / subtotal) * 100, 2)
-                : 0;
-
+                decimal invoiceVatRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
                 var invoice = new Invoice
                 {
                     InvoiceNumber = newInvoiceNumber,
@@ -141,20 +129,6 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentStatusID = 1,
                     IssuerID = request.SignedBy, //?? 1,
                     MinRows = request.MinRows ?? 5,
-                    // InvoiceItems = request.Items.Select(i => new InvoiceItem
-                    // {
-                    //     ProductID = i.ProductId,
-                    //     Quantity = i.Quantity,
-                    //     Amount = i.Amount,
-                    //     VATAmount = i.VATAmount
-                    // }).ToList()
-                    // SubtotalAmount = subtotal,
-                    // VATAmount = vatAmount,
-                    // VATRate = invoiceVatRate,
-                    // TotalAmount = totalAmount,
-                    // TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
-                    // InvoiceStatusID = 1,
-                    // IssuerID = request.SignedBy,
                     InvoiceItems = processedItems
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
@@ -170,7 +144,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();
-
+                await _unitOfWork.CommitAsync();
                 var fullInvoice = await _unitOfWork.InvoicesRepository
                     .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
                 var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
@@ -190,7 +164,6 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 fullInvoice.XMLPath = uploadResult.Value.Url;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _unitOfWork.SaveChanges();
-                await _unitOfWork.CommitAsync();
                 var response = new CreateInvoiceResponse
                 {
                     InvoiceID = fullInvoice.InvoiceID,
