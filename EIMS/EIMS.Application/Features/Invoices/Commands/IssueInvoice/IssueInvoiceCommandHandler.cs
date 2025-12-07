@@ -27,19 +27,16 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             // 1. Lấy thông tin hóa đơn từ DB
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
-
-            // 2. KIỂM TRA ĐIỀU KIỆN TRONG DB (Nhanh và Hiệu quả)
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
             bool hasMccqt = !string.IsNullOrEmpty(invoice.TaxAuthorityCode);
-
             if (!hasSignature)
                 return Result.Fail("Hóa đơn chưa có chữ ký số.");
 
             if (!hasMccqt)
                 return Result.Fail("Hóa đơn chưa được cấp Mã CQT.");
-            if (invoice.InvoiceStatusID != 6) // Nếu chưa phải là Issued
+            if (invoice.InvoiceStatusID != 2) // Nếu chưa phải là Issued
             {
-                invoice.InvoiceStatusID = 6;
+                invoice.InvoiceStatusID = 2;
                 invoice.IssuedDate = DateTime.UtcNow;
                 invoice.IssuerID = request.IssuerId;
                 await _uow.InvoicesRepository.UpdateAsync(invoice);

@@ -12,14 +12,14 @@ using ContentType = MimeKit.ContentType;
 
 namespace EIMS.Infrastructure.Service
 {
-    public class EmailService
+    public class EmailService : IEmailService
     {
-        private readonly EmailSettings _settings;
+        private readonly EmailSMTPSettings _settings;
         private readonly IUnitOfWork _uow;
         private readonly ILogger<EmailService> _logger;
         private readonly HttpClient _httpClient;
 
-        public EmailService(IOptions<EmailSettings> options, ILogger<EmailService> logger, HttpClient httpClient, IUnitOfWork uow)
+        public EmailService(IOptions<EmailSMTPSettings> options, ILogger<EmailService> logger, HttpClient httpClient, IUnitOfWork uow)
         {
             _settings = options.Value;
             _logger = logger;
@@ -32,7 +32,7 @@ namespace EIMS.Infrastructure.Service
             try
             {
                 var email = new MimeMessage();
-                // email.Sender = MailboxAddress.Parse(_settings.Email);
+                email.Sender = MailboxAddress.Parse(_settings.Email);
                 email.To.Add(MailboxAddress.Parse(mailRequest.Email));
                 email.Subject = mailRequest.Subject;
 
@@ -59,11 +59,11 @@ namespace EIMS.Infrastructure.Service
                 }
                 email.Body = builder.ToMessageBody();
 
-        //         using var smtp = new SmtpClient();
-        //         await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
-        //         await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
-        //         await smtp.SendAsync(email);
-        //         await smtp.DisconnectAsync(true);
+                 using var smtp = new SmtpClient();
+                 await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
+                 await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
+                 await smtp.SendAsync(email);
+                await smtp.DisconnectAsync(true);
 
                 _logger.LogInformation(" Invoice email sent successfully to {Recipient}", mailRequest.Email);
                 return Result.Ok();
@@ -163,29 +163,29 @@ namespace EIMS.Infrastructure.Service
                     subjectPrefix = $"{invoice.InvoiceNumber} đã được khởi tạo";
                     messageContent = "Hóa đơn điện tử của quý khách đã được tạo và đang ở trạng thái nháp.";
                     break;
-                case 6: 
+                case 12: 
                     subjectPrefix = "✅ [Thành công]";
-                    messageContent = "Hóa đơn điện tử của quý khách đã được Cơ quan Thuế cấp mã và có giá trị pháp lý.";
+                    messageContent = "Hóa đơn điện tử của quý khách đã được Cơ quan Thuế cấp mã.";
                     break;
 
-                case 9: // Cancelled (Đã hủy)
+                case 3: // Cancelled (Đã hủy)
                     subjectPrefix = "❌ [Đã hủy]";
                     messageContent = "Thông báo: Hóa đơn điện tử này đã bị HỦY bỏ giá trị sử dụng.";
                     break;
 
-                case 10: // Replaced (Bị thay thế)
+                case 5: // Replaced (Bị thay thế)
                     subjectPrefix = "⚠️ [Bị thay thế]";
                     messageContent = "Thông báo: Hóa đơn này đã bị thay thế bởi một hóa đơn mới. Vui lòng không sử dụng hóa đơn này để kê khai thuế.";
                     break;
 
-                case 11: // Adjusted (Đã điều chỉnh)
+                case 4: // Adjusted (Đã điều chỉnh)
                     subjectPrefix = "📝 [Đã điều chỉnh]";
                     messageContent = "Thông báo: Hóa đơn này đã có thông tin điều chỉnh.";
                     break;
 
-                case 7: // Rejected (CQT Từ chối - Nếu muốn báo khách)
-                    subjectPrefix = "🚫 [Bị từ chối]";
-                    messageContent = "Hóa đơn có sai sót và bị cơ quan thuế từ chối. Chúng tôi sẽ sớm liên hệ để xử lý.";
+                case 2: // Rejected (CQT Từ chối - Nếu muốn báo khách)
+                    subjectPrefix = "✅ [Đã phát hành]";
+                    messageContent = "Hóa đơn điện tử của quý khách đã được phát hành và có giá trị pháp lý.";
                     break;
 
                 default:

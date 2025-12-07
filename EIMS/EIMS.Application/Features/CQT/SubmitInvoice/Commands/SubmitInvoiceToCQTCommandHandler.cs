@@ -90,11 +90,11 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             else if (responseLog.TaxApiStatusID == 30) 
             {
                 invoice.TaxAuthorityCode = taxResponse.MCCQT;
-                invoice.InvoiceStatusID = 3; // Ví dụ: Đã cấp mã CQT
+                invoice.InvoiceStatusID = 12; // Ví dụ: Đã cấp mã CQT
             }
             else if (responseLog.TaxApiStatusID == 3) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
-                invoice.InvoiceStatusID = 3; // Ví dụ: Bị từ chối
+                invoice.InvoiceStatusID = 8; // Ví dụ: Bị từ chối
             }
             // ... Thêm các trạng thái InvoiceStatusID khác (PROCESSING, FAILED) nếu cần
 

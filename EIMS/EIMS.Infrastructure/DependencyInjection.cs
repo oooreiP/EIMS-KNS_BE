@@ -29,7 +29,8 @@ namespace EIMS.Infrastructure
             services.AddScoped<IExternalCompanyLookupService, VietQrLookupService>();
             // services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddHttpClient<IEmailService, MailerSendService>();
+            services.AddHttpClient<IEmailService, EmailService>();
+            services.AddHttpClient<IEmailSenderService, MailerSendService>();
             services.AddScoped<ITaxApiClient, MockTaxApiClient>();
             services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
             services.AddScoped<IPdfService, PdfService>();
