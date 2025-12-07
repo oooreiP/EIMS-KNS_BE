@@ -32,7 +32,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 return Result.Fail(new Error("Invoice must has at least one item").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.TemplateID == null || request.TemplateID == 0)
                 return Result.Fail(new Error("Invoice must has a valid template id").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-            var invoiceStatus = _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
+            var invoiceStatus = await _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
             if (invoiceStatus == null)
                 return Result.Fail(new Error ("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             string? xmlPath = null;
@@ -139,7 +139,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     InvoiceStatusID = request.InvoiceStatusID,
                     PaymentStatusID = 1,
-                    IssuerID = request.SignedBy ?? 1,
+                    IssuerID = request.SignedBy, //?? 1,
                     MinRows = request.MinRows ?? 5,
                     // InvoiceItems = request.Items.Select(i => new InvoiceItem
                     // {
@@ -202,7 +202,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     Status = fullInvoice.InvoiceStatus.StatusName,
                     XMLPath = fullInvoice.XMLPath
                 };
-                                await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
+                                // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
                 return Result.Ok(response);
 
             }
