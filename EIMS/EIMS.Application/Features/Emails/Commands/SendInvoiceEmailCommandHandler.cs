@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using System;
@@ -22,17 +23,22 @@ namespace EIMS.Application.Features.Emails.Commands
 
         public async Task<Result> Handle(SendInvoiceEmailCommand request, CancellationToken cancellationToken)
         {
-            var result = await _emailService.SendInvoiceEmailAsync(
-                request.RecipientEmail,
-                request.invoiceId,
-                request.Message
-            );
+            var result = await _emailService.SendInvoiceEmailAsync(request);
             if (result.IsSuccess)
             {
-              var invoice =  await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId);
-              invoice.InvoiceStatusID = 9;
-              await _uow.InvoicesRepository.UpdateAsync(invoice);
-              await _uow.InvoicesRepository.SaveChangesAsync();
+                var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
+                invoice.InvoiceStatusID = 3;
+                await _uow.InvoicesRepository.UpdateAsync(invoice);
+                await _uow.InvoicesRepository.SaveChangesAsync();
+                var history = new InvoiceHistory
+                {
+                    InvoiceID = request.InvoiceId,
+                    ActionType = "Email Sent",
+                    Date = DateTime.UtcNow
+                };
+
+                await _uow.InvoiceHistoryRepository.CreateAsync(history);
+                await _uow.SaveChanges();
             }
             return result;
         }
