@@ -20,17 +20,22 @@ namespace EIMS.API.Controllers
         /// <summary>
         /// Gửi email hóa đơn kèm file PDF/XML từ Cloudinary.
         /// </summary>
-        [HttpPost("send-invoice")]
-        [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> SendInvoiceEmail([FromBody] SendInvoiceEmailCommand command)
+        [HttpPost("{invoiceId}/send-email")]
+        public async Task<IActionResult> SendInvoiceEmail(int invoiceId, [FromBody] SendInvoiceEmailCommand command)
         {
+            command.InvoiceId = invoiceId;
             var result = await _mediator.Send(command);
 
             if (result.IsFailed)
-                return BadRequest(result);
+                return BadRequest(new { success = false, message = result.Errors[0].Message });
 
-            return Ok(Result.Ok().WithSuccess("Email gửi thành công."));
+            return Ok(new
+            {
+                success = true,
+                message = "Email đã được gửi thành công",
+                sentTo = command.RecipientEmail ?? "customer-default@email.com",
+                sentAt = DateTime.UtcNow
+            });
         }
     }
 }

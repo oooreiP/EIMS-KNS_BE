@@ -369,6 +369,68 @@ namespace EIMS.Infrastructure.Persistence
             BankName = "Vietcombank - CN Tan Son Nhat" // Example Bank
         }
     );
+            modelBuilder.Entity<EmailTemplate>().HasData(
+        new EmailTemplate
+        {
+            EmailTemplateID = 1,
+            TemplateCode = "INVOICE_SEND",
+            LanguageCode = "vi",
+            Subject = "🔔 [Hóa đơn] #{{InvoiceNumber}} - Thông báo phát hành",
+            Description = "Mẫu gửi hóa đơn mặc định",
+            IsActive = true,
+            BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>
+                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>
+                <p>Chúng tôi xin thông báo hóa đơn điện tử đã được phát hành:</p>
+                <table style='width:100%; margin:15px 0;'>
+                    <tr><td><strong>Số hóa đơn:</strong></td><td>#{{InvoiceNumber}}</td></tr>
+                    <tr><td><strong>Tổng tiền:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
+                </table>
+                <p>📂 <strong>File đính kèm:</strong></p>
+                <ul>{{AttachmentList}}</ul>
+                <p style='color:#777; font-size:12px;'>Trân trọng,<br>EIMS Team</p>
+            </div>"
+        },
+        new EmailTemplate
+        {
+            EmailTemplateID = 2,
+            TemplateCode = "INVOICE_SEND",
+            LanguageCode = "en",
+            Subject = "🧾 [Invoice] #{{InvoiceNumber}} - Issued Notification",
+            Description = "Standard Invoice Email (English)",
+            IsActive = true,
+            BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>
+                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>
+                <p>We are pleased to inform you that your e-invoice has been issued:</p>
+                <table style='width:100%; margin:15px 0;'>
+                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
+                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
+                </table>
+                <p>📂 <strong>Attachments:</strong></p>
+                <ul>{{AttachmentList}}</ul>
+                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
+            </div>"
+        },
+        new EmailTemplate
+        {
+            EmailTemplateID = 3,
+            TemplateCode = "PAYMENT_REMINDER",
+            LanguageCode = "vi",
+            Subject = "🔥 [NHẮC THANH TOÁN] Hóa đơn #{{InvoiceNumber}} quá hạn",
+            Description = "Mẫu nhắc nợ khẩn cấp",
+            IsActive = true,
+            BodyContent = @"<div style='font-family:Arial, sans-serif; border: 2px solid #dc3545; padding: 20px; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color:#dc3545;'>⚠️ Thông báo Nhắc thanh toán</h2>
+                <p>Kính gửi {{CustomerName}},</p>
+                <div style='background:#fff3cd; color:#856404; padding:10px; margin:10px 0;'>
+                    <strong>Lời nhắn:</strong> {{Message}}
+                </div>
+                <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>
+                <ul>{{AttachmentList}}</ul>
+            </div>"
+        }
+    );
             modelBuilder.Entity<TaxMessageCode>().HasData(
     // ---- Đăng ký ----
     new TaxMessageCode { Id = 1, MessageCode = "100", MessageName = "Thông điệp gửi tờ khai đăng ký/thay đổi thông tin sử dụng hóa đơn điện tử", Category = "Đăng ký", FlowType = 1 },

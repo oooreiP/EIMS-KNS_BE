@@ -1,0 +1,66 @@
+﻿using EIMS.Application.Features.Emails.Commands;
+using EIMS.Application.Features.Emails.Queries;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EIMS.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class EmailTemplatesController : ControllerBase
+    {
+        private readonly IMediator _mediator;
+
+        public EmailTemplatesController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
+        // GET: api/email-templates?searchTerm=invoice
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] string? searchTerm)
+        {
+            var result = await _mediator.Send(new GetEmailTemplatesQuery { SearchTerm = searchTerm });
+            return Ok(result.Value);
+        }
+
+        // GET: api/email-templates/5
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _mediator.Send(new GetEmailTemplateByIdQuery { Id = id });
+            if (result.IsFailed) return NotFound(result.Errors);
+            return Ok(result.Value);
+        }
+
+        // POST: api/email-templates
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateEmailTemplateCommand command)
+        {
+            var result = await _mediator.Send(command);
+            if (result.IsFailed) return BadRequest(result.Errors);
+            return Ok(new { id = result.Value, message = "Tạo mẫu email thành công" });
+        }
+
+        // PUT: api/email-templates/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateEmailTemplateCommand command)
+        {
+            if (id != command.EmailTemplateID) return BadRequest("ID không khớp");
+
+            var result = await _mediator.Send(command);
+            if (result.IsFailed) return BadRequest(result.Errors);
+            return Ok(new { message = "Cập nhật thành công" });
+        }
+
+        // DELETE: api/email-templates/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _mediator.Send(new DeleteEmailTemplateCommand { Id = id });
+            if (result.IsFailed) return BadRequest(result.Errors);
+            return Ok(new { message = "Xóa thành công" });
+        }
+    }
+}

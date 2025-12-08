@@ -42,7 +42,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
-            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 6);
+            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             return Result.Ok();
         }
     }
