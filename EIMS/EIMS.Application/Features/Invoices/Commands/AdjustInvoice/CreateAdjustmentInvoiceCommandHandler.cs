@@ -39,7 +39,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // Validate Trạng thái: 
             // Chỉ được điều chỉnh hóa đơn Đã Phát hành (6) hoặc Đang điều chỉnh (11).
             // Tuyệt đối không điều chỉnh hóa đơn Nháp (1), Đã hủy (9), Bị thay thế (10).
-            if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 11)
+            if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 10)
             {
                 return Result.Fail($"Trạng thái hóa đơn gốc (ID: {originalInvoice.InvoiceStatusID}) không hợp lệ để điều chỉnh. Chỉ hỗ trợ hóa đơn Đã phát hành.");
             }

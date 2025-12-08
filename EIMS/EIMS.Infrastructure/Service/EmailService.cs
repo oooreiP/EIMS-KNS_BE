@@ -1,10 +1,13 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
+using EIMS.Application.Features.Emails.Commands;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -74,73 +77,143 @@ namespace EIMS.Infrastructure.Service
                 return Result.Fail(new Error("Failed to send invoice email").CausedBy(ex));
             }
         }
-        public async Task<Result> SendInvoiceEmailAsync(string recipientEmail, int invoiceId, string message)
+
+        public async Task<Result> SendMailAsync(FEMailRequest mailRequest)
         {
-            var invoice = await _uow.InvoicesRepository.GetByIdAsync(invoiceId, includeProperties: "Customer");
-            if (invoice == null) return Result.Fail("Invoice not found");
-
-            // Gán tạm email vào object để hàm core dùng (trường hợp muốn gửi cho email khác email mặc định)
-            if (invoice.Customer != null) invoice.Customer.ContactEmail = recipientEmail;
-
-            return await SendEmailCoreAsync(invoice, "🔔 [Thông báo]", message);
-        }
-        public async Task<Result> SendEmailCoreAsync(Invoice invoice, string subjectPrefix, string message)
-        {
-            if (invoice.Customer == null || string.IsNullOrEmpty(invoice.Customer.ContactEmail))
-                return Result.Fail("Customer email missing");
-            var attachmentUrls = new List<string>();
-            if (!string.IsNullOrEmpty(invoice.FilePath)) attachmentUrls.Add(invoice.FilePath);
-            if (!string.IsNullOrEmpty(invoice.XMLPath)) attachmentUrls.Add(invoice.XMLPath); // Lưu ý tên biến XMLPath hay XmlPath
-            string formattedAmount = invoice.TotalAmount.ToString("N0");
-
-            var emailBody = $@"
-        <div style='font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#333; line-height:1.6; border: 1px solid #ddd; padding: 20px; max-width: 600px; margin: 0 auto;'>
-            <h2 style='color:#007BFF;'>Xin chào {invoice.Customer.CustomerName ?? "Quý khách"},</h2>
-
-            <p style='font-size: 16px;'>{message}</p>
-
-            <div style='background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
-                <table style='width:100%; border-collapse:collapse;'>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Mã hóa đơn:</td>
-                        <td style='padding:5px 0;'>{invoice.InvoiceNumber}</td>
-                    </tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Ngày tạo:</td>
-                        <td style='padding:5px 0;'>{invoice.CreatedAt:dd/MM/yyyy}</td>
-                    </tr>
-                    <tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Ngày lập:</td>
-                        <td style='padding:5px 0;'>{invoice.IssuedDate:dd/MM/yyyy}</td>
-                    </tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Tổng tiền:</td>
-                        <td style='padding:5px 0; color:#D63384; font-weight:bold;'>{formattedAmount} VND</td>
-                    </tr>
-                </table>
-            </div>
-
-            <p>
-                🧾 <strong>File đính kèm:</strong><br/>
-                Bạn có thể tải xuống qua các liên kết bên dưới:
-            </p>
-
-            <ul>
-                {string.Join("", attachmentUrls.Select(u => $"<li><a href='{u}' target='_blank'>Tải xuống {Path.GetFileName(u)}</a></li>"))}
-            </ul>
-
-            <p style='margin-top:20px; font-size: 13px; color: #777;'>
-                Trân trọng,<br/><strong>Đội ngũ E-Invoice System</strong>
-            </p>
-        </div>";
-
-            var mailRequest = new MailRequest
+            try
             {
-                Email = invoice.Customer.ContactEmail,
-                Subject = $"{subjectPrefix} Hóa đơn #{invoice.InvoiceNumber}", // VD: ✅ [Thành công] Hóa đơn #00123
+                var email = new MimeMessage();
+                email.Sender = MailboxAddress.Parse(_settings.Email);
+                email.From.Add(new MailboxAddress(_settings.DisplayName, _settings.Email)); // Thêm tên hiển thị
+                email.To.Add(MailboxAddress.Parse(mailRequest.ToEmail));
+                email.Subject = mailRequest.Subject;
+
+                // Xử lý CC
+                if (mailRequest.CcEmails != null)
+                {
+                    foreach (var cc in mailRequest.CcEmails)
+                        if (!string.IsNullOrWhiteSpace(cc)) email.Cc.Add(MailboxAddress.Parse(cc));
+                }
+
+                // Xử lý BCC
+                if (mailRequest.BccEmails != null)
+                {
+                    foreach (var bcc in mailRequest.BccEmails)
+                        if (!string.IsNullOrWhiteSpace(bcc)) email.Bcc.Add(MailboxAddress.Parse(bcc));
+                }
+
+                var builder = new BodyBuilder { HtmlBody = mailRequest.EmailBody };
+
+                // Xử lý File đính kèm (Download từ URL và Attach vào Email)
+                if (mailRequest.AttachmentUrls != null && mailRequest.AttachmentUrls.Any())
+                {
+                    foreach (var url in mailRequest.AttachmentUrls)
+                    {
+                        try
+                        {
+                            // Kiểm tra URL hợp lệ
+                            if (!Uri.TryCreate(url, UriKind.Absolute, out var uriResult)) continue;
+
+                            var fileName = Path.GetFileName(uriResult.LocalPath);
+                            // Tải file về RAM
+                            var fileBytes = await _httpClient.GetByteArrayAsync(url);
+
+                            // Add vào email
+                            builder.Attachments.Add(fileName, fileBytes);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("Không thể tải file đính kèm: {Url}. Lỗi: {Message}", url, ex.Message);
+                            // Vẫn tiếp tục gửi mail dù lỗi file đính kèm (hoặc return Fail tùy nghiệp vụ)
+                        }
+                    }
+                }
+
+                email.Body = builder.ToMessageBody();
+
+                using var smtp = new SmtpClient();
+                await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
+                await smtp.SendAsync(email);
+                await smtp.DisconnectAsync(true);
+
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi gửi email");
+                return Result.Fail(new Error("Lỗi gửi email SMTP").CausedBy(ex));
+            }
+        }
+        public async Task<Result> SendInvoiceEmailAsync(SendInvoiceEmailCommand request)
+        {
+            // 1. Lấy thông tin hóa đơn
+            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, includeProperties: "Customer");
+            if (invoice == null) return Result.Fail("Invoice not found");
+            EmailTemplate? template = null;
+
+            if (request.EmailTemplateId.HasValue && request.EmailTemplateId.Value > 0)
+            {
+                template = await _uow.EmailTemplateRepository.GetByIdAsync(request.EmailTemplateId.Value);
+
+                if (template == null)
+                    return Result.Fail($"Không tìm thấy mẫu email với ID {request.EmailTemplateId}");
+            }
+            else
+            {
+                string lang = request.Language ?? "vi";
+                // Giả sử bạn có hàm GetSingleAsync hoặc dùng GetQueryable
+                template = await _uow.EmailTemplateRepository.GetAllQueryable()
+                    .FirstOrDefaultAsync(x => x.TemplateCode == "INVOICE_SEND" && x.LanguageCode == lang && x.IsActive);
+
+                if (template == null)
+                    return Result.Fail($"Không tìm thấy mẫu mặc định 'INVOICE_SEND' cho ngôn ngữ '{lang}'");
+            }
+            // Validate active
+            if (!template.IsActive)
+                return Result.Fail("Mẫu email này đang bị khóa (Inactive).");
+            string toEmail = !string.IsNullOrEmpty(request.RecipientEmail)
+                        ? request.RecipientEmail
+                        : invoice.Customer?.ContactEmail;
+            if (string.IsNullOrEmpty(toEmail))
+                return Result.Fail("Không tìm thấy email người nhận.");
+            // 4. Chuẩn bị File đính kèm (Logic cũ)
+            var finalAttachments = new List<string>();
+            if (request.IncludePdf && !string.IsNullOrEmpty(invoice.FilePath)) finalAttachments.Add(invoice.FilePath);
+            if (request.IncludeXml && !string.IsNullOrEmpty(invoice.XMLPath)) finalAttachments.Add(invoice.XMLPath);
+            if (request.ExternalAttachmentUrls != null) finalAttachments.AddRange(request.ExternalAttachmentUrls);
+
+            // 5. Chuẩn bị Dữ liệu để thay thế vào Template (Replacements)
+            // Tạo chuỗi HTML danh sách file đính kèm để nhúng vào Body
+            string displayLang = template.LanguageCode;
+            string fileLinksHtml = string.Join("", finalAttachments.Select(u =>
+                $"<li><a href='{u}' target='_blank'>{(displayLang == "en" ? "Download" : "Tải xuống")} {Path.GetFileName(new Uri(u).LocalPath)}</a></li>"));
+
+            // Dictionary chứa các biến sẽ thay thế
+            var replacements = new Dictionary<string, string>
+        {
+            { "{{CustomerName}}", invoice.Customer?.CustomerName ?? (displayLang == "en" ? "Customer" : "Quý khách") },
+            { "{{Message}}", request.CustomMessage ?? template.Description ?? "" }, // Custom message ưu tiên
+            { "{{InvoiceNumber}}", invoice.InvoiceNumber.ToString() },
+            { "{{IssuedDate}}", invoice.IssuedDate?.ToString("dd/MM/yyyy") ?? "N/A" },
+            { "{{CreatedAt}}", invoice.CreatedAt.ToString("dd/MM/yyyy") },
+            { "{{TotalAmount}}", invoice.TotalAmount.ToString("N0") },
+            { "{{AttachmentList}}", fileLinksHtml }
+        };
+
+            // 6. Xử lý nội dung (Replace placeholders)
+            string emailSubject = ReplacePlaceholders(template.Subject, replacements);
+            string emailBody = ReplacePlaceholders(template.BodyContent, replacements);
+
+            // 7. Tạo Mail Request & Gửi
+            var mailRequest = new FEMailRequest
+            {
+                ToEmail = toEmail,
+                CcEmails = request.CcEmails ?? new List<string>(),
+                BccEmails = request.BccEmails ?? new List<string>(),
+                Subject = emailSubject,
                 EmailBody = emailBody,
-                CloudinaryUrls = attachmentUrls
+                AttachmentUrls = finalAttachments
             };
 
             return await SendMailAsync(mailRequest);
@@ -149,7 +222,7 @@ namespace EIMS.Infrastructure.Service
         {
             // 1. Lấy hóa đơn kèm thông tin khách hàng
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(invoiceId, includeProperties: "Customer");
-
+            string templateCode = "INVOICE_SEND_2";
             if (invoice == null) return Result.Fail("Invoice not found");
             if (invoice.Customer == null || string.IsNullOrEmpty(invoice.Customer.ContactEmail))
                 return Result.Ok(); 
@@ -183,7 +256,7 @@ namespace EIMS.Infrastructure.Service
                     messageContent = "Thông báo: Hóa đơn này đã có thông tin điều chỉnh.";
                     break;
 
-                case 2: // Rejected (CQT Từ chối - Nếu muốn báo khách)
+                case 2: 
                     subjectPrefix = "✅ [Đã phát hành]";
                     messageContent = "Hóa đơn điện tử của quý khách đã được phát hành và có giá trị pháp lý.";
                     break;
@@ -194,9 +267,33 @@ namespace EIMS.Infrastructure.Service
             }
 
             if (!shouldSend) return Result.Ok();
+            var template = await _uow.EmailTemplateRepository.GetAllQueryable()
+                .FirstOrDefaultAsync(x => x.TemplateCode == templateCode && x.LanguageCode == "vi" && x.IsActive);
+            int templateId = template?.EmailTemplateID ?? 1;
+            var command = new SendInvoiceEmailCommand
+            {
+                InvoiceId = invoiceId,
+                EmailTemplateId = templateId, 
+                CustomMessage = messageContent, 
+                RecipientEmail = null, 
+                IncludePdf = true,
+                IncludeXml = true,
+                Language = "vi"
+            };
 
-            // 3. Tái sử dụng hàm gửi email core
-            return await SendEmailCoreAsync(invoice, subjectPrefix, messageContent);
+            // 4. GỌI HÀM CHÍNH
+            return await SendInvoiceEmailAsync(command);
+        }
+        private string ReplacePlaceholders(string templateText, Dictionary<string, string> replacements)
+        {
+            if (string.IsNullOrEmpty(templateText)) return "";
+
+            foreach (var item in replacements)
+            {
+                // Thay thế {{Key}} bằng Value
+                templateText = templateText.Replace(item.Key, item.Value);
+            }
+            return templateText;
         }
     }
 }
