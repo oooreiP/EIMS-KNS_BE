@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 includeProperties: "InvoiceItems,InvoiceItems.Product"
             );
             if (originalInvoice == null) return Result.Fail("Không tìm thấy hóa đơn gốc.");
-            if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 10)
+            if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 11)
                 return Result.Fail("Chỉ được thay thế hóa đơn đã phát hành.");
             var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(originalInvoice.TemplateID);
             if (template == null)
@@ -54,6 +54,8 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 InvoiceStatusID = 1, // Draft
                 CreatedAt = DateTime.UtcNow,
                 InvoiceNumber = nextInvoiceNumber,
+                PaymentStatusID = originalInvoice.PaymentStatusID,
+                PaymentMethod = originalInvoice.PaymentMethod,
                 SignDate = null,
                 IssuedDate = null,
                 DigitalSignature = null,
@@ -101,9 +103,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                             Quantity = oldItem.Quantity,
                             UnitPrice = oldItem.UnitPrice,
                             Amount = oldItem.Amount,
-                            VATAmount = oldItem.VATAmount,
-                            InvoiceID = oldItem.InvoiceID,
-                            InvoiceItemID = oldItem.InvoiceItemID
+                            VATAmount = oldItem.VATAmount
                         };
                         newInvoice.InvoiceItems.Add(newItem);
                         totalSubtotal += oldItem.Amount;
@@ -133,7 +133,9 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             }
             originalInvoice.InvoiceStatusID = 5;
             await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
+            await _uow.SaveChanges();
             await _uow.InvoicesRepository.CreateAsync(newInvoice);
+            await _uow.SaveChanges();
             await _uow.InvoiceHistoryRepository.CreateAsync(new InvoiceHistory
             {
                 InvoiceID = originalInvoice.InvoiceID,
