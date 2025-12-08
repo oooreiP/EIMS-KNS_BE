@@ -6,8 +6,8 @@ using EIMS.Domain.Entities;
 
 namespace EIMS.Application.Commons.Interfaces
 {
-    public interface IInvoicePaymentRepository : IBaseRepository<PaymentStatus>
+    public interface IInvoicePaymentRepository : IBaseRepository<InvoicePayment>
     {
-        
+
     }
 }
