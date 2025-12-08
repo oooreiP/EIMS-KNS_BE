@@ -1,19 +1,14 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using AutoMapper;
 using EIMS.Application.DTOs;
-using EIMS.Application.DTOs.TaxAPIDTO;
-using EIMS.Application.Features.CQT.NotifyInvoiceError;
 using EIMS.Application.Features.Invoices.Commands.AdjustInvoice;
-using EIMS.Application.Features.Invoices.Commands.ChangeInvoiceStatus;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Commands.IssueInvoice;
 using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
 using EIMS.Application.Features.Invoices.Commands.SignInvoice;
 using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
-using EIMS.Application.Features.Invoices.Commands.UpdateStatus;
 using EIMS.Application.Features.Invoices.Queries;
 using EIMS.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -24,6 +19,7 @@ namespace EIMS.API.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
         public InvoiceController(IMediator mediator)
         {
             _mediator = mediator;
@@ -69,25 +65,8 @@ namespace EIMS.API.Controllers
                 return BadRequest("Invalid request body.");
             }
 
-            var command = new UpdateInvoiceCommand
-            {
-                InvoiceId = id,
-                CustomerID = request.CustomerID,
-                TaxCode = request.TaxCode,
-                CustomerName = request.CustomerName,
-                ContactPerson = request.ContactPerson,
-                ContactEmail = request.ContactEmail,
-                ContactPhone = request.ContactPhone,
-                Address = request.Address,
-                Notes = request.Notes,
-                PaymentMethod = request.PaymentMethod,
-                Items = request.Items,
-                Amount = request.Amount,
-                TaxAmount = request.TaxAmount,
-                TotalAmount = request.TotalAmount,
-                MinRows = request.MinRows,
-                SignedBy = request.SignedBy
-            };
+            var command = _mapper.Map<UpdateInvoiceCommand>(request);
+            command.InvoiceId = id;
 
             var result = await _mediator.Send(command);
 

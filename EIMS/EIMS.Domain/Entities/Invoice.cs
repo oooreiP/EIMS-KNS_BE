@@ -85,7 +85,7 @@ namespace EIMS.Domain.Entities
         public virtual Company Company { get; set; }
         // [JsonIgnore]
         // [InverseProperty("SalesInvoices")]
-         //public virtual User? Sales { get; set; }
+        //public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }
@@ -110,5 +110,14 @@ namespace EIMS.Domain.Entities
         public virtual PaymentStatus PaymentStatus { get; set; }
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
+        [InverseProperty("Invoice")]
+        public virtual ICollection<InvoicePayment> Payments { get; set; } = new List<InvoicePayment>();
+
+        // 2. Add the Calculation Logic
+        [NotMapped]
+        public decimal PaidAmount => Payments?.Sum(p => p.AmountPaid) ?? 0;
+
+        [NotMapped]
+        public decimal RemainingAmount => TotalAmount - PaidAmount;
     }
 }
