@@ -51,6 +51,10 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     invoice.CompanyId = 1;
                     invoice.Company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
                 }
+                if (invoice.Payments != null && invoice.Payments.Any())
+                {
+                    return Result.Fail("Cannot update an invoice that already has recorded payments. Delete the payments first.");
+                }
                 invoice.Notes = request.Notes;
                 invoice.PaymentMethod = request.PaymentMethod;
                 // 2. Update Customer Data (Safety Check logic)

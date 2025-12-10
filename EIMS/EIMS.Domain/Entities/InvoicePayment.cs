@@ -31,7 +31,7 @@ namespace EIMS.Domain.Entities
         public string? Note { get; set; } // e.g., "Deposit 30%"
 
         [ForeignKey("CreatedBy")]
-        public int? CreatedBy { get; set; } // User who recorded this payment
+        public int? CreatedBy { get; set; } 
 
         // --- Navigation Properties ---
         [InverseProperty("Payments")]
