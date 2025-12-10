@@ -62,5 +62,8 @@ namespace EIMS.Application.DTOs.Invoices
         public string? XMLPath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public List<InvoiceItemDto> InvoiceItems { get; set; } = new List<InvoiceItemDto>();
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public string PaymentStatus { get; set; }
     }
 }

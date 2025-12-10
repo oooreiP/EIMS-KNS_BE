@@ -16,6 +16,7 @@ using EIMS.Application.Features.InvoiceStatements.Commands;
 using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Customer;
 using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
+using EIMS.Application.DTOs.InvoicePayment;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -46,6 +47,7 @@ namespace EIMS.Application.Common.Mapping
                 .ReverseMap();
             CreateMap<Customer, CustomerDto>();
             CreateMap<UpdateInvoiceRequest, UpdateInvoiceCommand>();
+            CreateMap<InvoicePayment, InvoicePaymentDTO>();
 
         }
 
