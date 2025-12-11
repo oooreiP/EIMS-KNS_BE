@@ -11,6 +11,7 @@ namespace EIMS.Application.DTOs.InvoiceStatement
         public long InvoiceNumber { get; set; }
         public DateTime? SignDate { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal OwedAmount { get; set; }
         public string PaymentStatus { get; set; } // "Unpaid", "Overdue"
     }
 }
