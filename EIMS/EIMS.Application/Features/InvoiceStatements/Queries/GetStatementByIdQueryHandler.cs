@@ -29,6 +29,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                     InvoiceNumber = d.Invoice.InvoiceNumber,
                     SignDate = d.Invoice.SignDate,
                     TotalAmount = d.Invoice.TotalAmount,
+                    OwedAmount = d.OutstandingAmount,
                     PaymentStatus = d.Invoice.PaymentStatusID.ToString()
                 }).ToList()
             };

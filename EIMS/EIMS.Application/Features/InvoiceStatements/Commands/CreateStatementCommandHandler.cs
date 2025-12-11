@@ -6,6 +6,7 @@ using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.InvoiceStatements.Commands
 {
@@ -22,15 +23,27 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
         {
             //find the date boundary
             var statementDate = new DateTime(request.Year, request.Month, 1).AddMonths(1).AddDays(-1);
-            //get unpaid invoices
-            var unpaidInvoices = _uow.InvoicesRepository
+            // 2. Fetch Invoices WITH Payments to calculate real balance
+            var rawInvoices = await _uow.InvoicesRepository
                 .GetAllQueryable()
+                .Include(i => i.Payments) // Required for calculation
                 .Where(i => i.CustomerID == request.CustomerID)
                 .Where(i => i.SignDate <= statementDate)
-                .Where(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2)
+                .Where(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2) // Unpaid or Partial
+                .ToListAsync(cancellationToken);
+            // 3. Calculate Remaining Amount in Memory & Filter
+            var debtItems = rawInvoices
+                .Select(inv => new
+                {
+                    Invoice = inv,
+                    Paid = inv.Payments.Sum(p => p.AmountPaid),
+                    Remaining = inv.TotalAmount - inv.Payments.Sum(p => p.AmountPaid)
+                })
+                .Where(x => x.Remaining > 0) // IMPORTANT: Filter out if fully paid (just in case status was wrong)
                 .ToList();
-            if (!unpaidInvoices.Any())
-                return Result.Fail(new Error($"This customer {request.CustomerID} has no unpaid invoices."));
+
+            if (!debtItems.Any())
+                return Result.Fail(new Error($"Customer {request.CustomerID} has no outstanding debt for this period."));
             //start BeginTransactionAsync
             await using var transaction = await _uow.BeginTransactionAsync();
             try
@@ -42,19 +55,22 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     StatementDate = DateTime.UtcNow,
                     CreatedBy = request.AuthenticatedUserId,
                     StatusID = 1, // Draft
-                    TotalInvoices = unpaidInvoices.Count,
-                    TotalAmount = unpaidInvoices.Sum(i => i.TotalAmount),
-                    Notes = $"Statement for {request.Month}/{request.Year}"
+                    TotalInvoices = debtItems.Count,
+                    TotalAmount = debtItems.Sum(x => x.Remaining), // Sum of DEBT, not invoice totals                    Notes = $"Statement for {request.Month}/{request.Year}"
                 };
-                foreach (var inv in unpaidInvoices)
+                // 5. Create Details with SNAPSHOT
+                foreach (var item in debtItems)
                 {
                     statement.StatementDetails.Add(new InvoiceStatementDetail
                     {
-                        InvoiceID = inv.InvoiceID
+                        InvoiceID = item.Invoice.InvoiceID,
+                        OutstandingAmount = item.Remaining 
                     });
                 }
+
                 await _uow.InvoiceStatementRepository.CreateAsync(statement);
                 await _uow.CommitAsync();
+
                 return Result.Ok(statement.StatementID);
             }
             catch (Exception ex)
