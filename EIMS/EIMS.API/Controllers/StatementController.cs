@@ -54,5 +54,17 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        [HttpGet]
+        public async Task<IActionResult> GetStatements([FromQuery] GetInvoiceStatementsQuery query)
+        {
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
