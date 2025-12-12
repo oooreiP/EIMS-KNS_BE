@@ -37,5 +37,12 @@ namespace EIMS.API.Controllers
                 sentAt = DateTime.UtcNow
             });
         }
+        [HttpPost("{invoiceId}/send-minutes")]
+        public async Task<IActionResult> SendMinutes(int invoiceId, [FromBody] SendInvoiceMinutesCommand command)
+        {
+            command.InvoiceId = invoiceId;
+            var result = await _mediator.Send(command);
+            return result.IsSuccess ? Ok(Result.Ok("Đã gửi biên bản thành công.")) : BadRequest(result);
+        }
     }
 }
