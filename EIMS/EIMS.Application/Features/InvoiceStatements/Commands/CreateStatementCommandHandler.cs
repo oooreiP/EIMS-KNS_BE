@@ -28,7 +28,9 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 .GetAllQueryable()
                 .Include(i => i.Payments) // Required for calculation
                 .Where(i => i.CustomerID == request.CustomerID)
-                .Where(i => i.SignDate <= statementDate)
+                // .Where(i => i.SignDate <= statementDate)
+                .Where(i => (i.SignDate ?? i.CreatedAt) <= statementDate)
+                .Where(i => i.InvoiceStatusID != 1)
                 .Where(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2) // Unpaid or Partial
                 .ToListAsync(cancellationToken);
             // 3. Calculate Remaining Amount in Memory & Filter
