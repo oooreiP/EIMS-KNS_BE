@@ -16,6 +16,12 @@
      <None Update="template.html">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
+     <None Update="Templates\BienBan_DieuChinh.docx">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
+     <None Update="Templates\BienBan_ThayThe.docx">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
   </ItemGroup>
 
   <ItemGroup>
