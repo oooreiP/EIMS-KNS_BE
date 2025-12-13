@@ -9,5 +9,6 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IInvoiceStatementRepository : IBaseRepository<InvoiceStatement>
     {
         Task<InvoiceStatement?> GetByIdWithInvoicesAsync(int id);
+        Task<List<InvoiceStatement>> GetStatementsContainingInvoiceAsync(int invoiceId);
     }
 }

@@ -26,12 +26,11 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             // 2. Fetch Invoices WITH Payments to calculate real balance
             var rawInvoices = await _uow.InvoicesRepository
                 .GetAllQueryable()
-                .Include(i => i.Payments) // Required for calculation
+                .Include(i => i.Payments)
                 .Where(i => i.CustomerID == request.CustomerID)
-                // .Where(i => i.SignDate <= statementDate)
                 .Where(i => (i.SignDate ?? i.CreatedAt) <= statementDate)
                 .Where(i => i.InvoiceStatusID != 1)
-                .Where(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2) // Unpaid or Partial
+                // Removed the PaymentStatusID filter here to handle the logic in memory below for safety
                 .ToListAsync(cancellationToken);
             // 3. Calculate Remaining Amount in Memory & Filter
             var debtItems = rawInvoices
@@ -46,7 +45,9 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
             if (!debtItems.Any())
                 return Result.Fail(new Error($"Customer {request.CustomerID} has no outstanding debt for this period."));
-            //start BeginTransactionAsync
+            decimal totalOriginalAmount = debtItems.Sum(x => x.Invoice.TotalAmount);
+            decimal totalPaidSoFar = debtItems.Sum(x => x.Paid);
+
             await using var transaction = await _uow.BeginTransactionAsync();
             try
             {
@@ -55,18 +56,36 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     CustomerID = request.CustomerID,
                     StatementCode = $"ST-{request.CustomerID}-{request.Month:D2}{request.Year}",
                     StatementDate = DateTime.UtcNow,
+
+                    // ADD THIS: Set a Due Date (e.g., 14 days from now) 
+                    // Essential for the "IsOverdue" logic we added earlier
+                    DueDate = DateTime.UtcNow.AddDays(14),
+
                     CreatedBy = request.AuthenticatedUserId,
-                    StatusID = 1, // Draft
                     TotalInvoices = debtItems.Count,
-                    TotalAmount = debtItems.Sum(x => x.Remaining), // Sum of DEBT, not invoice totals                    Notes = $"Statement for {request.Month}/{request.Year}"
+                    Notes = $"Statement for {request.Month}/{request.Year}",
+
+                    // --- UPDATED FINANCIALS ---
+                    TotalAmount = totalOriginalAmount,
+                    PaidAmount = totalPaidSoFar,
+
+                    // --- UPDATED STATUS LOGIC ---
+                    // 5 = Paid (Shouldn't happen here due to filter, but good safety)
+                    // 4 = Partially Paid (If they have paid ANYTHING so far)
+                    // 1 = Draft (Default)
+                    StatusID = (totalPaidSoFar >= totalOriginalAmount) ? 5 :
+                               (totalPaidSoFar > 0) ? 4 :
+                               1
                 };
-                // 5. Create Details with SNAPSHOT
+
+                // 5. Create Details
                 foreach (var item in debtItems)
                 {
                     statement.StatementDetails.Add(new InvoiceStatementDetail
                     {
                         InvoiceID = item.Invoice.InvoiceID,
-                        OutstandingAmount = item.Remaining 
+                        // You can save the snapshot of what was owed specifically at this moment
+                        OutstandingAmount = item.Remaining
                     });
                 }
 
