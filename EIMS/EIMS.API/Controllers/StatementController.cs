@@ -67,15 +67,13 @@ namespace EIMS.API.Controllers
             return Ok(result.Value);
         }
         [HttpPost("generate-batch")]
-        public async Task<IActionResult> GenerateBatchStatements([FromBody] GenerateStatementRequest request)
+        public async Task<IActionResult> GenerateBatchStatements([FromBody] GenerateAllStatementsRequest request)
         {
-            // Note: We use the same Request DTO (Year/Month), but map it to the NEW Command
+            // Now using the specific DTO without CustomerID
             var command = new GenerateAllStatementsCommand
             {
                 Month = request.Month,
                 Year = request.Year
-                // User ID is filled by your UserIdPopulationBehavior automatically? 
-                // If not, ensure you set it here or in the behavior.
             };
 
             var result = await _sender.Send(command);
