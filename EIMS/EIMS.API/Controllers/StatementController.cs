@@ -66,5 +66,30 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpPost("generate-batch")]
+        public async Task<IActionResult> GenerateBatchStatements([FromBody] GenerateStatementRequest request)
+        {
+            // Note: We use the same Request DTO (Year/Month), but map it to the NEW Command
+            var command = new GenerateAllStatementsCommand
+            {
+                Month = request.Month,
+                Year = request.Year
+                // User ID is filled by your UserIdPopulationBehavior automatically? 
+                // If not, ensure you set it here or in the behavior.
+            };
+
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Batch Generation Failed",
+                    Detail = result.Errors.FirstOrDefault()?.Message
+                });
+            }
+            return Ok(result.Value);
+        }
     }
 }
