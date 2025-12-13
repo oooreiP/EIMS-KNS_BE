@@ -47,9 +47,9 @@ namespace EIMS.API.Controllers
             return Ok(result.Value);
         }
         [HttpGet]
-        public async Task<IActionResult> GetPayments()
+        public async Task<IActionResult> GetPayments([FromQuery] GetInvoicePayments query)
         {
-            var result = await _mediator.Send(new GetInvoicePayments());
+            var result = await _mediator.Send(query);
             var firstError = result.Errors.FirstOrDefault();
             if (result.IsFailed)
                 return BadRequest(new ProblemDetails

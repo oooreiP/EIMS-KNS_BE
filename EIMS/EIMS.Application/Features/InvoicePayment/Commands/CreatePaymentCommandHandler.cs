@@ -2,20 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.InvoicePayment;
 using FluentResults;
 using MediatR;
 
 namespace EIMS.Application.Features.InvoicePayment.Commands
 {
-    public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, Result<int>>
+    public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, Result<InvoicePaymentDTO>>
     {
         private readonly IUnitOfWork _uow;
-        public CreatePaymentCommandHandler(IUnitOfWork uow)
+        private readonly IMapper _mapper;
+        public CreatePaymentCommandHandler(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
+            _mapper = mapper;
         }
-        public async Task<Result<int>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<InvoicePaymentDTO>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
         {
             await using var transaction = await _uow.BeginTransactionAsync();
             try
@@ -55,10 +59,34 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                     invoice.PaymentStatusID = 2;
                 }
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
+                var relatedStatements = await _uow.InvoiceStatementRepository
+            .GetStatementsContainingInvoiceAsync(request.InvoiceId);
+
+                foreach (var stmt in relatedStatements)
+                {
+                    // A. Update the Paid Amount on the statement
+                    stmt.PaidAmount += request.Amount;
+
+                    // B. Recalculate Statement Status
+                    // 5 = Paid, 4 = Partially Paid, 3 = Sent
+                    if (stmt.PaidAmount >= stmt.TotalAmount)
+                    {
+                        stmt.StatusID = 5; // Fully Paid
+                    }
+                    else if (stmt.PaidAmount > 0)
+                    {
+                        // Only switch to "Partially Paid" if it's currently "Sent" or "Draft"
+                        // If it was already "Partially Paid", this keeps it there.
+                        stmt.StatusID = 4;
+                    }
+
+                    // C. Update the Statement in DB
+                    await _uow.InvoiceStatementRepository.UpdateAsync(stmt);
+                }   
                 // 5. Commit
                 await _uow.SaveChanges();
                 await _uow.CommitAsync();
-                return Result.Ok(payment.PaymentID);
+                return Result.Ok(_mapper.Map<InvoicePaymentDTO>(payment));
             }
             catch (Exception ex)
             {

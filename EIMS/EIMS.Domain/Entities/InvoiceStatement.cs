@@ -12,18 +12,30 @@ namespace EIMS.Domain.Entities
         [Key]
         public int StatementID { get; set; }
         public string? StatementCode { get; set; }
-        public DateTime? StatementDate { get; set; }
+        public DateTime StatementDate { get; set; } = DateTime.Now;
+        public DateTime DueDate { get; set; }
         [ForeignKey("CreatedBy")]
         public int CreatedBy { get; set; }
         [ForeignKey("CustomerID")]
-        public int? CustomerID { get; set; }
+        public int CustomerID { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal PaidAmount { get; set; } = 0;
         public int? TotalInvoices { get; set; }
         [Column(TypeName = "decimal(18, 2)")] // Assuming precision
-        public decimal? TotalAmount { get; set; }
-        public int StatusID { get; set; }
+        public decimal TotalAmount { get; set; } = 0;
+
         [ForeignKey("StatusID")]
+        public int StatusID { get; set; }
 
         public string? Notes { get; set; }
+        [NotMapped]
+        public bool IsOverdue =>
+                    (StatusID == 3 || StatusID == 4) && // If Sent or Partially Paid
+                    DateTime.Now > DueDate;
+
+        // Helper to quickly see what is left to pay
+        [NotMapped]
+        public decimal BalanceDue => TotalAmount - PaidAmount;
         //navigations
         [InverseProperty("Statements")]
         public virtual Customer? Customer { get; set; }

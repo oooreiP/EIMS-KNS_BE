@@ -70,7 +70,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 StatementID = s.StatementID,
                 StatementCode = s.StatementCode,
                 CustomerName = s.Customer != null ? s.Customer.CustomerName : "Unknown",
-                StatementDate = s.StatementDate ?? DateTime.MinValue,
+                StatementDate = s.StatementDate ,
                 TotalAmount = s.TotalAmount,
                 TotalInvoices = s.TotalInvoices ?? 0,
                 Status = s.StatementStatus != null ? s.StatementStatus.StatusName : "Unknown"
