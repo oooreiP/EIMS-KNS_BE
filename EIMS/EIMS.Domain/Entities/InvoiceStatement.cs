@@ -14,9 +14,9 @@ namespace EIMS.Domain.Entities
         public string? StatementCode { get; set; }
         public DateTime StatementDate { get; set; } = DateTime.Now;
         public DateTime DueDate { get; set; }
-        [ForeignKey("CreatedBy")]
+        // [ForeignKey("CreatedBy")]
         public int CreatedBy { get; set; }
-        [ForeignKey("CustomerID")]
+        // [ForeignKey("CustomerID")]
         public int CustomerID { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
         public decimal PaidAmount { get; set; } = 0;
@@ -24,7 +24,6 @@ namespace EIMS.Domain.Entities
         [Column(TypeName = "decimal(18, 2)")] // Assuming precision
         public decimal TotalAmount { get; set; } = 0;
 
-        [ForeignKey("StatusID")]
         public int StatusID { get; set; }
 
         public string? Notes { get; set; }
@@ -37,10 +36,13 @@ namespace EIMS.Domain.Entities
         [NotMapped]
         public decimal BalanceDue => TotalAmount - PaidAmount;
         //navigations
+        [ForeignKey("CustomerID")]
         [InverseProperty("Statements")]
         public virtual Customer? Customer { get; set; }
+        [ForeignKey("CustomerID")]
         [InverseProperty("CreatedStatements")]
         public virtual User Creator { get; set; }
+        [ForeignKey("StatusID")]
         [InverseProperty("InvoiceStatements")]
         public virtual StatementStatus StatementStatus { get; set; }
         [InverseProperty("Statement")]

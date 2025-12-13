@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -10,27 +12,46 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.InvoiceStatements.Commands
 {
-    public class CreateStatementCommandHandler : IRequestHandler<CreateStatementCommand, Result<int>>
+    public class CreateStatementCommandHandler : IRequestHandler<CreateStatementCommand, Result<StatementDetailResponse>>
     {
         private readonly IUnitOfWork _uow;
+        private readonly IMapper _mapper;
 
-        public CreateStatementCommandHandler(IUnitOfWork uow)
+        public CreateStatementCommandHandler(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
+            _mapper = mapper;
         }
 
-        public async Task<Result<int>> Handle(CreateStatementCommand request, CancellationToken cancellationToken)
+        public async Task<Result<StatementDetailResponse>> Handle(CreateStatementCommand request, CancellationToken cancellationToken)
         {
+            string statementCode = $"ST-{request.CustomerID}-{request.Month:D2}{request.Year}";
+
+            // 1. CHECK FOR DUPLICATES
+            // 1. CHECK FOR DUPLICATES
+            var existingStatement = await _uow.InvoiceStatementRepository
+                .GetAllQueryable()
+                .Include(s => s.Customer)
+                .Include(s => s.StatementDetails)
+                    .ThenInclude(sd => sd.Invoice)
+                .Include(s => s.StatementStatus)
+                .FirstOrDefaultAsync(s => s.StatementCode == statementCode, cancellationToken);
+            if (existingStatement != null)
+            {
+                // If it already exists, just return its ID. 
+                var responseDto = _mapper.Map<StatementDetailResponse>(existingStatement);
+                return Result.Ok(responseDto);
+            }
             //find the date boundary
-            var statementDate = new DateTime(request.Year, request.Month, 1).AddMonths(1).AddDays(-1);
-            // 2. Fetch Invoices WITH Payments to calculate real balance
+            var startOfMonth = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var statementDate = startOfMonth.AddMonths(1).AddDays(-1);            // 2. Fetch Invoices WITH Payments to calculate real balance
             var rawInvoices = await _uow.InvoicesRepository
                 .GetAllQueryable()
                 .Include(i => i.Payments)
+                .Include(i => i.Customer)
                 .Where(i => i.CustomerID == request.CustomerID)
                 .Where(i => (i.SignDate ?? i.CreatedAt) <= statementDate)
                 .Where(i => i.InvoiceStatusID != 1)
-                // Removed the PaymentStatusID filter here to handle the logic in memory below for safety
                 .ToListAsync(cancellationToken);
             // 3. Calculate Remaining Amount in Memory & Filter
             var debtItems = rawInvoices
@@ -84,15 +105,24 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     statement.StatementDetails.Add(new InvoiceStatementDetail
                     {
                         InvoiceID = item.Invoice.InvoiceID,
-                        // You can save the snapshot of what was owed specifically at this moment
-                        OutstandingAmount = item.Remaining
+                        //save the snapshot of what was owed specifically at this moment
+                        OutstandingAmount = item.Remaining,
+                        Invoice = item.Invoice
                     });
                 }
 
                 await _uow.InvoiceStatementRepository.CreateAsync(statement);
+                await _uow.SaveChanges();
                 await _uow.CommitAsync();
 
-                return Result.Ok(statement.StatementID);
+                // EF Core won't automatically load the 'Customer' navigation property on the new entity.
+                // We manually assign it from the loaded invoices so the Mapper can map 'CustomerName'.
+                statement.Customer = rawInvoices.FirstOrDefault()?.Customer;
+
+                // Your MappingProfile handles StatusID fallback logic, so we don't need to load StatementStatus entity.
+                var response = _mapper.Map<StatementDetailResponse>(statement);
+
+                return Result.Ok(response);
             }
             catch (Exception ex)
             {
