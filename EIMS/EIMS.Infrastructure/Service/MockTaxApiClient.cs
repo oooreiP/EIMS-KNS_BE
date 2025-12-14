@@ -16,7 +16,7 @@ namespace EIMS.Infrastructure.Service
         public Task<TaxApiResponse> SendTaxMessageAsync(string xmlPayload, string? referenceId)
         {
             bool isInvoiceSubmission = xmlPayload.Contains("<MLTDiep>200</MLTDiep>") || xmlPayload.Contains("<MLTDiep>201</MLTDiep>");
-            bool isErrorNotification = xmlPayload.Contains("<MLTDiep>300</MLTDiep>"); // TB04
+            bool isErrorNotification = xmlPayload.Contains("<MLTDiep>300</MLTDiep>");
             if (isInvoiceSubmission)
             {
                 return GenerateResponse202(xmlPayload, referenceId);
@@ -31,6 +31,9 @@ namespace EIMS.Infrastructure.Service
         }
         private Task<TaxApiResponse> GenerateResponse301(string xmlPayload, string? referenceId)
         {
+            int currentYear = DateTime.Now.Year;
+            string prefix = $"TB/{currentYear}/";
+            var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
 
             try
             {
@@ -58,7 +61,7 @@ namespace EIMS.Infrastructure.Service
                     MLTDiep = "301",
                     MTDiep = mtDiepPhanHoi,
                     MTDThamChieu = responseObj.TTChung.MaThongDiep,
-                    SoTBao = "TB01",
+                    SoTBao = soThongBao,
                     RawResponse = responseXml
                 });
             }
@@ -87,7 +90,9 @@ namespace EIMS.Infrastructure.Service
         }
         private Task<TaxApiResponse> GenerateResponse202(string xmlPayload, string? referenceId)
         {
-            var soThongBao = $"2025/{new Random().Next(100000000, 999999999)}";
+            int currentYear = DateTime.Now.Year;
+            string prefix = $"TB/{currentYear}/";
+            var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
             var error = XmlHelpers.Validate(xmlPayload);
             if (error.Any())
             {

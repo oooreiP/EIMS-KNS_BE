@@ -15,12 +15,12 @@ namespace EIMS.Application.Commons.Mapping
     public class InvoiceXmlMapper
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IInvoiceXMLService _invoiceXMLService;
 
         public InvoiceXmlMapper(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
-
         public static HDon MapInvoiceToXmlModel(Invoice invoice)
         {
             if (invoice == null)

@@ -36,7 +36,27 @@ namespace EIMS.Infrastructure.Service
             xmlDoc.LoadXml(xmlContent);
             return xmlDoc;
         }
+        public async Task<string> DownloadStringAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
 
+            // TRƯỜNG HỢP 1: File nằm trên Cloud (Cloudinary, Azure, AWS...)
+            if (path.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                // Tải nội dung text từ URL
+                return await _httpClient.GetStringAsync(path);
+            }
+
+            // TRƯỜNG HỢP 2: File nằm trên ổ cứng Server (Local Disk)
+            if (System.IO.File.Exists(path))
+            {
+                // Đọc trực tiếp từ ổ cứng
+                return await System.IO.File.ReadAllTextAsync(path);
+            }
+
+            throw new FileNotFoundException($"Không tìm thấy file XML tại đường dẫn: {path}");
+        }
         // Hàm lưu XmlDocument lên Cloudinary và trả về URL mới
         public async Task<string> UploadXmlAsync(XmlDocument xmlDoc, string fileName)
         {
