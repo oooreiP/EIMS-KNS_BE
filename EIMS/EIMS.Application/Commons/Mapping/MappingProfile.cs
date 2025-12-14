@@ -29,8 +29,15 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<LoginRequest, LoginCommand>();
             CreateMap<LoginResponse, AuthResponse>();
             CreateMap<RefreshTokenResponse, AuthResponse>();
-            CreateMap<Invoice, InvoiceDTO>().ReverseMap();
-            CreateMap<CreateSerialCommand, Serial>();
+            CreateMap<Invoice, InvoiceDTO>()
+                        // Map the PaymentStatus name from the navigation property
+                        .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src =>
+                            src.PaymentStatus != null ? src.PaymentStatus.StatusName : "Unknown"))
+                        // Ensure PaidAmount is calculated from the Payments collection (which we now include)
+                        .ForMember(dest => dest.PaidAmount, opt => opt.MapFrom(src => src.PaidAmount))
+                        // Ensure RemainingAmount is calculated
+                        .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.RemainingAmount))
+                        .ReverseMap(); CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
             CreateMap<CreateTemplateRequest, CreateTemplateCommand>();
             CreateMap<CreateTemplateCommand, InvoiceTemplate>();

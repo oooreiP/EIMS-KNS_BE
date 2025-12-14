@@ -126,5 +126,44 @@ namespace EIMS.API.Controllers
 
             return Ok(new { message = "Customer deactivated successfully." });
         }
+        [HttpGet("debt-summary")]
+        public async Task<IActionResult> GetCustomerDebtSummary(
+                                            [FromQuery] int pageNumber = 1,
+                                            [FromQuery] int pageSize = 10,
+                                            [FromQuery] string? search = null,
+                                            [FromQuery] string? sortBy = null,
+                                            [FromQuery] string sortOrder = "desc",
+                                            [FromQuery] bool hasOverdue = false)
+        {
+            var query = new GetCustomerDebtSummaryQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                SearchTerm = search,
+                SortBy = sortBy,
+                SortOrder = sortOrder,
+                HasOverdue = hasOverdue
+            };
+
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed) return BadRequest(result.Errors);
+
+            return Ok(result.Value);
+        }
+        [HttpGet("{id}/debt-detail")]
+        // [Authorize(Roles = "Admin,Accountant")]
+        public async Task<IActionResult> GetCustomerDebtDetail(int id)
+        {
+            var query = new GetCustomerDebtDetailQuery(id);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return NotFound(result.Errors);
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
