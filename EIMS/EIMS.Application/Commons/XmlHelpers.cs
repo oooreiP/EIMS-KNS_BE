@@ -10,6 +10,7 @@ using System.Xml.Schema;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using EIMS.Application.DTOs;
+using System.Security.Cryptography;
 
 namespace EIMS.Application.Commons
 {
@@ -169,14 +170,9 @@ namespace EIMS.Application.Commons
         /// </summary>
         public static string GenerateMTDiep(string prefix, string? idPart = null)
         {
-            // UUID V4 32 ký tự in hoa, không dấu '-'
             string uuidPart = Guid.NewGuid().ToString("N").ToUpper();
-            string idString = idPart ?? ""; // Nếu không có ID Part, dùng chuỗi rỗng
-
-            // Ghép: Tiền tố + ID Part + UUID (đảm bảo độ dài tối đa 46)
+            string idString = idPart ?? ""; 
             string mtDiep = prefix + idString + uuidPart;
-
-            // Cắt chuỗi để đảm bảo đúng 46 ký tự (hoặc ít hơn nếu không đủ)
             return mtDiep.Length > MtDiepLength ? mtDiep.Substring(0, MtDiepLength) : mtDiep;
         }
         public static InvoiceSigningResult SignInvoiceXml(string rawInvoiceXml, X509Certificate2 signingCert)
@@ -260,6 +256,122 @@ namespace EIMS.Application.Commons
             };
         }
         /// <summary>
+        /// Ký số bằng USB
+        /// </summary>
+        public static XmlDocument EmbedSignatureToXml(XmlDocument xmlDoc, string signatureBase64, string certificateBase64)
+        {
+            // 1. TÌM HOẶC TẠO THẺ BAO (Khác code của bạn một chút để an toàn hơn)
+            XmlElement dscksNode = (XmlElement)xmlDoc.GetElementsByTagName("DSCKS")[0];
+            if (dscksNode == null)
+            {
+                dscksNode = xmlDoc.CreateElement("DSCKS");
+                xmlDoc.DocumentElement.AppendChild(dscksNode);
+            }
+
+            XmlElement nbanNode = (XmlElement)dscksNode.GetElementsByTagName("NBan")[0];
+            if (nbanNode == null)
+            {
+                nbanNode = xmlDoc.CreateElement("NBan");
+                dscksNode.AppendChild(nbanNode);
+            }
+            else
+            {
+                nbanNode.RemoveAll();
+            }
+
+            // 2. KHỞI TẠO SIGNED XML
+            var signedXml = new SignedXml(xmlDoc);
+            // --- ID ---
+            string signatureId = "NBan";
+            signedXml.Signature.Id = signatureId;
+
+            // --- KEY INFO ---
+            var keyInfo = new KeyInfo();
+            var cert = new X509Certificate2(Convert.FromBase64String(certificateBase64));
+            var keyInfoData = new KeyInfoX509Data(cert);
+            keyInfoData.AddSubjectName(cert.SubjectName.Name); // Giống code bạn
+            keyInfo.AddClause(keyInfoData);
+            signedXml.KeyInfo = keyInfo;
+
+            // --- REFERENCE ---
+            var reference = new Reference { Uri = "" };
+            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
+            reference.AddTransform(new XmlDsigC14NTransform()); // Giống code bạn
+            signedXml.AddReference(reference);
+
+            // --- OBJECT (SigningTime) ---
+            // Sửa lại đoạn này để giống code bạn nhưng xử lý Namespace chuẩn
+            var signingTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+
+            // Tạo Object
+            var dataObject = new DataObject();
+            var signatureProperty = xmlDoc.CreateElement("SignatureProperty", SignedXml.XmlDsigNamespaceUrl);
+            signatureProperty.SetAttribute("Target", "#" + signatureId);
+
+            var signingTimeElement = xmlDoc.CreateElement("SigningTime", SignedXml.XmlDsigNamespaceUrl);
+            signingTimeElement.InnerText = signingTime;
+            signatureProperty.AppendChild(signingTimeElement);
+
+            var signatureProperties = xmlDoc.CreateElement("SignatureProperties", SignedXml.XmlDsigNamespaceUrl);
+            signatureProperties.AppendChild(signatureProperty);
+
+            // Gán vào DataObject
+            dataObject.Data = signatureProperties.SelectNodes(".");
+            signedXml.AddObject(dataObject);
+
+            // 3. TÍNH TOÁN CẤU TRÚC (Dùng Key giả để tạo khung)
+            using (RSA rsa = RSA.Create())
+            {
+                signedXml.SigningKey = rsa;
+                signedXml.SignedInfo.SignatureMethod = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+                signedXml.ComputeSignature();
+            }
+
+            // 4. LẤY XML VÀ GHI ĐÈ CHỮ KÝ THẬT
+            XmlElement signatureElement = signedXml.GetXml();
+
+            // Tìm thẻ SignatureValue và ghi đè giá trị từ USB Token
+            var signatureValueNode = signatureElement.GetElementsByTagName("SignatureValue")[0];
+            signatureValueNode.InnerText = signatureBase64;
+
+            // 5. CHÈN VÀO NBAN (Đã tìm thấy hoặc tạo ở bước 1)
+            nbanNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
+
+            return xmlDoc;
+        }
+        /// <summary>
+        /// Kiểm tra tính toàn vẹn của chữ ký số trong file XML
+        /// </summary>
+        public static bool ValidateXmlSignature(XmlDocument xmlDoc)
+        {
+            // QUAN TRỌNG: XmlDocument phải được load với PreserveWhitespace = true trước khi gọi hàm này
+            // Nếu không, hash sẽ bị sai lệch.
+
+            // 1. Tạo đối tượng SignedXml
+            SignedXml signedXml = new SignedXml(xmlDoc);
+
+            // 2. Tìm thẻ <Signature>
+            // Namespace chuẩn của W3C XML Digital Signature
+            var nodeList = xmlDoc.GetElementsByTagName("Signature", "http://www.w3.org/2000/09/xmldsig#");
+
+            // Nếu không tìm thấy chữ ký nào -> False
+            if (nodeList.Count == 0) return false;
+
+            // 3. Duyệt qua các chữ ký (Thường hóa đơn chỉ có 1 hoặc 2 chữ ký)
+            // Trong ngữ cảnh API "CompleteSigning", ta thường chỉ quan tâm chữ ký vừa thêm vào.
+            // Ở đây tôi viết code để validate chữ ký ĐẦU TIÊN tìm thấy (thường là Người bán).
+
+            // Load thẻ Signature vào đối tượng SignedXml
+            signedXml.LoadXml((XmlElement)nodeList[0]);
+
+            // 4. Kiểm tra (Verify)
+            // Hàm CheckSignature() sẽ làm 2 việc:
+            // - Lấy Public Key từ thẻ <KeyInfo> trong XML.
+            // - Tính toán lại Hash của XML và so sánh với Hash trong chữ ký.
+            // - Decrypt chữ ký bằng Public Key xem có khớp không.
+            return signedXml.CheckSignature();
+        }
+        /// <summary>
         /// Ký số cho Thông báo sai sót (Mẫu 04/SS-HĐĐT)
         /// Cấu trúc: TDiep -> DLieu -> TBao -> DSCKS -> Signature
         /// </summary>
@@ -317,6 +429,29 @@ namespace EIMS.Application.Commons
                 SignedXml = xmlDoc.OuterXml,
                 SignatureValue = signatureBase64
             };
+        }
+        public static string CreateDigest(string xmlContent)
+        {
+            var doc = new XmlDocument();
+            doc.PreserveWhitespace = true;
+            doc.LoadXml(xmlContent);
+            var signedXml = new SignedXml(doc);
+            var reference = new Reference { Uri = "" };
+            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
+            signedXml.AddReference(reference);
+            // Để lấy được DigestValue chính xác, ta cần "giả vờ" ký để .NET chạy qua quy trình Canonicalization
+            // Ta dùng một key tạm (hoặc không cần key nếu chỉ lấy Digest của Reference)
+            // Tuy nhiên, cách thủ công chuẩn nhất là Canonicalize XML rồi Hash SHA256
+            // CÁCH ĐƠN GIẢN: Lấy nội dung XML đã chuẩn hóa
+            Transform transform = new XmlDsigEnvelopedSignatureTransform();
+            transform.LoadInput(doc);
+            var output = (Stream)transform.GetOutput(typeof(Stream));
+
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hash = sha256.ComputeHash(output);
+                return Convert.ToBase64String(hash);
+            }
         }
         public static int MapApiCodeToStatusId(string apiCode)
         {
@@ -379,7 +514,30 @@ namespace EIMS.Application.Commons
 
             return value;
         }
+        /// <summary>
+        /// Tính chuỗi Hash (Digest Value) chuẩn SHA256 của XML để gửi xuống Client ký
+        /// </summary>
+        public static string CalculateDigest(XmlDocument xmlDoc)
+        {
+            // 1. Chuẩn hóa XML (Canonicalization - C14N)
+            // Bước này cực kỳ quan trọng để đảm bảo XML ở Server và Client giống hệt nhau từng byte
+            // Client (Plugin ký số) thường sẽ tự động C14N trước khi Hash, nên Server cũng phải làm vậy.
 
+            var transform = new XmlDsigC14NTransform();
+            transform.LoadInput(xmlDoc);
+
+            // 2. Lấy luồng dữ liệu sau khi chuẩn hóa
+            // Lưu ý: Dùng HashAlgorithm SHA256 vì các thiết bị Token hiện nay đều dùng chuẩn này
+            using (var stream = (Stream)transform.GetOutput(typeof(Stream)))
+            using (var sha256 = SHA256.Create())
+            {
+                // 3. Tính Hash
+                byte[] hashBytes = sha256.ComputeHash(stream);
+
+                // 4. Trả về Base64
+                return Convert.ToBase64String(hashBytes);
+            }
+        }
         private static bool IsNumericRate(decimal rate)
         {
             // Kiểm tra xem có phải là các mã đặc biệt không

@@ -222,5 +222,40 @@ namespace EIMS.API.Controllers
 
             return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
         }
+        [HttpPost("get-hash")]
+        public async Task<IActionResult> GetHashToSign([FromBody] GetHashToSignCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(new { Error = result.Errors[0].Message });
+
+            // Trả về Hash và ID hóa đơn
+            return Ok(new
+            {
+                InvoiceId = command.InvoiceId,
+                HashToSign = result.Value,
+                Algorithm = "SHA256" // Báo cho FE biết thuật toán hash
+            });
+        }
+
+        /// <summary>
+        /// Bước 2: Hoàn tất ký (Client gửi Chữ ký + Cert lên)
+        /// </summary>
+        [HttpPost("complete_signing")]
+        public async Task<IActionResult> CompleteSigning([FromBody] CompleteInvoiceSigningCommand command)
+        {
+            // Validate input cơ bản
+            if (string.IsNullOrEmpty(command.SignatureBase64) || string.IsNullOrEmpty(command.CertificateBase64))
+            {
+                return BadRequest("Vui lòng cung cấp Chữ ký số và Thông tin chứng thư.");
+            }
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed) return BadRequest(result.Errors);
+
+            return Ok(new { Message = "Ký số thành công!", InvoiceId = command.InvoiceId });
+        }
     }
 }

@@ -39,8 +39,11 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
             if (invoice == null)
-                return Result.Fail("Invoice not found");
-
+                return Result.Fail("Không tìm thấy hóa đơn");
+            if (invoice.InvoiceStatusID != 8 && invoice.DigitalSignature == null)
+            {
+                return Result.Fail("Hóa đơn phải kí trước khi gửi");
+            }
             // 2. Map và Serialize
             var tDiep = InvoiceXmlMapper.MapThongDiepToXmlModel(invoice, messageCode,1, null);
             if (!string.IsNullOrEmpty(invoice.XMLPath))
@@ -82,6 +85,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 InvoiceID = invoice.InvoiceID,
                 RequestPayload = xmlPayload,
                 TaxApiStatusID = 1, // PENDING: Đang gửi CQT
+                MTDiep = "200",
                 Timestamp = DateTime.UtcNow
             };
 
@@ -91,8 +95,12 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
                        taxResponse.MLTDiep == "204" ? "TBxx" :
                        "TB01"; 
+            log.ResponsePayload = taxResponse.RawResponse;
+            await _uow.TaxApiLogRepository.UpdateAsync(log);
+            await _uow.SaveChanges();
             var responseLog = new TaxApiLog
             {
+                RequestPayload = xmlPayload,
                 ResponsePayload = taxResponse.RawResponse,
                 MTDiep = taxResponse.MTDiep,
                 SoTBao = taxResponse.SoTBao, 
