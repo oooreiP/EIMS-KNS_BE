@@ -8,6 +8,7 @@ namespace EIMS.Application.DTOs.XMLModels
 {
     public class HHDVu
     {
+        public string TChat { get; set; }
         public int STT { get; set; }
         public string THHDVu { get; set; } = "";
         public string DVTinh { get; set; } = "";

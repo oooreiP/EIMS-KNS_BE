@@ -15,8 +15,8 @@ namespace EIMS.Infrastructure.Service
     {
         public Task<TaxApiResponse> SendTaxMessageAsync(string xmlPayload, string? referenceId)
         {
-            bool isInvoiceSubmission = xmlPayload.Contains("<MaLoaiThongDiep>200</MaLoaiThongDiep>") || xmlPayload.Contains("<MaLoaiThongDiep>201</MaLoaiThongDiep>");
-            bool isErrorNotification = xmlPayload.Contains("<MaLoaiThongDiep>300</MaLoaiThongDiep>"); // TB04
+            bool isInvoiceSubmission = xmlPayload.Contains("<MLTDiep>200</MLTDiep>") || xmlPayload.Contains("<MLTDiep>201</MLTDiep>");
+            bool isErrorNotification = xmlPayload.Contains("<MLTDiep>300</MLTDiep>"); // TB04
             if (isInvoiceSubmission)
             {
                 return GenerateResponse202(xmlPayload, referenceId);
