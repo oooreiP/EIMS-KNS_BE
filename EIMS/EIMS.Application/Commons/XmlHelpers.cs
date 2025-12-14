@@ -40,9 +40,24 @@ namespace EIMS.Application.Commons
 
             using var stringWriter = new Utf8StringWriter();
             using var xmlWriter = XmlWriter.Create(stringWriter, settings);
-
             var ns = new XmlSerializerNamespaces();
-            ns.Add("", "");  // remove xmlns:xsd, xmlns:xsi
+
+            // 1. Tự động tìm Namespace được khai báo trên class DTO
+            // Ví dụ: [XmlRoot(Namespace = "http://tempuri.org/TDiepSchema.xsd")]
+            var xmlRootAttr = typeof(T).GetCustomAttribute<XmlRootAttribute>();
+
+            if (xmlRootAttr != null && !string.IsNullOrEmpty(xmlRootAttr.Namespace))
+            {
+                // Nếu class có khai báo Namespace, thêm nó vào làm default namespace
+                // Key rỗng "" nghĩa là: xmlns="http://..."
+                ns.Add("", xmlRootAttr.Namespace);
+            }
+            else
+            {
+                // Nếu không có khai báo, giữ nguyên logic cũ (xóa namespace mặc định xsd, xsi cho gọn)
+                ns.Add("", "");
+            }
+            // ---------------------------------
 
             xmlSerializer.Serialize(xmlWriter, obj, ns);
 
@@ -82,7 +97,7 @@ namespace EIMS.Application.Commons
             if (_schemaSet != null) return;
 
             _schemaSet = new XmlSchemaSet();
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = typeof(XmlHelpers).Assembly;
             string[] names = assembly.GetManifestResourceNames();
             foreach (var name in names)
             {
@@ -111,18 +126,27 @@ namespace EIMS.Application.Commons
         // Hàm Validation chính
         public static List<string> Validate(string xmlPayload)
         {
-            LoadSchemas();
+            try
+            {
+                LoadSchemas();
+            }
+            catch (Exception ex)
+            {
+                return new List<string> { $"Lỗi cấu hình hệ thống (Load Schema): {ex.Message}" };
+            }
             var errors = new List<string>();
             var settings = new XmlReaderSettings
             {
                 ValidationType = ValidationType.Schema,
-                Schemas = _schemaSet
+                Schemas = _schemaSet,
+                ValidationFlags = XmlSchemaValidationFlags.ReportValidationWarnings | XmlSchemaValidationFlags.ProcessIdentityConstraints
             };
 
             // Thêm event handler để bắt lỗi validation
             settings.ValidationEventHandler += (sender, args) =>
             {
-                errors.Add($"[Dòng {args.Exception.LineNumber}, Cột {args.Exception.LinePosition}] {args.Message}");
+                string severity = args.Severity == XmlSeverityType.Warning ? "Cảnh báo" : "Lỗi";
+                errors.Add($"[{severity} - Dòng {args.Exception.LineNumber}, Cột {args.Exception.LinePosition}] {args.Message}");
             };
 
             // Đọc XML và thực hiện validation
@@ -130,7 +154,6 @@ namespace EIMS.Application.Commons
             {
                 try
                 {
-                    // Đọc toàn bộ tài liệu để kích hoạt validation
                     while (reader.Read()) { }
                 }
                 catch (XmlException ex)

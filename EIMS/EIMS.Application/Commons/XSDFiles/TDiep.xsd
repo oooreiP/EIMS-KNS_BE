@@ -12,7 +12,9 @@
             <xs:totalDigits value="7"/>
         </xs:restriction>
     </xs:simpleType>
-    
+	<xs:simpleType name="TimeType">
+		<xs:restriction base="xs:time"/>
+	</xs:simpleType>
     <xs:simpleType name="SimpleInteger">
         <xs:restriction base="xs:integer"/>
     </xs:simpleType>
@@ -81,15 +83,17 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="SLuong" type="Number7"/>
+			<xs:element name="NLap" type="DateType"/>
+			<xs:element name="TDLap" type="TimeType"/>
+            <xs:element name="SLuong" type="Number7"/>			
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="DLieuType">
-        <xs:sequence>
-            <xs:element name="HDon" type="hdon:DLHDonType" minOccurs="1" maxOccurs="unbounded"/>
-        </xs:sequence>
-    </xs:complexType>
+	<xs:complexType name="DLieuType">
+		<xs:sequence>
+			<xs:element ref="hdon:HDon" minOccurs="1" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
 
     <xs:element name="TDiep">
         <xs:complexType>

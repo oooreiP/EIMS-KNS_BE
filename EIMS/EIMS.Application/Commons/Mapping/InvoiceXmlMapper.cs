@@ -46,7 +46,7 @@ namespace EIMS.Application.Commons.Mapping
                                 KHMSHDon = khmsHDon,                       // Ký hiệu mẫu số hóa đơn 
                                 KHHDon = khHDon,                      // Ký hiệu hóa đơn
                                 SHDon = invoice.InvoiceNumber.ToString("0000000"),  // Số hóa đơn
-                                NLap = invoice.SignDate?.ToString("yyyy-MM-dd"),
+                                NLap = invoice.CreatedAt.ToString("yyyy-MM-dd"),
                                 DVTTe = "VND",
                                 HTTToan = "TM/CK",
                                 MSTTCGP = "0311357436" // Mã số thuế tổ chức phát hành
@@ -78,6 +78,7 @@ namespace EIMS.Application.Commons.Mapping
                                 // ---- Danh sách hàng hóa ----
                                 DSHHDVu = invoice.InvoiceItems.Select((item, index) => new HHDVu
                                 {
+                                    TChat = khmsHDon,
                                     STT = index + 1,
                                     THHDVu = item.Product?.Name ?? "Sản phẩm",
                                     DVTinh = item.Product?.Unit ?? "cái",
@@ -101,15 +102,14 @@ namespace EIMS.Application.Commons.Mapping
                                 TTin = new List<TTin>
                     {
                         new TTin { TTruong = "NguoiKy", KDLieu = "string", DLieu = "Kế toán trưởng" },
-                        new TTin { TTruong = "NgayKy", KDLieu = "date", DLieu = invoice.SignDate?.ToString("yyyy-MM-dd") }
+                        new TTin { TTruong = "NgayKy", KDLieu = "date", DLieu = invoice.SignDate?.ToString("yyyy-MM-dd") ?? "01/01/2025" }
                     }
                             }
                         },
                         MCCQT = new MCCQT
                         {
-                            Id = $"MCCQT_{invoice.InvoiceID}",
                             Value = String.Empty                
-                }
+                        }
             };
             if ((invoice.InvoiceType == 2 || invoice.InvoiceType == 3) && invoice.OriginalInvoice != null)
             {
