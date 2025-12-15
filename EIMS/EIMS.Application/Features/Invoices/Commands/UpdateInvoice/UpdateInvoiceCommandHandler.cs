@@ -7,6 +7,7 @@ using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
@@ -47,10 +48,15 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     return Result.Fail(new Error($"Only Draft invoices can be updated."));
                 if (invoice.CompanyId == null)
                 {
-                    invoice.CompanyId = 1; // The ID we just seeded
-                                           // We must manually load the Company property if it was null initially
+                    invoice.CompanyId = 1;
                     invoice.Company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
                 }
+                if (invoice.Payments != null && invoice.Payments.Any())
+                {
+                    return Result.Fail("Cannot update an invoice that already has recorded payments. Delete the payments first.");
+                }
+                invoice.Notes = request.Notes;
+                invoice.PaymentMethod = request.PaymentMethod;
                 // 2. Update Customer Data (Safety Check logic)
                 if (request.CustomerID.HasValue && request.CustomerID.Value > 0)
                 {
@@ -60,7 +66,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 else
                 {
                     bool detailsChanged =
-                        (request.CompanyName ?? request.Name) != invoice.Customer.CustomerName ||
+                        (request.CustomerName ?? request.ContactPerson) != invoice.Customer.CustomerName ||
                         request.Address != invoice.Customer.Address ||
                         request.TaxCode != invoice.Customer.TaxCode;
 
@@ -71,69 +77,110 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                         {
                             var newCustomer = new Customer
                             {
-                                CustomerName = request.CompanyName ?? request.Name ?? "Khách hàng mới",
+                                CustomerName = request.CustomerName ?? request.ContactPerson ?? "Khách hàng mới",
                                 TaxCode = request.TaxCode ?? "",
                                 Address = request.Address ?? "",
                                 ContactEmail = invoice.Customer.ContactEmail,
-                                ContactPerson = request.Name,
+                                ContactPerson = request.ContactPerson,
                                 ContactPhone = invoice.Customer.ContactPhone
                             };
                             newCustomer = await _unitOfWork.CustomerRepository.CreateCustomerAsync(newCustomer);
+                            await _unitOfWork.SaveChanges();
                             invoice.CustomerID = newCustomer.CustomerID;
                         }
                         else
                         {
                             var customerToUpdate = invoice.Customer;
-                            customerToUpdate.CustomerName = request.CompanyName ?? request.Name ?? customerToUpdate.CustomerName;
+                            customerToUpdate.CustomerName = request.CustomerName ?? request.ContactPerson ?? customerToUpdate.CustomerName;
                             customerToUpdate.TaxCode = request.TaxCode ?? customerToUpdate.TaxCode;
                             customerToUpdate.Address = request.Address ?? customerToUpdate.Address;
-                            customerToUpdate.ContactPerson = request.Name ?? customerToUpdate.ContactPerson;
+                            customerToUpdate.ContactPerson = request.ContactPhone ?? customerToUpdate.ContactPerson;
                             await _unitOfWork.CustomerRepository.UpdateAsync(customerToUpdate);
                         }
                     }
                 }
 
                 // 3. Update Items
+                // Fetch Products to get BasePrice and VATRate
+                var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+                var products = await _unitOfWork.ProductRepository.GetAllQueryable()
+                    .Where(p => productIds.Contains(p.ProductID))
+                    .ToListAsync(cancellationToken);
+                var productDict = products.ToDictionary(p => p.ProductID);
+
+                if (products.Count != productIds.Count)
+                    return Result.Fail(new Error("One or more products not found").WithMetadata("ErrorCode", "Invoice.Update.Failed"));
+
+                // Clear old items
                 if (invoice.InvoiceItems != null && invoice.InvoiceItems.Any())
                 {
                     invoice.InvoiceItems.Clear();
                 }
 
-                foreach (var itemDto in request.Items)
+                var processedItems = new List<InvoiceItem>();
+
+                foreach (var itemReq in request.Items)
                 {
+                    if (!productDict.ContainsKey(itemReq.ProductId)) continue;
+
+                    var productInfo = productDict[itemReq.ProductId];
+
+                    // Calculate Final Amount
+                    decimal finalAmount = (itemReq.Amount ?? 0) > 0
+                        ? itemReq.Amount!.Value
+                        : productInfo.BasePrice * (decimal)itemReq.Quantity;
+
+                    // Calculate Final VAT
+                    decimal finalVatAmount;
+                    if ((itemReq.VATAmount ?? 0) > 0)
+                    {
+                        finalVatAmount = itemReq.VATAmount!.Value;
+                    }
+                    else
+                    {
+                        decimal vatRate = productInfo.VATRate ?? 0;
+                        finalVatAmount = Math.Round(finalAmount * (vatRate / 100m), 2);
+                    }
+
+                    // Add to collection
                     invoice.InvoiceItems.Add(new InvoiceItem
                     {
                         InvoiceID = invoice.InvoiceID,
-                        ProductID = itemDto.ProductId,
-                        Quantity = itemDto.Quantity,
-                        Amount = itemDto.Amount ?? 0,
-                        VATAmount = itemDto.VATAmount ?? 0,
-                        UnitPrice = itemDto.Quantity > 0 ? (itemDto.Amount /  (decimal)itemDto.Quantity) ?? 0 : 0
+                        ProductID = itemReq.ProductId,
+                        Quantity = itemReq.Quantity,
+                        Amount = finalAmount,
+                        VATAmount = finalVatAmount,
+                        UnitPrice = productInfo.BasePrice
                     });
                 }
 
                 // 4. Update Totals
-                decimal subtotal = request.Items.Sum(i => i.Amount) ?? 0;
-                decimal vatAmount = request.Items.Sum(i => i.VATAmount) ?? 0;
+                decimal subtotal = invoice.InvoiceItems.Sum(i => i.Amount);
+                decimal vatAmount = invoice.InvoiceItems.Sum(i => i.VATAmount);
+
+                // Use request overrides if provided and > 0, otherwise calculated values
+                if ((request.Amount ?? 0) > 0) subtotal = request.Amount!.Value;
+                if ((request.TaxAmount ?? 0) > 0) vatAmount = request.TaxAmount!.Value;
+
+                decimal totalAmount = subtotal + vatAmount;
+                if ((request.TotalAmount ?? 0) > 0) totalAmount = request.TotalAmount!.Value;
+
                 invoice.SubtotalAmount = subtotal;
                 invoice.VATAmount = vatAmount;
-                invoice.TotalAmount = request.TotalAmount > 0 ? request.TotalAmount : (subtotal + vatAmount);
-                invoice.VATRate = (invoice.SubtotalAmount > 0 && invoice.VATAmount > 0)
-                   ? Math.Round((invoice.VATAmount / invoice.SubtotalAmount) * 100, 2)
-                   : 0;
-                invoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(invoice.TotalAmount);
+                invoice.TotalAmount = totalAmount;
+                invoice.VATRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
+                invoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount);
 
                 if (request.MinRows.HasValue) invoice.MinRows = request.MinRows.Value;
                 if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
 
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
-
                 // 5. Regenerate XML
                 // Fetch FULL invoice again with Company included
                 var fullInvoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(
                     invoice.InvoiceID,
-                    "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,Company" // <--- Added Company here
+                    "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,Company"
                 );
 
                 var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
@@ -155,7 +202,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
                 }
 
-                // 6. Log History
+                // 7. Log History
                 var history = new InvoiceHistory
                 {
                     InvoiceID = invoice.InvoiceID,

@@ -54,5 +54,40 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        [HttpGet]
+        public async Task<IActionResult> GetStatements([FromQuery] GetInvoiceStatementsQuery query)
+        {
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
+        }
+        [HttpPost("generate-batch")]
+        public async Task<IActionResult> GenerateBatchStatements([FromBody] GenerateAllStatementsRequest request)
+        {
+            // Now using the specific DTO without CustomerID
+            var command = new GenerateAllStatementsCommand
+            {
+                Month = request.Month,
+                Year = request.Year
+            };
+
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Batch Generation Failed",
+                    Detail = result.Errors.FirstOrDefault()?.Message
+                });
+            }
+            return Ok(result.Value);
+        }
     }
 }

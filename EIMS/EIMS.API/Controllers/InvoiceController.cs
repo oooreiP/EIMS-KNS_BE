@@ -1,18 +1,14 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using AutoMapper;
 using EIMS.Application.DTOs;
-using EIMS.Application.DTOs.TaxAPIDTO;
-using EIMS.Application.Features.CQT.NotifyInvoiceError;
 using EIMS.Application.Features.Invoices.Commands.AdjustInvoice;
-using EIMS.Application.Features.Invoices.Commands.ChangeInvoiceStatus;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Commands.IssueInvoice;
 using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
 using EIMS.Application.Features.Invoices.Commands.SignInvoice;
-using EIMS.Application.Features.Invoices.Commands.UpdateStatus;
+using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
 using EIMS.Application.Features.Invoices.Queries;
 using EIMS.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -23,6 +19,7 @@ namespace EIMS.API.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
         public InvoiceController(IMediator mediator)
         {
             _mediator = mediator;
@@ -59,6 +56,26 @@ namespace EIMS.API.Controllers
         {
             var invoice = await _mediator.Send(new GetInvoiceByIdQuery(id));
             return invoice != null ? Ok(invoice) : NotFound();
+        }
+        [HttpPut("draft/{id}")]
+        public async Task<IActionResult> UpdateInvoice(int id, [FromBody] UpdateInvoiceRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Invalid request body.");
+            }
+
+            var command = _mapper.Map<UpdateInvoiceCommand>(request);
+            command.InvoiceId = id;
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { InvoiceId = result.Value });
+            }
+
+            return BadRequest(result.Errors);
         }
         /// <summary>
         /// Kích hoạt quy trình ký số hóa đơn điện tử

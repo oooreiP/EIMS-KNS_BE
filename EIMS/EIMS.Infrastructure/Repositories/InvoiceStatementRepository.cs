@@ -18,11 +18,19 @@ namespace EIMS.Infrastructure.Repositories
         public async Task<InvoiceStatement?> GetByIdWithInvoicesAsync(int id)
         {
             return await _db.InvoiceStatements
-                          .Where(s => s.StatementID == id)
-                          .Include(s => s.StatementDetails)
-                          .ThenInclude(detail => detail.Invoice)
-                          .Include(s => s.Customer)
-                          .FirstOrDefaultAsync();
+            .Include(s => s.Customer)
+            .Include(s => s.StatementStatus)
+            .Include(s => s.StatementDetails)
+                .ThenInclude(sd => sd.Invoice)
+            .FirstOrDefaultAsync(s => s.StatementID == id);
+        }
+        public async Task<List<InvoiceStatement>> GetStatementsContainingInvoiceAsync(int invoiceId)
+        {
+            return await _db.InvoiceStatements
+                .Where(statement => statement.StatementDetails
+                    .Any(detail => detail.InvoiceID == invoiceId)
+                )
+                .ToListAsync();
         }
     }
 }

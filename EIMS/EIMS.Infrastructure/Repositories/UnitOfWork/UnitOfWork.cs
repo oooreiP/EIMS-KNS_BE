@@ -30,6 +30,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public ITemplateFrameRepository TemplateFrameRepository { get; set; }
         public ICompanyRepository CompanyRepository { get; set; }
         public IBaseRepository<InvoiceStatus> InvoiceStatusRepository { get; set; }
+        public IInvoicePaymentRepository InvoicePaymentRepository { get; private set; }
         public IBaseRepository<EmailTemplate> EmailTemplateRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
@@ -53,6 +54,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             UserRepository = new UserRepository(_db);
             TemplateFrameRepository = new TemplateFrameRepository(_db);
             CompanyRepository = new CompanyRepository(_db);
+            InvoicePaymentRepository = new InvoicePaymentRepository(_db);
             EmailTemplateRepository = new BaseRepository<EmailTemplate>(_db);
         }
         public async Task SaveChanges()
