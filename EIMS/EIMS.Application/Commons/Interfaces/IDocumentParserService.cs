@@ -10,5 +10,6 @@ namespace EIMS.Application.Commons.Interfaces
     {
         Task<string> ConvertPdfToXmlAsync(Stream pdfStream);
         Task<string> ConvertDocxToXmlAsync(Stream docxStream);
+        string TransformXmlToHtml(string xmlContent, string xsltPath);
     }
 }

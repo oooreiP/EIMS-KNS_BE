@@ -127,7 +127,9 @@ namespace EIMS.Infrastructure.Service
             }
             var mlTDiepThanhCong = "202";
             var mtDiepPhanHoiThanhCong = XmlHelpers.GenerateMTDiep("TCT");
-            var mccqt = "A" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N").ToUpper();
+            var uniquePart = Guid.NewGuid().ToString("N"); // 32 ký tự
+            var randomPart = new Random().Next(0, 10).ToString(); // 1 ký tự (0-9)
+            var mccqt = $"A{uniquePart}{randomPart}".ToUpper();
 
             // --- XÂY DỰNG XML PHẢN HỒI THÀNH CÔNG THEO CẤU TRÚC MỚI ---
             var successResponseXml =

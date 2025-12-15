@@ -45,7 +45,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             invoice.XMLPath = newUrl;
             invoice.InvoiceStatusID = 8;
             invoice.SignDate = DateTime.UtcNow;
-            invoice.DigitalSignature = request.SignatureBase64; // Lưu chữ ký để đối soát
+            invoice.DigitalSignature = request.SignatureBase64;
 
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
             await _unitOfWork.SaveChanges();

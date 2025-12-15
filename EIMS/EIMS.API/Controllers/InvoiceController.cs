@@ -11,6 +11,7 @@ using EIMS.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -20,9 +21,12 @@ namespace EIMS.API.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
-        public InvoiceController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public InvoiceController(IMediator mediator, IWebHostEnvironment env, IMapper mapper)
         {
             _mediator = mediator;
+            _env = env;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -273,6 +277,16 @@ namespace EIMS.API.Controllers
             if (result.IsFailed) return BadRequest(result.Errors);
 
             return Ok(new { Message = "Ký số thành công!", InvoiceId = command.InvoiceId });
+        }
+        [HttpGet("preview-by-invoice/{id}")]
+        public async Task<IActionResult> PreviewByInvoiceId(int id)
+        {
+            // Truyền đường dẫn gốc vào Query
+            var query = new GetInvoiceHtmlViewQuery(id, _env.ContentRootPath);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed) return NotFound(result.Errors[0].Message);
+            return Content(result.Value, "text/html", Encoding.UTF8);
         }
     }
 }
