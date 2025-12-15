@@ -15,8 +15,8 @@ namespace EIMS.Infrastructure.Service
     {
         public Task<TaxApiResponse> SendTaxMessageAsync(string xmlPayload, string? referenceId)
         {
-            bool isInvoiceSubmission = xmlPayload.Contains("<MaLoaiThongDiep>200</MaLoaiThongDiep>") || xmlPayload.Contains("<MaLoaiThongDiep>201</MaLoaiThongDiep>");
-            bool isErrorNotification = xmlPayload.Contains("<MaLoaiThongDiep>300</MaLoaiThongDiep>"); // TB04
+            bool isInvoiceSubmission = xmlPayload.Contains("<MLTDiep>200</MLTDiep>") || xmlPayload.Contains("<MLTDiep>201</MLTDiep>");
+            bool isErrorNotification = xmlPayload.Contains("<MLTDiep>300</MLTDiep>");
             if (isInvoiceSubmission)
             {
                 return GenerateResponse202(xmlPayload, referenceId);
@@ -31,6 +31,9 @@ namespace EIMS.Infrastructure.Service
         }
         private Task<TaxApiResponse> GenerateResponse301(string xmlPayload, string? referenceId)
         {
+            int currentYear = DateTime.Now.Year;
+            string prefix = $"TB/{currentYear}/";
+            var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
 
             try
             {
@@ -58,7 +61,7 @@ namespace EIMS.Infrastructure.Service
                     MLTDiep = "301",
                     MTDiep = mtDiepPhanHoi,
                     MTDThamChieu = responseObj.TTChung.MaThongDiep,
-                    SoTBao = "TB01",
+                    SoTBao = soThongBao,
                     RawResponse = responseXml
                 });
             }
@@ -87,7 +90,9 @@ namespace EIMS.Infrastructure.Service
         }
         private Task<TaxApiResponse> GenerateResponse202(string xmlPayload, string? referenceId)
         {
-            var soThongBao = $"2025/{new Random().Next(100000000, 999999999)}";
+            int currentYear = DateTime.Now.Year;
+            string prefix = $"TB/{currentYear}/";
+            var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
             var error = XmlHelpers.Validate(xmlPayload);
             if (error.Any())
             {
@@ -122,7 +127,9 @@ namespace EIMS.Infrastructure.Service
             }
             var mlTDiepThanhCong = "202";
             var mtDiepPhanHoiThanhCong = XmlHelpers.GenerateMTDiep("TCT");
-            var mccqt = "A" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N").ToUpper();
+            var uniquePart = Guid.NewGuid().ToString("N"); // 32 ký tự
+            var randomPart = new Random().Next(0, 10).ToString(); // 1 ký tự (0-9)
+            var mccqt = $"A{uniquePart}{randomPart}".ToUpper();
 
             // --- XÂY DỰNG XML PHẢN HỒI THÀNH CÔNG THEO CẤU TRÚC MỚI ---
             var successResponseXml =

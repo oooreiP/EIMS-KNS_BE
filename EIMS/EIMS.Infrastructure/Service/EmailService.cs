@@ -107,24 +107,25 @@ namespace EIMS.Infrastructure.Service
                 // Xử lý File đính kèm (Download từ URL và Attach vào Email)
                 if (mailRequest.AttachmentUrls != null && mailRequest.AttachmentUrls.Any())
                 {
-                    foreach (var url in mailRequest.AttachmentUrls)
+                    foreach (var file in mailRequest.AttachmentUrls)
                     {
-                        try
+                        // CASE 1: Nếu là URL (File trên Cloud) -> Tải về rồi đính kèm
+                        if (!string.IsNullOrEmpty(file.FileUrl))
                         {
-                            // Kiểm tra URL hợp lệ
-                            if (!Uri.TryCreate(url, UriKind.Absolute, out var uriResult)) continue;
-
-                            var fileName = Path.GetFileName(uriResult.LocalPath);
-                            // Tải file về RAM
-                            var fileBytes = await _httpClient.GetByteArrayAsync(url);
-
-                            // Add vào email
-                            builder.Attachments.Add(fileName, fileBytes);
+                            try
+                            {
+                                var fileBytes = await _httpClient.GetByteArrayAsync(file.FileUrl);
+                                builder.Attachments.Add(file.FileName, fileBytes);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning($"Lỗi tải file {file.FileUrl}: {ex.Message}");
+                            }
                         }
-                        catch (Exception ex)
+                        // CASE 2: Nếu là Byte Array (File sinh ra từ RAM - ví dụ Biên bản) -> Đính kèm luôn
+                        else if (file.FileContent != null && file.FileContent.Length > 0)
                         {
-                            _logger.LogWarning("Không thể tải file đính kèm: {Url}. Lỗi: {Message}", url, ex.Message);
-                            // Vẫn tiếp tục gửi mail dù lỗi file đính kèm (hoặc return Fail tùy nghiệp vụ)
+                            builder.Attachments.Add(file.FileName, file.FileContent);
                         }
                     }
                 }
@@ -178,22 +179,57 @@ namespace EIMS.Infrastructure.Service
             if (string.IsNullOrEmpty(toEmail))
                 return Result.Fail("Không tìm thấy email người nhận.");
             // 4. Chuẩn bị File đính kèm (Logic cũ)
-            var finalAttachments = new List<string>();
-            if (request.IncludePdf && !string.IsNullOrEmpty(invoice.FilePath)) finalAttachments.Add(invoice.FilePath);
-            if (request.IncludeXml && !string.IsNullOrEmpty(invoice.XMLPath)) finalAttachments.Add(invoice.XMLPath);
-            if (request.ExternalAttachmentUrls != null) finalAttachments.AddRange(request.ExternalAttachmentUrls);
+            var finalAttachments = new List<FileAttachment>();
+            string GetFileNameFromUrl(string url)
+            {
+                try { return Path.GetFileName(new Uri(url).LocalPath); }
+                catch { return "document.pdf"; }
+            }
+
+            // 4.1. PDF Hóa đơn
+            if (request.IncludePdf && !string.IsNullOrEmpty(invoice.FilePath))
+            {
+                finalAttachments.Add(new FileAttachment
+                {
+                    FileUrl = invoice.FilePath,
+                    FileName = GetFileNameFromUrl(invoice.FilePath)
+                });
+            }
+
+            // 4.2. XML Hóa đơn
+            if (request.IncludeXml && !string.IsNullOrEmpty(invoice.XMLPath))
+            {
+                finalAttachments.Add(new FileAttachment
+                {
+                    FileUrl = invoice.XMLPath,
+                    FileName = GetFileNameFromUrl(invoice.XMLPath)
+                });
+            }
+
+            // 4.3. File bên ngoài (Từ request)
+            if (request.ExternalAttachmentUrls != null)
+            {
+                foreach (var url in request.ExternalAttachmentUrls)
+                {
+                    finalAttachments.Add(new FileAttachment
+                    {
+                        FileUrl = url,
+                        FileName = GetFileNameFromUrl(url)
+                    });
+                }
+            }
 
             // 5. Chuẩn bị Dữ liệu để thay thế vào Template (Replacements)
             // Tạo chuỗi HTML danh sách file đính kèm để nhúng vào Body
             string displayLang = template.LanguageCode;
-            string fileLinksHtml = string.Join("", finalAttachments.Select(u =>
-                $"<li><a href='{u}' target='_blank'>{(displayLang == "en" ? "Download" : "Tải xuống")} {Path.GetFileName(new Uri(u).LocalPath)}</a></li>"));
+            string fileLinksHtml = string.Join("", finalAttachments.Select(f =>
+                $"<li><a href='{f.FileUrl}' target='_blank'>{(displayLang == "en" ? "Download" : "Tải xuống")} {f.FileName}</a></li>"));
 
             // Dictionary chứa các biến sẽ thay thế
             var replacements = new Dictionary<string, string>
         {
             { "{{CustomerName}}", invoice.Customer?.CustomerName ?? (displayLang == "en" ? "Customer" : "Quý khách") },
-            { "{{Message}}", request.CustomMessage ?? template.Description ?? "" }, // Custom message ưu tiên
+            { "{{Message}}", request.CustomMessage ?? template.Description ?? "" }, 
             { "{{InvoiceNumber}}", invoice.InvoiceNumber.ToString() },
             { "{{IssuedDate}}", invoice.IssuedDate?.ToString("dd/MM/yyyy") ?? "N/A" },
             { "{{CreatedAt}}", invoice.CreatedAt.ToString("dd/MM/yyyy") },
@@ -259,6 +295,10 @@ namespace EIMS.Infrastructure.Service
                 case 2: 
                     subjectPrefix = "✅ [Đã phát hành]";
                     messageContent = "Hóa đơn điện tử của quý khách đã được phát hành và có giá trị pháp lý.";
+                    break;
+                case 10: // Adjusted (Đã điều chỉnh)
+                    subjectPrefix = "📝 [Đang điều chỉnh]";
+                    messageContent = "Thông báo: Hóa đơn này đã có thông tin điều chỉnh, vui lòng kiểm tra hóa đơn nháp ở dưới.";
                     break;
 
                 default:

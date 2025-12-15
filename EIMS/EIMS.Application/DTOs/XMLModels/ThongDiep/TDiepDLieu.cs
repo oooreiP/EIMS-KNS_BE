@@ -9,7 +9,7 @@ namespace EIMS.Application.DTOs.XMLModels.ThongDiep
 {
     public class TDiepDLieu
     {
-        [XmlElement("HDon")]
+        [XmlElement(ElementName = "HDon", Namespace = "http://tempuri.org/HDonSchema.xsd")]
         public HDon HDon { get; set; }
     }
 }
