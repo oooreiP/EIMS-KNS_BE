@@ -1,4 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Commons.Mapping;
+using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -7,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
 {
@@ -14,11 +17,13 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
     {
         private readonly IUnitOfWork _uow;
         private readonly IEmailService _emailService;
+        private readonly IFileStorageService _fileStorageService;
 
-        public CreateReplacementInvoiceCommandHandler(IUnitOfWork uow, IEmailService emailService)
+        public CreateReplacementInvoiceCommandHandler(IUnitOfWork uow, IEmailService emailService, IFileStorageService fileStorageService)
         {
             _uow = uow;
             _emailService = emailService;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<Result<int>> Handle(CreateReplacementInvoiceCommand request, CancellationToken cancellationToken)
@@ -131,9 +136,6 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 // Ở đây ta gán -1 để biểu thị "Nhiều thuế suất"
                 newInvoice.VATRate = -1;
             }
-            originalInvoice.InvoiceStatusID = 5;
-            await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
-            await _uow.SaveChanges();
             await _uow.InvoicesRepository.CreateAsync(newInvoice);
             await _uow.SaveChanges();
             await _uow.InvoiceHistoryRepository.CreateAsync(new InvoiceHistory
@@ -145,7 +147,25 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             });
 
             await _uow.SaveChanges();
-            await _emailService.SendStatusUpdateNotificationAsync(newInvoice.InvoiceID, 10);
+            var fullInvoice = await _uow.InvoicesRepository
+                   .GetByIdAsync(newInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
+            var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
+
+            var serializer = new XmlSerializer(typeof(HDon));
+            var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
+            var xmlPath = Path.Combine(Path.GetTempPath(), fileName);
+            await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
+            {
+                serializer.Serialize(fs, xmlModel);
+            }
+            await using var xmlStream = File.OpenRead(xmlPath);
+            var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
+            if (uploadResult.IsFailed)
+                return Result.Fail(uploadResult.Errors);
+            fullInvoice.XMLPath = uploadResult.Value.Url;
+            await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+            await _uow.SaveChanges();
+            await _emailService.SendStatusUpdateNotificationAsync(newInvoice.InvoiceID, 11);
             return Result.Ok(newInvoice.InvoiceID);
         }
     }

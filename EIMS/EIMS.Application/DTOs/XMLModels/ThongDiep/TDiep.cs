@@ -7,9 +7,10 @@ using System.Xml.Serialization;
 
 namespace EIMS.Application.DTOs.XMLModels.ThongDiep
 {
+    [XmlRoot(ElementName = "TDiep", Namespace = "http://tempuri.org/TDiepSchema.xsd")]
     public class TDiep
     {
-        [XmlElement("TDiepTTChung")]
+        [XmlElement("TTChung")]
         public TtinChung TtinChung { get; set; }
 
         [XmlElement("DLieu")]

@@ -11,6 +11,7 @@ using EIMS.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -20,9 +21,12 @@ namespace EIMS.API.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
-        public InvoiceController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public InvoiceController(IMediator mediator, IWebHostEnvironment env, IMapper mapper)
         {
             _mediator = mediator;
+            _env = env;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -238,6 +242,51 @@ namespace EIMS.API.Controllers
             }
 
             return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+        }
+        [HttpPost("get-hash")]
+        public async Task<IActionResult> GetHashToSign([FromBody] GetHashToSignCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(new { Error = result.Errors[0].Message });
+
+            // Trả về Hash và ID hóa đơn
+            return Ok(new
+            {
+                InvoiceId = command.InvoiceId,
+                HashToSign = result.Value,
+                Algorithm = "SHA256" // Báo cho FE biết thuật toán hash
+            });
+        }
+
+        /// <summary>
+        /// Bước 2: Hoàn tất ký (Client gửi Chữ ký + Cert lên)
+        /// </summary>
+        [HttpPost("complete_signing")]
+        public async Task<IActionResult> CompleteSigning([FromBody] CompleteInvoiceSigningCommand command)
+        {
+            // Validate input cơ bản
+            if (string.IsNullOrEmpty(command.SignatureBase64) || string.IsNullOrEmpty(command.CertificateBase64))
+            {
+                return BadRequest("Vui lòng cung cấp Chữ ký số và Thông tin chứng thư.");
+            }
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed) return BadRequest(result.Errors);
+
+            return Ok(new { Message = "Ký số thành công!", InvoiceId = command.InvoiceId });
+        }
+        [HttpGet("preview-by-invoice/{id}")]
+        public async Task<IActionResult> PreviewByInvoiceId(int id)
+        {
+            // Truyền đường dẫn gốc vào Query
+            var query = new GetInvoiceHtmlViewQuery(id, _env.ContentRootPath);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed) return NotFound(result.Errors[0].Message);
+            return Content(result.Value, "text/html", Encoding.UTF8);
         }
     }
 }
