@@ -17,7 +17,8 @@ namespace EIMS.Domain.Entities
 
         [ForeignKey("InvoiceID")]
         public int InvoiceID { get; set; }
-
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal OutstandingAmount { get; set; } // Snapshot of debt at this specific time
         // Navigation Properties
         [InverseProperty("StatementDetails")]
         public virtual InvoiceStatement Statement { get; set; }

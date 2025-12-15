@@ -352,11 +352,14 @@ namespace EIMS.Infrastructure.Persistence
                 new PaymentStatus { PaymentStatusID = 4, StatusName = "Overdue" }
             );
             modelBuilder.Entity<StatementStatus>().HasData(
-                new StatementStatus { StatusID = 1, StatusName = "Draft" }, // Mới tạo (Chưa gửi)
-                new StatementStatus { StatusID = 2, StatusName = "Sent" },  // Đã gửi cho khách hàng
-                new StatementStatus { StatusID = 3, StatusName = "Paid" },  // Khách đã thanh toán hết
-                new StatementStatus { StatusID = 4, StatusName = "Overdue" } // Quá hạn (Optional)
-            );
+                new StatementStatus { StatusID = 1, StatusName = "Draft" },          // Editing phase, not visible to client
+                new StatementStatus { StatusID = 2, StatusName = "Published" },      // Finalized/Approved, ready to send (Locked)
+                new StatementStatus { StatusID = 3, StatusName = "Sent" },           // Emailed/Delivered to client
+                new StatementStatus { StatusID = 4, StatusName = "Partially Paid" }, // Client paid 50%, 50% remaining
+                new StatementStatus { StatusID = 5, StatusName = "Paid" },           // Fully settled
+                new StatementStatus { StatusID = 6, StatusName = "Cancelled" },           // Cancelled (Mistake/Invalid) - Never delete!
+                new StatementStatus { StatusID = 7, StatusName = "Refunded" }        // Money returned to client
+                        );
             modelBuilder.Entity<Company>().HasData(
         new Company
         {

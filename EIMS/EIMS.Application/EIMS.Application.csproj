@@ -15,7 +15,11 @@
     <EmbeddedResource Include="Commons\XSDFiles\HDon.xsd" />
     <EmbeddedResource Include="Commons\XSDFiles\TDiep.xsd" />
   </ItemGroup>
-
+<ItemGroup>
+    <None Update="Commons\XSDFiles\TestCert.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EIMS.Domain\EIMS.Domain.csproj" />
   </ItemGroup>

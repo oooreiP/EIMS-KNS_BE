@@ -33,5 +33,8 @@ namespace EIMS.Application.DTOs.Invoices
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? AdjustmentReason { get; set; }
         public List<InvoiceItemDto> InvoiceItems { get; set; } = new List<InvoiceItemDto>();
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public string PaymentStatus { get; set; }
     }
 }

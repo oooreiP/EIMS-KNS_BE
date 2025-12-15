@@ -20,7 +20,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 StatementID = statement.StatementID,
                 StatementCode = statement.StatementCode,
                 CustomerName = statement.Customer?.CustomerName ?? "Unknown",
-                StatementDate = statement.StatementDate ?? DateTime.MinValue,
+                StatementDate = statement.StatementDate,
                 TotalAmount = statement.TotalAmount,
                 Status = statement.StatementStatus?.StatusName ?? "Draft",
                 Invoices = statement.StatementDetails.Select(d => new StatementInvoiceDto
@@ -29,6 +29,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                     InvoiceNumber = d.Invoice.InvoiceNumber,
                     SignDate = d.Invoice.SignDate,
                     TotalAmount = d.Invoice.TotalAmount,
+                    OwedAmount = d.OutstandingAmount,
                     PaymentStatus = d.Invoice.PaymentStatusID.ToString()
                 }).ToList()
             };
