@@ -61,12 +61,11 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                         // Nếu là file lưu trên ổ cứng Server
                         hdonXmlContent = await File.ReadAllTextAsync(invoice.XMLPath);
                     }
-
                     if (!string.IsNullOrEmpty(hdonXmlContent))
                     {
                         // B. Deserialize chuỗi XML đó ngược lại thành Object HDon
                         // Lưu ý: Cần thêm hàm Deserialize vào XmlHelper (xem bên dưới)
-                        var existingHDon = XmlHelpers.Deserialize<HDon>(hdonXmlContent);
+                        var existingHDon = XmlHelpers.DeserializeFlexible<HDon>(hdonXmlContent);
 
                         // C. Gán đè Hóa đơn cũ vào Thông điệp mới
                         // Việc này giữ nguyên chữ ký số (nếu class HDon map đúng Signature)
