@@ -11,11 +11,12 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using EIMS.Application.DTOs;
 using System.Security.Cryptography;
-
+using System.Collections.Concurrent; // <-- Để dùng ConcurrentDictionary (_serializerCache)
 namespace EIMS.Application.Commons
 {
     public static class XmlHelpers
     {
+        private static readonly ConcurrentDictionary<string, XmlSerializer> _serializerCache = new();
         private static XmlSchemaSet _schemaSet;
         // Tiền tố cố định cho MTDiep của CQT (Ví dụ: TCT + UUID)
         const string CqtMTDiepPrefix = "TCT";
@@ -91,6 +92,44 @@ namespace EIMS.Application.Commons
             {
                 // Ném lỗi ra ngoài để Handler biết mà xử lý (ví dụ: XML sai định dạng)
                 throw new InvalidOperationException($"Lỗi khi Deserialize XML sang {typeof(T).Name}: {ex.Message}", ex);
+            }
+        }
+        public static T DeserializeFlexible<T>(string xmlContent)
+        {
+            if (string.IsNullOrWhiteSpace(xmlContent)) return default;
+
+            // 1. Tạo Cache Key mới (Thêm _Override để tránh dùng lại cái cũ bị lỗi)
+            string cacheKey = typeof(T).FullName + "_Override_NoNs";
+
+            // 2. Lấy hoặc Tạo Serializer cấu hình đặc biệt
+            var serializer = _serializerCache.GetOrAdd(cacheKey, key =>
+            {
+                // A. Tìm tên Element gốc (VD: "HDon" hoặc "TDiep") từ Class T
+                var rootAttr = typeof(T).GetCustomAttribute<XmlRootAttribute>();
+                string rootName = rootAttr?.ElementName ?? typeof(T).Name;
+
+                // B. Tạo cấu hình GHI ĐÈ (Override)
+                var overrides = new XmlAttributeOverrides();
+                var attrs = new XmlAttributes();
+
+                // C. Ép Serializer: "Root của class này tên là 'rootName', và Namespace là RỖNG"
+                attrs.XmlRoot = new XmlRootAttribute
+                {
+                    ElementName = rootName,
+                    Namespace = "" // <--- QUAN TRỌNG NHẤT: Ép về rỗng
+                };
+
+                overrides.Add(typeof(T), attrs);
+
+                // D. Tạo Serializer với cấu hình đè này
+                return new XmlSerializer(typeof(T), overrides);
+            });
+
+            // 3. Đọc XML và lột bỏ Namespace
+            using (var stringReader = new StringReader(xmlContent))
+            using (var reader = new NamespaceIgnorantXmlTextReader(stringReader))
+            {
+                return (T)serializer.Deserialize(reader);
             }
         }
         private static void LoadSchemas()
@@ -542,6 +581,11 @@ namespace EIMS.Application.Commons
         {
             // Kiểm tra xem có phải là các mã đặc biệt không
             return rate != RATE_KHAC && rate != RATE_KCT && rate != RATE_KKNT;
+        }
+        private class NamespaceIgnorantXmlTextReader : XmlTextReader
+        {
+            public NamespaceIgnorantXmlTextReader(TextReader reader) : base(reader) { }
+            public override string NamespaceURI => "";
         }
     }
 
