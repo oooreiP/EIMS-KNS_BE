@@ -277,6 +277,10 @@ namespace EIMS.Infrastructure.Persistence
                 new TaxApiStatus { TaxApiStatusID = 5, Code = "FAILED", StatusName = "Lỗi hệ thống" },
                 new TaxApiStatus { TaxApiStatusID = 6, Code = "PROCESSING", StatusName = "Đang xử lý" },
                 new TaxApiStatus { TaxApiStatusID = 7, Code = "NOT_FOUND", StatusName = "Không tìm thấy hóa đơn" },
+                new TaxApiStatus { TaxApiStatusID = 8, Code = "NOT_SENT", StatusName = "Hoá đơn đang trong trạng thái nháp/chờ kí" },
+                new TaxApiStatus { TaxApiStatusID = 9, Code = "TECHNICAL_ERROR", StatusName = "Lỗi kĩ thuật" },
+
+
 
                 // === Các mã thông điệp tiếp nhận TBxx ===
                 new TaxApiStatus { TaxApiStatusID = 10, Code = "TB01", StatusName = "Tiếp nhận hợp lệ" },
@@ -342,7 +346,15 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceStatus { InvoiceStatusID = 9, StatusName = "Sent" }, // Quá hạn (Optional)
                 new InvoiceStatus { InvoiceStatusID = 10, StatusName = "Adjustment_in_process" }, // Quá hạn (Optional)
                 new InvoiceStatus { InvoiceStatusID = 11, StatusName = "Replacement_in_process" }, // Quá hạn (Optional)
-                new InvoiceStatus { InvoiceStatusID = 12, StatusName = "TaxAuthority Approved" }
+                new InvoiceStatus { InvoiceStatusID = 12, StatusName = "TaxAuthority Approved" },
+                new InvoiceStatus { InvoiceStatusID = 13, StatusName = "TaxAuthority Rejected" },
+                new InvoiceStatus { InvoiceStatusID = 14, StatusName = "Processing" },
+                new InvoiceStatus { InvoiceStatusID = 15, StatusName = "Send Error" },
+                new InvoiceStatus { InvoiceStatusID = 16, StatusName = "Rejected" }
+
+
+
+
             );
 
             modelBuilder.Entity<PaymentStatus>().HasData(
