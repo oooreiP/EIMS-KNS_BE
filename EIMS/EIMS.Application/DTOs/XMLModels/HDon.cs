@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 
 namespace EIMS.Application.DTOs.XMLModels
 {
-    [XmlRoot("HDon")]
+    [XmlRoot(ElementName = "HDon", Namespace = "http://tempuri.org/HDonSchema.xsd")]
     public class HDon
     {
         [XmlElement("DLHDon")]

@@ -15,6 +15,6 @@ namespace EIMS.Application.DTOs.Mails
         public string EmailBody { get; set; }
 
         // Danh sách URL file đính kèm (Gộp cả PDF, XML và File ngoài vào đây)
-        public List<string> AttachmentUrls { get; set; } = new();
+        public List<FileAttachment> AttachmentUrls { get; set; } = new();
     }
 }

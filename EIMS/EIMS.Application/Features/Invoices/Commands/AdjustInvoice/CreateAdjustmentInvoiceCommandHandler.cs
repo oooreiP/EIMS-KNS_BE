@@ -136,8 +136,9 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // =========================================================================
             if (originalInvoice.InvoiceStatusID == 2)
             {
-                originalInvoice.InvoiceStatusID = 4;
+                originalInvoice.InvoiceStatusID = 10;
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
+                await _uow.SaveChanges();
             }
             await _uow.InvoicesRepository.CreateAsync(adjInvoice);
             await _uow.SaveChanges();
@@ -169,7 +170,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             fullInvoice.XMLPath = uploadResult.Value.Url;
             await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
             await _uow.SaveChanges();
-            await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 11);
+            await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 10);
             return Result.Ok(adjInvoice.InvoiceID);
         }
     }
