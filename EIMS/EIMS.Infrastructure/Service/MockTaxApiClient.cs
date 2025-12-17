@@ -79,7 +79,6 @@ namespace EIMS.Infrastructure.Service
         {
             var responseObj = InvoiceXmlMapper.CreateRejectResponse301(request, errCode, errMsg);
             string xml = XmlHelpers.Serialize(responseObj);
-
             return Task.FromResult(new TaxApiResponse
             {
                 IsSuccess = true, 

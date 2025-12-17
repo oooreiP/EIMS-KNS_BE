@@ -3,6 +3,7 @@ using EIMS.Application.Features.TaxLogs;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -11,12 +12,25 @@ namespace EIMS.API.Controllers
     public class TaxLogsController : ControllerBase
     {
         private readonly IMediator _mediator;
-
-        public TaxLogsController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public TaxLogsController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
+            _env = env;
         }
+        /// <summary>
+        /// Lấy danh sách lịch sử truyền nhận (Không bao gồm nội dung XML chi tiết)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var query = new GetTaxApiLogListQuery();
+            var result = await _mediator.Send(query);
 
+            if (result.IsFailed) return BadRequest(result.Errors[0].Message);
+
+            return Ok(result.Value);
+        }
         /// <summary>
         /// Lấy lịch sử giao dịch thuế của một hóa đơn
         /// </summary>
@@ -60,6 +74,38 @@ namespace EIMS.API.Controllers
             var result = await _mediator.Send(new DeleteTaxLogCommand { Id = id });
             if (result.IsSuccess) return Ok();
             return BadRequest(result.Errors);
+        }
+        /// <summary>
+        /// Xem chi tiết Log (Hỗ trợ view đẹp hoặc view raw)
+        /// </summary>
+        /// <param name="id">ID của Log</param>
+        /// <param name="type">'request' hoặc 'response'</param>
+        /// <param name="viewHtml">true: Xem đẹp (Mặc định), false: Xem raw xml</param>
+        [HttpGet("{id}/view")]
+        public async Task<IActionResult> ViewLogContent(int id, [FromQuery] string type = "request", [FromQuery] bool viewHtml = true)
+        {
+            string rootPath = _env.ContentRootPath;
+            var query = new GetLogHtmlViewQuery(id, type, viewHtml, rootPath);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return NotFound(result.Errors[0].Message);
+            }
+
+            string content = result.Value;
+
+            // XỬ LÝ CONTENT-TYPE TRẢ VỀ
+            if (viewHtml)
+            {
+                // Trả về HTML để trình duyệt render giao diện
+                return Content(content, "text/html", Encoding.UTF8);
+            }
+            else
+            {
+                string contentType = content.Trim().StartsWith("<") ? "text/xml" : "text/plain";
+                return Content(content, contentType, Encoding.UTF8);
+            }
         }
     }
 }

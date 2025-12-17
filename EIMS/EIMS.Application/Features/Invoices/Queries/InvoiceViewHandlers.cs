@@ -27,7 +27,6 @@ namespace EIMS.Application.Features.Invoices.Queries
 
         public async Task<Result<string>> Handle(GetInvoiceHtmlViewQuery request, CancellationToken cancellationToken)
         {
-            // 1. Lấy thông tin hóa đơn từ DB
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn.");
@@ -37,10 +36,7 @@ namespace EIMS.Application.Features.Invoices.Queries
 
             try
             {
-                // 2. Tải nội dung XML (Dùng hàm DownloadStringAsync bạn đã viết ở bài trước)
                 string xmlContent = await _invoiceXmlService.DownloadStringAsync(invoice.XMLPath);
-
-                // 3. Convert sang HTML
                 string html = ConvertToHtml(xmlContent,request.RootPath);
                 return Result.Ok(html);
             }
