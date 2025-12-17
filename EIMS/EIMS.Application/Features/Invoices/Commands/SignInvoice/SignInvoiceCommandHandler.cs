@@ -28,9 +28,6 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn.");
-            if (invoice.InvoiceStatusID != 7)
-                return Result.Fail($"Hóa đơn đang ở trạng thái {invoice.InvoiceStatusID}, không thể ký.");
-
             if (string.IsNullOrEmpty(invoice.XMLPath))
                 return Result.Fail("Chưa có file XML gốc để ký.");
 

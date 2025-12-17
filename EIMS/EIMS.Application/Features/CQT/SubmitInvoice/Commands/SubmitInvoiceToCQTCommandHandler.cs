@@ -2,6 +2,7 @@
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.Results;
+using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.DTOs.XMLModels.ThongDiep;
 using EIMS.Domain.Entities;
 using FluentResults;
@@ -20,12 +21,13 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly ITaxApiClient _taxClient;
-
-        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService)
+        private readonly HttpClient _httpClient;
+        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService, HttpClient httpClient)
         {
             _uow = uow;
             _taxClient = taxClient;
             _invoiceXMLService = invoiceXMLService;
+            _httpClient = httpClient;
         }
 
         public async Task<Result<SubmitInvoiceToCQTResult>> Handle(
@@ -37,19 +39,52 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
             if (invoice == null)
-                return Result.Fail("Invoice not found");
-
+                return Result.Fail("Không tìm thấy hóa đơn");
+            if (invoice.InvoiceStatusID != 8 && invoice.DigitalSignature == null)
+            {
+                return Result.Fail("Hóa đơn phải kí trước khi gửi");
+            }
             // 2. Map và Serialize
             var tDiep = InvoiceXmlMapper.MapThongDiepToXmlModel(invoice, messageCode,1, null);
+            if (!string.IsNullOrEmpty(invoice.XMLPath))
+            {
+                try
+                {
+                    string hdonXmlContent = "";
+                    if (invoice.XMLPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Nếu là link Cloudinary/S3
+                        hdonXmlContent = await _httpClient.GetStringAsync(invoice.XMLPath);
+                    }
+                    else if (File.Exists(invoice.XMLPath))
+                    {
+                        // Nếu là file lưu trên ổ cứng Server
+                        hdonXmlContent = await File.ReadAllTextAsync(invoice.XMLPath);
+                    }
+                    if (!string.IsNullOrEmpty(hdonXmlContent))
+                    {
+                        // B. Deserialize chuỗi XML đó ngược lại thành Object HDon
+                        // Lưu ý: Cần thêm hàm Deserialize vào XmlHelper (xem bên dưới)
+                        var existingHDon = XmlHelpers.DeserializeFlexible<HDon>(hdonXmlContent);
+
+                        // C. Gán đè Hóa đơn cũ vào Thông điệp mới
+                        // Việc này giữ nguyên chữ ký số (nếu class HDon map đúng Signature)
+                        tDiep.TDiepDLieu.HDon = existingHDon;
+                    }
+                }
+                catch (Exception ex)
+                {
+                     return Result.Fail("Không đọc được file XML hóa đơn gốc"); // Nếu muốn chặn luôn
+                }
+            }
             var referenceId = tDiep.TtinChung.MaThongDiep;
             var xmlPayload = XmlHelpers.Serialize(tDiep);
-
-            // 3. TẠO LOG GỐC (Trạng thái: PENDING - Đang gửi CQT)
             var log = new TaxApiLog
             {
                 InvoiceID = invoice.InvoiceID,
                 RequestPayload = xmlPayload,
                 TaxApiStatusID = 1, // PENDING: Đang gửi CQT
+                MTDiep = "200",
                 Timestamp = DateTime.UtcNow
             };
 
@@ -59,8 +94,12 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
                        taxResponse.MLTDiep == "204" ? "TBxx" :
                        "TB01"; 
+            log.ResponsePayload = taxResponse.RawResponse;
+            await _uow.TaxApiLogRepository.UpdateAsync(log);
+            await _uow.SaveChanges();
             var responseLog = new TaxApiLog
             {
+                RequestPayload = xmlPayload,
                 ResponsePayload = taxResponse.RawResponse,
                 MTDiep = taxResponse.MTDiep,
                 SoTBao = taxResponse.SoTBao, 

@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,17 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
         {
             // 1. Lấy thông tin hóa đơn từ DB
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
+            if (invoice.OriginalInvoiceID != null)
+            {
+                var original = await _uow.InvoicesRepository.GetAllQueryable()
+               .Include(x => x.InvoiceItems)
+               .Include(x => x.Customer)
+               .Include(x => x.Company)
+               .OrderByDescending(x => x.InvoiceID)
+               .FirstOrDefaultAsync(x => x.InvoiceID == invoice.OriginalInvoiceID);
+                if(original.InvoiceType == 3) original.InvoiceStatusID = 5;
+                else if(original.InvoiceType == 2) original.InvoiceStatusID = 4;
+            }
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
             bool hasMccqt = !string.IsNullOrEmpty(invoice.TaxAuthorityCode);
@@ -42,7 +54,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
-            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
+                await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             return Result.Ok();
         }
     }

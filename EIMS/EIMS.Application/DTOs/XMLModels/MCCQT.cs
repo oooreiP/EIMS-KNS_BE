@@ -9,8 +9,6 @@ namespace EIMS.Application.DTOs.XMLModels
 {
     public class MCCQT
     {
-        [XmlAttribute("Id")]
-        public string Id { get; set; } = "";
         [XmlText]
         public string Value { get; set; } = "";
     }
