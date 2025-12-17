@@ -5,6 +5,7 @@ using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,38 @@ namespace EIMS.Application.Features.TaxLogs
          IRequestHandler<GetTaxLogsByInvoiceQuery, Result<List<TaxApiLogSummaryDto>>>,
          IRequestHandler<GetTaxLogByIdQuery, Result<TaxApiLogDetailDto>>,
          IRequestHandler<CreateTaxLogCommand, Result<int>>,
-         IRequestHandler<DeleteTaxLogCommand, Result>
+         IRequestHandler<DeleteTaxLogCommand, Result>,
+         IRequestHandler<GetLogHtmlViewQuery, Result<string>>,
+         IRequestHandler<GetTaxApiLogListQuery, Result<List<TaxApiLogSummaryDto>>>
     {
         private readonly IUnitOfWork _uow;
-
-        public TaxLogHandlers(IUnitOfWork uow)
+        private readonly IDocumentParserService _documentParserService;
+        public TaxLogHandlers(IUnitOfWork uow, IDocumentParserService documentParserService)
         {
             _uow = uow;
+            _documentParserService = documentParserService;
+        }
+        public async Task<Result<List<TaxApiLogSummaryDto>>> Handle(GetTaxApiLogListQuery request, CancellationToken cancellationToken)
+        {
+            var query = _uow.TaxApiLogRepository.GetAllQueryable();
+            query = query
+                .Include(l => l.TaxApiStatus)
+                .Include(l => l.Invoice);
+            query = query.OrderByDescending(l => l.Timestamp);
+            var dtoList = await query.Select(l => new TaxApiLogSummaryDto
+            {
+                TaxLogID = l.TaxLogID,
+                InvoiceID = l.InvoiceID,
+                InvoiceNumber = l.Invoice.InvoiceNumber,
+                TaxApiStatusID = l.TaxApiStatusID,
+                TaxApiStatusName = l.TaxApiStatus.StatusName,
+                MTDiep = l.MTDiep,
+                MCCQT = l.MCCQT,
+                SoTBao = l.SoTBao,
+                Timestamp = l.Timestamp
+            }).ToListAsync(cancellationToken);
+
+            return Result.Ok(dtoList);
         }
         public async Task<Result<List<TaxApiLogSummaryDto>>> Handle(GetTaxLogsByInvoiceQuery request, CancellationToken cancellationToken)
         {
@@ -36,6 +62,8 @@ namespace EIMS.Application.Features.TaxLogs
             var dtos = logs.Select(x => new TaxApiLogSummaryDto
             {
                 TaxLogID = x.TaxLogID,
+                InvoiceID = x.InvoiceID,
+                TaxApiStatusID = x.TaxApiStatusID,
                 Timestamp = x.Timestamp,
                 TaxApiStatusName = x.TaxApiStatus?.StatusName ?? "Unknown",
                 MTDiep = x.MTDiep,
@@ -100,7 +128,7 @@ namespace EIMS.Application.Features.TaxLogs
             {
                 TaxLogID = x.TaxLogID,
                 InvoiceID = x.InvoiceID,
-                InvoiceNumber = x.Invoice != null ? x.Invoice.InvoiceNumber.ToString("D7") : "N/A",
+                InvoiceNumber = x.Invoice != null ? x.Invoice.InvoiceNumber : 0,
                 Timestamp = x.Timestamp,
                 MTDiep = x.MTDiep,
                 SoTBao = x.SoTBao,
@@ -120,7 +148,67 @@ namespace EIMS.Application.Features.TaxLogs
             await _uow.SaveChanges();
             return Result.Ok();
         }
+        public async Task<Result<string>> Handle(GetLogHtmlViewQuery request, CancellationToken cancellationToken)
+        {
+            // 1. LẤY DỮ LIỆU LOG TỪ DB
+            var log = await _uow.TaxApiLogRepository.GetByIdAsync(request.LogId);
+            if (log == null)
+                return Result.Fail("Không tìm thấy lịch sử truyền nhận (Log) này.");
 
+            // 2. CHỌN NỘI DUNG (Gửi đi hay Nhận về)
+            string content = (request.ViewType == "response") ? log.ResponsePayload : log.RequestPayload;
+            string title = (request.ViewType == "response") ? "Phản hồi từ CQT (Response)" : "Dữ liệu gửi đi (Request)";
+
+            if (string.IsNullOrWhiteSpace(content))
+                return Result.Fail("Log này không có dữ liệu.");
+
+            // =========================================================
+            // NHÁNH A: XEM RAW XML (ViewByHtml = false)
+            // =========================================================
+            // Trả về nguyên gốc để Controller hiển thị dạng text/xml (tô màu code)
+            if (!request.ViewByHtml)
+            {
+                return Result.Ok(content);
+            }
+
+            // =========================================================
+            // NHÁNH B: XEM GIAO DIỆN HTML (ViewByHtml = true)
+            // =========================================================
+
+            // Bước 3: Kiểm tra sơ bộ xem có phải XML không?
+            // (Vì Response có thể là JSON lỗi, HTML 500 Server Error, hoặc Text thuần)
+            if (!content.TrimStart().StartsWith("<"))
+            {
+                // Nếu không phải XML, hiển thị giao diện Text thô
+                return Result.Ok(GenerateRawViewHtml(title, "Dữ liệu không phải XML (JSON/Text)", content));
+            }
+
+            try
+            {
+                // Bước 4: Tự động phát hiện loại dữ liệu để chọn XSLT phù hợp
+                string xsltFileName = DetectTemplate(content);
+
+                // Nếu không tìm thấy template phù hợp (XML lạ), hiển thị Raw
+                if (string.IsNullOrEmpty(xsltFileName))
+                {
+                    return Result.Ok(GenerateRawViewHtml(title, "Dữ liệu XML chưa được hỗ trợ giao diện", content));
+                }
+
+                // Bước 5: Lấy đường dẫn file XSLT
+                string xsltPath = Path.Combine(request.RootPath, "Templates", xsltFileName);
+
+                if (!File.Exists(xsltPath))
+                    return Result.Ok(GenerateErrorHtml(title, $"Không tìm thấy file mẫu tại: {xsltPath}", content));
+                // Bước 6: Transform XML -> HTML
+                string htmlOutput = _documentParserService.TransformXmlToHtml(content, xsltPath);
+                return Result.Ok(htmlOutput);
+            }
+            catch (Exception ex)
+            {
+                // Nếu transform lỗi (do XML sai cấu trúc, thiếu thẻ đóng...), hiển thị XML gốc để debug
+                return Result.Ok(GenerateErrorHtml(title, $"Lỗi hiển thị: {ex.Message}", content));
+            }
+        }
         // --- HELPER: Format XML ---
         private string TryFormatXml(string xml)
         {
@@ -134,6 +222,54 @@ namespace EIMS.Application.Features.TaxLogs
             {
                 return xml; 
             }
+        }
+        // --- Hàm phụ trợ: Tự động chọn file XSLT ---
+        private string DetectTemplate(string xmlContent)
+        {
+            if (xmlContent.Contains("DLHDon") || xmlContent.Contains("HDon"))
+            {
+                return "InvoiceTemplate.xsl"; // Xem hóa đơn
+            }
+            if (xmlContent.Contains("TBao") || xmlContent.Contains("DiepToBa"))
+            {
+                return "TaxNotificationTemplate.xsl"; // Xem thông báo thuế
+            }
+            // Mặc định dùng InvoiceTemplate hoặc một file Generic nào đó
+            return "InvoiceTemplate.xsl";
+        }
+
+        // --- Hàm phụ trợ: HTML hiển thị lỗi/text thô ---
+        private string GenerateRawViewHtml(string title, string status, string content)
+        {
+            return $@"
+                <html>
+                <body style='font-family: Segoe UI, sans-serif; padding: 20px; background: #f9f9f9;'>
+                    <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
+                        <h2 style='color: #0056b3; margin-top: 0;'>{title}</h2>
+                        <div style='background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ffeeba;'>
+                            <strong>Trạng thái:</strong> {status}
+                        </div>
+                        <h4 style='margin-bottom: 5px; color: #555;'>Nội dung gốc:</h4>
+                        <pre style='background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; font-family: Consolas, monospace;'>{System.Net.WebUtility.HtmlEncode(content)}</pre>
+                    </div>
+                </body>
+                </html>";
+        }
+
+        private string GenerateErrorHtml(string title, string error, string rawXml)
+        {
+            return $@"
+                <html>
+                <body style='font-family: Segoe UI, sans-serif; padding: 20px; background: #fff5f5;'>
+                    <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid #dc3545;'>
+                        <h2 style='color: #dc3545; margin-top: 0;'>⚠️ {title}</h2>
+                        <p style='color: #721c24; font-weight: bold;'>Lỗi: {error}</p>
+                        <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'/>
+                        <h4 style='margin-bottom: 5px;'>Dữ liệu XML gốc:</h4>
+                        <textarea style='width: 100%; height: 400px; font-family: Consolas, monospace; border: 1px solid #ccc; padding: 10px;'>{rawXml}</textarea>
+                    </div>
+                </body>
+                </html>";
         }
     }
 }

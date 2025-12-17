@@ -141,6 +141,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 };
                 await _uow.TaxApiLogRepository.CreateAsync(responseLog);
                 await _uow.SaveChanges();
+                await _uow.TaxApiLogRepository.UpdateAsync(responseLog);
                 if (taxResponse.IsSuccess) // Nếu CQT nhận thành công (Thường trả về 301 hoặc 204 OK)
                 {
                     switch (request.ErrorType)

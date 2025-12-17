@@ -341,11 +341,11 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceStatus { InvoiceStatusID = 4, StatusName = "Adjusted" }, // Bị điều chỉnh
                 new InvoiceStatus { InvoiceStatusID = 5, StatusName = "Replaced" },  // Bị thay thế
                 new InvoiceStatus { InvoiceStatusID = 6, StatusName = "Pending Approval" },  // Đã thanh toán
-                new InvoiceStatus { InvoiceStatusID = 7, StatusName = "Pending Sign" }, // Quá hạn (Optional)
-                new InvoiceStatus { InvoiceStatusID = 8, StatusName = "Signed" }, // Quá hạn (Optional)
-                new InvoiceStatus { InvoiceStatusID = 9, StatusName = "Sent" }, // Quá hạn (Optional)
-                new InvoiceStatus { InvoiceStatusID = 10, StatusName = "Adjustment_in_process" }, // Quá hạn (Optional)
-                new InvoiceStatus { InvoiceStatusID = 11, StatusName = "Replacement_in_process" }, // Quá hạn (Optional)
+                new InvoiceStatus { InvoiceStatusID = 7, StatusName = "Pending Sign" }, 
+                new InvoiceStatus { InvoiceStatusID = 8, StatusName = "Signed" }, 
+                new InvoiceStatus { InvoiceStatusID = 9, StatusName = "Sent" }, 
+                new InvoiceStatus { InvoiceStatusID = 10, StatusName = "Adjustment_in_process" }, 
+                new InvoiceStatus { InvoiceStatusID = 11, StatusName = "Replacement_in_process" },
                 new InvoiceStatus { InvoiceStatusID = 12, StatusName = "TaxAuthority Approved" },
                 new InvoiceStatus { InvoiceStatusID = 13, StatusName = "TaxAuthority Rejected" },
                 new InvoiceStatus { InvoiceStatusID = 14, StatusName = "Processing" },
