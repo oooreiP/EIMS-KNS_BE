@@ -60,5 +60,19 @@ namespace EIMS.API.Controllers
                 });
             return Ok(result.Value);
         }
+
+        [HttpGet("invoice/{id}")]
+        public async Task<IActionResult> GetPayments(int id)
+        {
+            var query = new GetPaymentsByInvoiceIdQuery(id);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return NotFound(new { message = result.Errors[0].Message });
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
