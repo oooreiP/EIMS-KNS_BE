@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using EIMS.Application.DTOs;
+using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.Features.Invoices.Commands.AdjustInvoice;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Application.Features.Invoices.Commands.IssueInvoice;
@@ -118,16 +119,31 @@ namespace EIMS.API.Controllers
             }
         }
         [HttpPost("{id}/issue")]
-        public async Task<IActionResult> IssueInvoice(int id, int issuerId)
+        public async Task<IActionResult> IssueInvoice(int id, [FromBody] IssueInvoiceRequest requestBody)
         {
-            var command = new IssueInvoiceCommand { InvoiceId = id, IssuerId = issuerId };
-            var result = await _mediator.Send(command);
+            var command = new IssueInvoiceCommand
+            {
+                InvoiceId = id, // Lấy từ URL
+                IssuerId = requestBody.IssuerId,
 
+                // Map các thông tin thanh toán mới
+                AutoCreatePayment = requestBody.AutoCreatePayment,
+                PaymentAmount = requestBody.PaymentAmount,
+                PaymentMethod = requestBody.PaymentMethod,
+                Note = requestBody.Note
+            };
+            var result = await _mediator.Send(command);
             if (result.IsSuccess)
             {
-                return Ok(new { message = "Phát hành hóa đơn thành công. Trạng thái: Issued." });
+                var successMsg = result.Successes.FirstOrDefault()?.Message
+                                 ?? "Phát hành hóa đơn thành công. Trạng thái: Issued.";
+                return Ok(new
+                {
+                    message = successMsg,
+                    invoiceId = id
+                });
             }
-
+            // 4. Trả về lỗi
             return BadRequest(new
             {
                 message = "Không thể phát hành hóa đơn.",
