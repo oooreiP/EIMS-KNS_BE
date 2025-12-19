@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Features.InvoicePayment.Commands;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,14 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _xmlService;
         private readonly IEmailService _emailService;
+        private readonly IMediator _mediator;
 
-        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService)
+        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator)
         {
             _uow = uow;
             _xmlService = xmlService;
             _emailService = emailService;
+            _mediator = mediator;
         }
 
         public async Task<Result> Handle(IssueInvoiceCommand request, CancellationToken cancellationToken)
@@ -46,15 +49,38 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
 
             if (!hasMccqt)
                 return Result.Fail("Hóa đơn chưa được cấp Mã CQT.");
-            if (invoice.InvoiceStatusID != 2) // Nếu chưa phải là Issued
+            if (invoice.InvoiceStatusID != 2) 
             {
                 invoice.InvoiceStatusID = 2;
                 invoice.IssuedDate = DateTime.UtcNow;
                 invoice.IssuerID = request.IssuerId;
+                if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
                 await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
+            if (request.AutoCreatePayment && request.PaymentAmount > 0)
+            {
+                // Tạo Command tạo Payment
+                var paymentCommand = new CreatePaymentCommand
+                {
+                    InvoiceId = invoice.InvoiceID,
+                    UserId = request.IssuerId,
+                    Amount = request.PaymentAmount.Value,
+                    PaymentDate = DateTime.UtcNow,
+                    PaymentMethod = request.PaymentMethod ?? "Cash", 
+                    TransactionCode = $"AUTO-{invoice.InvoiceNumber}", 
+                    Note = request.Note ?? "Thanh toán ngay khi phát hành"
+                };
+
+                // Gọi Handler tạo Payment thông qua Mediator
+                var paymentResult = await _mediator.Send(paymentCommand, cancellationToken);
+
+                if (paymentResult.IsFailed)
+                {
+                    return Result.Ok().WithSuccess("Phát hành thành công nhưng lỗi tạo thanh toán: " + paymentResult.Errors[0].Message);
+                }
+            }
             return Result.Ok();
         }
     }
