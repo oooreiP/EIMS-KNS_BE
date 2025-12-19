@@ -1,4 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Commons.Mapping;
+using EIMS.Application.DTOs.XMLModels;
+using EIMS.Domain.Entities;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace EIMS.Infrastructure.Service
 {
@@ -73,10 +77,13 @@ namespace EIMS.Infrastructure.Service
         {
             try
             {
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 var path = _config["Signature:PfxPath"];
                 var password = _config["Signature:Password"];
+                string fullPath = Path.Combine(basePath, path);
                 // Load cert
-                var cert = new X509Certificate2(path, password, X509KeyStorageFlags.MachineKeySet);
+                var flags = X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable;
+                var cert = new X509Certificate2(fullPath, password,flags);
                 return Result.Ok(cert);
             }
             catch (Exception ex)
@@ -182,6 +189,28 @@ namespace EIMS.Infrastructure.Service
             catch (Exception ex)
             {
                 return Result.Fail($"Lỗi khi đọc file XML: {ex.Message}");
+            }
+        }
+        public async Task<string> GenerateAndUploadXmlAsync(Invoice fullInvoice)
+        {
+            var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
+            string fileName = fullInvoice.InvoiceNumber.HasValue
+                ? $"Invoice_{fullInvoice.InvoiceNumber}.xml"
+                : $"Invoice_Draft_{fullInvoice.InvoiceID}.xml";
+            using (var memoryStream = new MemoryStream())
+            {
+                var ns = new XmlSerializerNamespaces();
+                ns.Add("hdon", "http://tempuri.org/HDonSchema.xsd");
+                var serializer = new XmlSerializer(typeof(HDon));
+                serializer.Serialize(memoryStream, xmlModel, ns);
+                memoryStream.Position = 0;
+                var uploadResult = await _fileStorageService.UploadFileAsync(memoryStream, fileName, "invoices");
+                if (uploadResult.IsFailed)
+                {
+                    // Ném lỗi để Handler bên ngoài bắt được
+                    throw new Exception($"Upload XML thất bại: {uploadResult.Errors[0].Message}");
+                }
+                return uploadResult.Value.Url;
             }
         }
     }
