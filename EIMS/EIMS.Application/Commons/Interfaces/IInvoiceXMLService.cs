@@ -1,4 +1,5 @@
-﻿using FluentResults;
+﻿using EIMS.Domain.Entities;
+using FluentResults;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,5 +19,6 @@ namespace EIMS.Application.Commons.Interfaces
         void EmbedMccqtIntoXml(XmlDocument xmlDoc, string mccqtValue);
         Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl);
         Task<string> GenerateNextNotificationNumberAsync();
+        Task<string> GenerateAndUploadXmlAsync(Invoice fullInvoice);
     }
 }

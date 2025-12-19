@@ -8,7 +8,6 @@ namespace EIMS.Application.DTOs.Invoices
     public class CreateInvoiceResponse
     {
         public int InvoiceID { get; set; }
-        public long InvoiceNumber { get; set; }
         public int CustomerID { get; set; }
         public string PaymentMethod { get; set; }
         public decimal TotalAmount { get; set; }

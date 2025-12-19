@@ -91,7 +91,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                                     MCCQT = invoice.TaxAuthorityCode, 
                                     KHMSHDon = khmsHDon, 
                                     KHHDon = khHDon,         
-                                    SHDon = invoice.InvoiceNumber.ToString("D7"),
+                                    SHDon = invoice.InvoiceNumber.HasValue ? invoice.InvoiceNumber.Value.ToString("D7") : "",
                                     Ngay = invoice.IssuedDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"),
                                     LADHDDT = 1, // 1: Có mã theo NĐ123
                                     TCTBao = request.ErrorType, // 1: Hủy, 2: ĐC, 3: TT, 4: GT

@@ -17,14 +17,16 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
         private readonly IEmailService _emailService;
+        private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly IMapper _mapper;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileStorageService = fileStorageService;
             _emailService = emailService;
+            _invoiceXMLService = invoiceXMLService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -68,12 +70,6 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 // var user = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
                 // if (user == null)
                 //     return Result.Fail(new Error($"User {request.SalesID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-                var serial = await _unitOfWork.SerialRepository.GetByIdAndLockAsync(template.SerialID);
-                if (serial == null)
-                    return Result.Fail(new Error($"Template {serial.SerialID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-                serial.CurrentInvoiceNumber += 1;
-                long newInvoiceNumber = serial.CurrentInvoiceNumber;
-                await _unitOfWork.SerialRepository.UpdateAsync(serial);
                 var processedItems = new List<InvoiceItem>();
                 foreach (var itemReq in request.Items)
                 {
@@ -112,7 +108,6 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 decimal invoiceVatRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
                 var invoice = new Invoice
                 {
-                    InvoiceNumber = newInvoiceNumber,
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
@@ -141,33 +136,18 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     Date = DateTime.UtcNow,
                     PerformedBy = request.SignedBy,
                 };
-
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
                 var fullInvoice = await _unitOfWork.InvoicesRepository
                     .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
-                var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
-
-                var serializer = new XmlSerializer(typeof(HDon));
-                var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
-                xmlPath = Path.Combine(Path.GetTempPath(), fileName);
-                await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
-                {
-                    serializer.Serialize(fs, xmlModel);
-                }
-                await using var xmlStream = File.OpenRead(xmlPath);
-                var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
-
-                if (uploadResult.IsFailed)
-                    return Result.Fail(uploadResult.Errors);
-                fullInvoice.XMLPath = uploadResult.Value.Url;
+                string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
+                fullInvoice.XMLPath = newXmlUrl;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _unitOfWork.SaveChanges();
                 var response = new CreateInvoiceResponse
                 {
                     InvoiceID = fullInvoice.InvoiceID,
-                    InvoiceNumber = fullInvoice.InvoiceNumber,
                     CustomerID = fullInvoice.CustomerID,
                     TotalAmount = fullInvoice.TotalAmount,
                     TotalAmountInWords = fullInvoice.TotalAmountInWords,

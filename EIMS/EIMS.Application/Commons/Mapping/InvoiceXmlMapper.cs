@@ -45,7 +45,9 @@ namespace EIMS.Application.Commons.Mapping
                                 THDon = "Hóa đơn giá trị gia tăng",
                                 KHMSHDon = khmsHDon,                       // Ký hiệu mẫu số hóa đơn 
                                 KHHDon = khHDon,                      // Ký hiệu hóa đơn
-                                SHDon = invoice.InvoiceNumber.ToString("0000000"),  // Số hóa đơn
+                                SHDon = invoice.InvoiceNumber.HasValue
+                                ? invoice.InvoiceNumber.Value.ToString("0000000")
+                                : "",
                                 NLap = invoice.CreatedAt.ToString("yyyy-MM-dd"),
                                 DVTTe = "VND",
                                 HTTToan = "TM/CK",
@@ -129,7 +131,8 @@ namespace EIMS.Application.Commons.Mapping
                     LHDCLQuan = 1, // 1: Hóa đơn điện tử
                     KHMSHDCLQuan = orgKhms, // Ký hiệu mẫu số gốc
                     KHHDCLQuan = orgKh,     // Ký hiệu hóa đơn gốc
-                    SHDCLQuan = orgInv.InvoiceNumber.ToString("D7"), // Số hóa đơn gốc
+                    SHDCLQuan = orgInv.InvoiceNumber.HasValue ? 
+                                orgInv.InvoiceNumber.Value.ToString("D7") : "",
                     NLHDCLQuan = (orgInv.IssuedDate ?? orgInv.CreatedAt).ToString("yyyy-MM-dd"),
 
                     Gchu = invoice.AdjustmentReason ?? invoice.Notes 
