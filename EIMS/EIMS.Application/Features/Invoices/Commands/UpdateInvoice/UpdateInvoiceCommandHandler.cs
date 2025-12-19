@@ -185,7 +185,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
                 var serializer = new XmlSerializer(typeof(HDon));
-                var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
+                var fileName = $"Invoice_{fullInvoice.InvoiceID}.xml";
                 xmlPath = Path.Combine(Path.GetTempPath(), fileName);
 
                 await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
