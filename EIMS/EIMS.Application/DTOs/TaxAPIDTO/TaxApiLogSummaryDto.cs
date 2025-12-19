@@ -10,7 +10,7 @@ namespace EIMS.Application.DTOs.TaxAPIDTO
     {
         public int TaxLogID { get; set; }
         public int InvoiceID { get; set; }
-        public long InvoiceNumber { get; set; }
+        public long? InvoiceNumber { get; set; }
         public DateTime Timestamp { get; set; }
         public string TaxApiStatusName { get; set; } 
         public int TaxApiStatusID { get; set; } 
