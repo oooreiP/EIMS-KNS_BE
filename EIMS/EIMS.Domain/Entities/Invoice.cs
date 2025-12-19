@@ -17,7 +17,7 @@ namespace EIMS.Domain.Entities
 
         public int TemplateID { get; set; }
 
-        public long InvoiceNumber { get; set; }
+        public long? InvoiceNumber { get; set; }
         [ForeignKey("InvoiceStatusID")]
 
         public int InvoiceStatusID { get; set; }
