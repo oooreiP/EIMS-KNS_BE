@@ -122,7 +122,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     InvoiceStatusID = request.InvoiceStatusID,
                     PaymentStatusID = 1,
-                    IssuerID = request.SignedBy, //?? 1,
+                    IssuerID = null,
                     MinRows = request.MinRows ?? 5,
                     InvoiceItems = processedItems
                 };
