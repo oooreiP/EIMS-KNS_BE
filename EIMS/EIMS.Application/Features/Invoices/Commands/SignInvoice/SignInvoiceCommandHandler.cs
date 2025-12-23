@@ -12,7 +12,7 @@ using System.Xml;
 
 namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
 {
-    public class SignInvoiceCommandHandler : IRequestHandler<SignInvoiceCommand, Result<long?>>
+    public class SignInvoiceCommandHandler : IRequestHandler<SignInvoiceCommand, Result<long>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IInvoiceXMLService _invoiceXmlService;
@@ -22,7 +22,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             _unitOfWork = unitOfWork;
             _invoiceXmlService = invoiceXmlService;
         }
-        public async Task<Result<long?>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
+        public async Task<Result<long>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
         {
             // BƯỚC 1: VALIDATION NGHIỆP VỤ
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
@@ -69,7 +69,8 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
             await _unitOfWork.SaveChanges();
 
-            return Result.Ok(invoice.InvoiceNumber);
+            if (invoice.InvoiceNumber == null) return Result.Fail("Lỗi: Không có số hóa đơn.");
+            return Result.Ok((long)invoice.InvoiceNumber);
         }
         private async Task<long?> GenerateInvoiceNumberAsync(int serialId)
         {
