@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoicePayment;
+using EIMS.Domain.Constants;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 
@@ -82,7 +84,17 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
 
                     // C. Update the Statement in DB
                     await _uow.InvoiceStatementRepository.UpdateAsync(stmt);
-                }   
+                }
+                var history = new InvoiceHistory
+                {
+                    InvoiceID = request.InvoiceId,
+                    ActionType = InvoiceActionTypes.PaymentAdded,
+                    PerformedBy = request.UserId,
+                    Date = DateTime.UtcNow,
+                    ReferenceInvoiceID = null
+                };
+
+                await _uow.InvoiceHistoryRepository.CreateAsync(history);
                 // 5. Commit
                 await _uow.SaveChanges();
                 await _uow.CommitAsync();

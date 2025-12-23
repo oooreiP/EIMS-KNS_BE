@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
+using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -138,14 +139,28 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             }
             await _uow.InvoicesRepository.CreateAsync(newInvoice);
             await _uow.SaveChanges();
-            await _uow.InvoiceHistoryRepository.CreateAsync(new InvoiceHistory
+            // Log 1: Gắn cho Hóa đơn CŨ
+            var logForOld = new InvoiceHistory
             {
-                InvoiceID = originalInvoice.InvoiceID,
-                ActionType = "Replacement Created",
+                InvoiceID = originalInvoice.InvoiceID,        // 100
+                ActionType = InvoiceActionTypes.Replaced, // "Bị thay thế"
+                ReferenceInvoiceID = newInvoice.InvoiceID, // Trỏ đến 200
+                PerformedBy = request.PerformedBy ?? newInvoice.IssuerID,
                 Date = DateTime.UtcNow
-                // PerformedBy lấy từ User Context
-            });
+            };
+            // Log 2: Gắn cho Hóa đơn MỚI
+            var logForNew = new InvoiceHistory
+            {
+                InvoiceID = newInvoice.InvoiceID,           
+                ActionType = InvoiceActionTypes.Replacement, // "Là bản thay thế"
+                ReferenceInvoiceID = originalInvoice.InvoiceID,  
+                PerformedBy = request.PerformedBy ?? newInvoice.IssuerID,
+                Date = DateTime.UtcNow
+            };
 
+            // 3. Thêm vào DB
+            await _uow.InvoiceHistoryRepository.CreateAsync(logForOld);
+            await _uow.InvoiceHistoryRepository.CreateAsync(logForNew);
             await _uow.SaveChanges();
             var fullInvoice = await _uow.InvoicesRepository
                    .GetByIdAsync(newInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
