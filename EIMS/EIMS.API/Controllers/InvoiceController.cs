@@ -105,7 +105,7 @@ namespace EIMS.API.Controllers
             // 3. Xử lý kết quả trả về
             if (result.IsSuccess)
             {
-                return Ok(new { message = $"Đã kích hoạt ký số thành công cho hóa đơn ID: {invoiceId}. Trạng thái đang được cập nhật." });
+                return Ok(new { InvoiceNumber = result.Value });
             }
             else
             {

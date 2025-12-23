@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
 {
-    public class SignInvoiceCommand : IRequest<Result>
+    public class SignInvoiceCommand : IRequest<Result<long?>>
     {
         // 1. BẮT BUỘC: ID của hóa đơn cần ký
         public int InvoiceId { get; set; }
