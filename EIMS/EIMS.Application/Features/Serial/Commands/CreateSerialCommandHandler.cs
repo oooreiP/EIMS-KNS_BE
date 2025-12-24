@@ -3,6 +3,7 @@ using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Serials;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.Serial.Commands
 {
@@ -17,6 +18,18 @@ namespace EIMS.Application.Features.Serial.Commands
         }
         public async Task<Result<SerialResponse>> Handle(CreateSerialCommand request, CancellationToken cancellationToken)
         {
+            bool exists = await _unitOfWork.SerialRepository.GetAllQueryable().AnyAsync(s =>
+            s.InvoiceTypeID == request.InvoiceTypeID &&
+            s.PrefixID == request.PrefixID &&
+            s.Year == request.Year &&
+            s.Tail == request.Tail,
+            cancellationToken);
+
+            if (exists)
+            {
+                return Result.Fail(new Error($"Ký hiệu này đã tồn tại: {request.Year}-{request.Tail}")
+                    .WithMetadata("ErrorCode", "Serial.Duplicate"));
+            }
             var newSerial = new Domain.Entities.Serial
             {
                 PrefixID = request.PrefixID,

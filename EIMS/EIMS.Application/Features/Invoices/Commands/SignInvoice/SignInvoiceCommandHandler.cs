@@ -34,22 +34,24 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                 return Result.Fail("Không tìm thấy hóa đơn.");
             if (string.IsNullOrEmpty(invoice.XMLPath))
                 return Result.Fail("Chưa có file XML gốc để ký.");
-            if (invoice.InvoiceStatusID != 7)
-            {
-                try
-                {
+            if(invoice.InvoiceStatusID == 7 || invoice.InvoiceStatusID == 8)
+            return Result.Fail(new Error("Invoice is signed or pending sign"));
+            // if (invoice.InvoiceStatusID != 7)
+            // {
+            //     try
+            //     {
                     invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(serial.SerialID);
                     invoice.XMLPath = await _invoiceXmlService.GenerateAndUploadXmlAsync(invoice);
                     invoice.InvoiceStatusID = 7;
-                }
-                catch (Exception ex)
-                {
-                    return Result.Fail(ex.Message);
-                }
+                // }
+                // catch (Exception ex)
+                // {
+                //     return Result.Fail(ex.Message);
+                // }
 
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
-            }
+            // }
             var certResult = _invoiceXmlService.GetCertificate(request.CertificateSerial);
             if (certResult.IsFailed)
                 return Result.Fail(certResult.Errors);
