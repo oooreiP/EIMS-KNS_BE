@@ -18,17 +18,23 @@ namespace EIMS.Application.Features.Serial.Commands
         }
         public async Task<Result<SerialResponse>> Handle(CreateSerialCommand request, CancellationToken cancellationToken)
         {
-            bool exists = await _unitOfWork.SerialRepository.GetAllQueryable().AnyAsync(s =>
+            var existingSerial = await _unitOfWork.SerialRepository.GetAllQueryable()
+        .FirstOrDefaultAsync(s =>
             s.InvoiceTypeID == request.InvoiceTypeID &&
             s.PrefixID == request.PrefixID &&
             s.Year == request.Year &&
             s.Tail == request.Tail,
             cancellationToken);
 
-            if (exists)
+            if (existingSerial != null)
             {
-                return Result.Fail(new Error($"Ký hiệu này đã tồn tại: {request.Year}-{request.Tail}")
-                    .WithMetadata("ErrorCode", "Serial.Duplicate"));
+                 var existed = new SerialResponse
+            {
+                SerialID = existingSerial.SerialID,
+                Serial = $"{existingSerial.Prefix.PrefixID}{existingSerial.SerialStatus.Symbol}{existingSerial.Year}{existingSerial.InvoiceType.Symbol}{existingSerial.Tail}",
+                Description = $"{existingSerial.Prefix.PrefixName} - {existingSerial.SerialStatus.StatusName}"
+            };
+                return Result.Ok(existed);
             }
             var newSerial = new Domain.Entities.Serial
             {
