@@ -49,12 +49,14 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                     CreatedBy = request.UserId
                 };
                 await _uow.InvoicePaymentRepository.CreateAsync(payment);
-                var newTotalPaid = currentlyPaid + request.Amount;
-                if (newTotalPaid >= invoice.TotalAmount)
+                decimal newTotalPaid = currentlyPaid + request.Amount;
+                invoice.PaidAmount = newTotalPaid;
+                invoice.RemainingAmount = invoice.TotalAmount - newTotalPaid;
+                if (invoice.RemainingAmount <= 0) // Fully Paid
                 {
                     invoice.PaymentStatusID = 3;
                 }
-                else if (newTotalPaid > 0)
+                else // Partially Paid
                 {
                     invoice.PaymentStatusID = 2;
                 }
@@ -82,7 +84,7 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
 
                     // C. Update the Statement in DB
                     await _uow.InvoiceStatementRepository.UpdateAsync(stmt);
-                }   
+                }
                 // 5. Commit
                 await _uow.SaveChanges();
                 await _uow.CommitAsync();
