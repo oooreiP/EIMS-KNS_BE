@@ -37,7 +37,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 return Result.Fail(new Error("Invoice must has a valid template id").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             var invoiceStatus = await _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
             if (invoiceStatus == null)
-                return Result.Fail(new Error ("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+                return Result.Fail(new Error("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
             if (template == null)
                 return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
@@ -63,7 +63,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
                 var products = await _unitOfWork.ProductRepository.GetAllQueryable()
                 .Where(p => productIds.Contains(p.ProductID))
-                .ToListAsync(cancellationToken); 
+                .ToListAsync(cancellationToken);
                 var productDict = products.ToDictionary(p => p.ProductID);
                 if (products.Count != productIds.Count)
                     return Result.Fail(new Error("One or more products not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
@@ -124,6 +124,8 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentStatusID = 1,
                     IssuerID = null,
                     MinRows = request.MinRows ?? 5,
+                    PaidAmount = 0,
+                    RemainingAmount = totalAmount,
                     InvoiceItems = processedItems
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
@@ -155,7 +157,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     Status = fullInvoice.InvoiceStatus.StatusName,
                     XMLPath = fullInvoice.XMLPath
                 };
-                                // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
+                // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
                 return Result.Ok(response);
 
             }
