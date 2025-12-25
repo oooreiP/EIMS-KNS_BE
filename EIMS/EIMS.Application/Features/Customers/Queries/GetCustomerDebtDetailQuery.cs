@@ -11,10 +11,16 @@ namespace EIMS.Application.Features.Customers.Queries
     public class GetCustomerDebtDetailQuery : IRequest<Result<CustomerDebtDetailDto>>
     {
         public int CustomerId { get; set; }
+        public int InvoicePageIndex { get; set; } = 1;
+        public int InvoicePageSize { get; set; } = 10;
 
-        public GetCustomerDebtDetailQuery(int customerId)
-        {
-            CustomerId = customerId;
-        }
+        // Pagination for Payments
+        public int PaymentPageIndex { get; set; } = 1;
+        public int PaymentPageSize { get; set; } = 10;
+
+        // Filters
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+        public string? SearchInvoiceNumber { get; set; }
     }
 }
