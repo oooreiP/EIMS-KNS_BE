@@ -13,7 +13,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
     public class GenerateAllStatementsCommandHandler : IRequestHandler<GenerateAllStatementsCommand, Result<GenerateBatchStatementResponse>>
     {
         private readonly IUnitOfWork _uow;
-        private readonly ISender _sender; 
+        private readonly ISender _sender;
 
         public GenerateAllStatementsCommandHandler(IUnitOfWork uow, ISender sender)
         {
@@ -26,8 +26,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             var response = new GenerateBatchStatementResponse();
 
             // 1. Determine the Date Boundary
-            var statementDate = new DateTime(request.Year, request.Month, 1).AddMonths(1).AddDays(-1);
-
+            var baseDate = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var statementDate = baseDate.AddMonths(1).AddDays(-1);
             // 2. Find "Candidate" Customers
             // We want customers who have at least one invoice that is:
             // - Created/Signed before the statement date

@@ -170,6 +170,8 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 invoice.TotalAmount = totalAmount;
                 invoice.VATRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
                 invoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount);
+                invoice.PaidAmount = 0;
+                invoice.RemainingAmount = totalAmount;
 
                 if (request.MinRows.HasValue) invoice.MinRows = request.MinRows.Value;
                 if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;

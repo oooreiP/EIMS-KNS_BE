@@ -39,7 +39,7 @@ namespace EIMS.Domain.Entities
         [ForeignKey("CustomerID")]
         [InverseProperty("Statements")]
         public virtual Customer? Customer { get; set; }
-        [ForeignKey("CustomerID")]
+        [ForeignKey("CreatedBy")]
         [InverseProperty("CreatedStatements")]
         public virtual User Creator { get; set; }
         [ForeignKey("StatusID")]
