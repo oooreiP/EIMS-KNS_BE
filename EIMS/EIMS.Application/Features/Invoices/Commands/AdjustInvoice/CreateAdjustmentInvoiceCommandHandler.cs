@@ -2,6 +2,7 @@
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
+using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -142,15 +143,28 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             }
             await _uow.InvoicesRepository.CreateAsync(adjInvoice);
             await _uow.SaveChanges();
-            var history = new InvoiceHistory
+            var logForOld = new InvoiceHistory
             {
-                InvoiceID = originalInvoice.InvoiceID,
-                ActionType = "Adjustment Created",
-                Date = DateTime.UtcNow,
-                ReferenceInvoiceID = null,
-                // PerformedBy = ... (Lấy UserID từ Claims)
+                InvoiceID = originalInvoice.InvoiceID,        // 100
+                ActionType = InvoiceActionTypes.Adjusted, // "Bị thay thế"
+                ReferenceInvoiceID = adjInvoice.InvoiceID, // Trỏ đến 200
+                PerformedBy = request.PerformedBy,
+                Date = DateTime.UtcNow
             };
-            await _uow.InvoiceHistoryRepository.CreateAsync(history);
+
+            // Log 2: Gắn cho Hóa đơn MỚI
+            var logForNew = new InvoiceHistory
+            {
+                InvoiceID = adjInvoice.InvoiceID,
+                ActionType = InvoiceActionTypes.Adjustment, // "Là bản thay thế"
+                ReferenceInvoiceID = originalInvoice.InvoiceID,
+                PerformedBy = request.PerformedBy,
+                Date = DateTime.UtcNow
+            };
+
+            // 3. Thêm vào DB
+            await _uow.InvoiceHistoryRepository.CreateAsync(logForOld);
+            await _uow.InvoiceHistoryRepository.CreateAsync(logForNew);
             await _uow.SaveChanges();
             var fullInvoice = await _uow.InvoicesRepository
                    .GetByIdAsync(adjInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");

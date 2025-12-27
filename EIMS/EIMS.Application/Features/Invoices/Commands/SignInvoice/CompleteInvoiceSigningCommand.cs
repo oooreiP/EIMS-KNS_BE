@@ -20,5 +20,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         // 3. PUBLIC KEY (Dạng Base64)
         // Để Server biết ai vừa ký và điền vào thẻ <X509Certificate>
         public string CertificateBase64 { get; set; }
+
+        public string RootPath { get; set; }
     }
 }
