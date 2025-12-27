@@ -14,7 +14,7 @@ using System.Xml;
 
 namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
 {
-    public class SignInvoiceCommandHandler : IRequestHandler<SignInvoiceCommand, Result>
+    public class SignInvoiceCommandHandler : IRequestHandler<SignInvoiceCommand, Result<long>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IInvoiceXMLService _invoiceXmlService;
@@ -24,7 +24,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             _unitOfWork = unitOfWork;
             _invoiceXmlService = invoiceXmlService;
         }
-        public async Task<Result> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
+        public async Task<Result<long>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
         {
             // BƯỚC 1: VALIDATION NGHIỆP VỤ
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
@@ -36,22 +36,24 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                 return Result.Fail("Không tìm thấy hóa đơn.");
             if (string.IsNullOrEmpty(invoice.XMLPath))
                 return Result.Fail("Chưa có file XML gốc để ký.");
-            if (invoice.InvoiceStatusID != 7)
-            {
-                try
-                {
+            if( invoice.InvoiceStatusID == 8)
+            return Result.Fail(new Error("Invoice is signed"));
+            // if (invoice.InvoiceStatusID != 7)
+            // {
+            //     try
+            //     {
                     invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(serial.SerialID);
                     invoice.XMLPath = await _invoiceXmlService.GenerateAndUploadXmlAsync(invoice);
                     invoice.InvoiceStatusID = 7;
-                }
-                catch (Exception ex)
-                {
-                    return Result.Fail(ex.Message);
-                }
+                // }
+                // catch (Exception ex)
+                // {
+                //     return Result.Fail(ex.Message);
+                // }
 
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
-            }
+            // }
             var certResult = _invoiceXmlService.GetCertificate(request.CertificateSerial);
             if (certResult.IsFailed)
                 return Result.Fail(certResult.Errors);
@@ -79,7 +81,8 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
             await _unitOfWork.SaveChanges();
 
-            return Result.Ok();
+            if (invoice.InvoiceNumber == null) return Result.Fail("Lỗi: Không có số hóa đơn.");
+            return Result.Ok((long)invoice.InvoiceNumber);
         }
         private async Task<long?> GenerateInvoiceNumberAsync(int serialId)
         {

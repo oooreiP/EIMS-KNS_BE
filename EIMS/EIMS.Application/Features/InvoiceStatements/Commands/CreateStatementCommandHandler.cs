@@ -25,6 +25,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
         public async Task<Result<StatementDetailResponse>> Handle(CreateStatementCommand request, CancellationToken cancellationToken)
         {
+            
 
             //find the date boundary
             var startOfMonth = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);

@@ -32,8 +32,11 @@ namespace EIMS.Application.Features.Customers.Commands
                                          c.TaxCode.Contains(term));
             }
 
-            // 3. Project directly to DTO (Efficient SQL generation)
-            // We ignore Draft Invoices (StatusID = 1) for debt calculations
+            // --- KEY FIX: Define Valid Debt Statuses ---
+            // 2=Issued, 8=Signed, 9=Sent, 12=TaxApproved, 15=SendError
+            var validStatuses = new[] { 2, 8, 9, 12, 15 };
+
+            // 3. Project directly to DTO
             var projection = query.Select(c => new CustomerDebtSummaryDto
             {
                 CustomerId = c.CustomerID,
@@ -43,32 +46,37 @@ namespace EIMS.Application.Features.Customers.Commands
                 Phone = c.ContactPhone,
                 Address = c.Address,
 
-                // --- CALCULATIONS ---
+                // --- CALCULATIONS (Updated to use Valid Statuses + Real Columns) ---
 
-                // Total Debt: (TotalAmount - PaidAmount) for all non-draft invoices
+                // Total Debt: Sum of 'RemainingAmount' for VALID invoices
                 TotalDebt = c.Invoices
-                    .Where(i => i.InvoiceStatusID != 1)
-                    .Sum(i => i.TotalAmount - i.Payments.Sum(p => p.AmountPaid)),
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID))
+                    .Sum(i => i.RemainingAmount),
 
-                // Overdue Debt: Same as above, but only where DueDate is in the past
+                // Overdue Debt: Valid invoices where DueDate < Now AND they still owe money
                 OverdueDebt = c.Invoices
-                    .Where(i => i.InvoiceStatusID != 1 &&
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID) &&
                                 i.PaymentDueDate < DateTime.UtcNow)
-                    .Sum(i => i.TotalAmount - i.Payments.Sum(p => p.AmountPaid)),
+                    .Sum(i => i.RemainingAmount),
 
-                // Total Paid: Sum of all payments received
+                // Total Paid: Sum of 'PaidAmount' for VALID invoices
                 TotalPaid = c.Invoices
-                    .Where(i => i.InvoiceStatusID != 1)
-                    .Sum(i => i.Payments.Sum(p => p.AmountPaid)),
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID))
+                    .Sum(i => i.PaidAmount),
+                
+                // Last Payment: Look at payments linked to VALID invoices
                 LastPaymentDate = c.Invoices
-            .SelectMany(i => i.Payments)
-            .Max(p => (DateTime?)p.PaymentDate),
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID))
+                    .SelectMany(i => i.Payments)
+                    .Max(p => (DateTime?)p.PaymentDate),
+
                 // Counts
-                InvoiceCount = c.Invoices.Count(i => i.InvoiceStatusID != 1),
+                InvoiceCount = c.Invoices
+                    .Count(i => validStatuses.Contains(i.InvoiceStatusID)),
 
                 UnpaidInvoiceCount = c.Invoices
-                    .Count(i => i.InvoiceStatusID != 1 &&
-                                (i.TotalAmount - i.Payments.Sum(p => p.AmountPaid)) > 0)
+                    .Count(i => validStatuses.Contains(i.InvoiceStatusID) && 
+                                i.PaymentStatusID != 3) // Assuming 3 = Paid
             });
 
             // 3. Apply "HasOverdue" Filter
