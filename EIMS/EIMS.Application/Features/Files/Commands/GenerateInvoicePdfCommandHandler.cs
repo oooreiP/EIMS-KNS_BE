@@ -35,12 +35,6 @@ namespace EIMS.Application.Features.Files.Commands
             var template = await _unitOfWork.InvoiceTemplateRepository.GetTemplateDetailsAsync(invoice.TemplateID);
             if (template == null)
                 return Result.Fail(new Error("Template not found").WithMetadata("ErrorCode", "Template.NotFound"));
-
-
-            // 2. === APPLY THE LOGIC HERE ===
-
-            // A. Parse the JSON Config from the Template
-            // We need this to know "MinRows" (e.g., 5)
             TemplateConfig? config = null;
             if (!string.IsNullOrEmpty(template.LayoutDefinition))
             {

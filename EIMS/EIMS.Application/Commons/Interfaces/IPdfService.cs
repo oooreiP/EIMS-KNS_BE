@@ -8,5 +8,7 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IPdfService
     {
         Task<byte[]> ConvertHtmlToPdfAsync(string htmlContent);
+        Task<byte[]> ConvertXmlToPdfAsync(int invoiceId, string rootPath);
+        Task<string> GenerateInvoiceHtmlAsync(int invoiceId, string rootPath);
     }
 }
