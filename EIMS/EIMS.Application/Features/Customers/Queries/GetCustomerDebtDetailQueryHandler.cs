@@ -34,10 +34,9 @@ namespace EIMS.Application.Features.Customers.Queries
                 return Result.Fail($"Customer with ID {request.CustomerId} not found");
 
             // 2. Map Customer Info
-            // Đảm bảo CustomerInfoDto khớp với JSON yêu cầu
-            var customerInfo = _mapper.Map<CustomerInfoDto>(customerEntity); 
-            
-            // Xử lý Date UTC an toàn
+            var customerInfo = _mapper.Map<CustomerInfoDto>(customerEntity);
+
+            // Date UTC 
             DateTime? fromDateUtc = request.FromDate.HasValue
                  ? DateTime.SpecifyKind(request.FromDate.Value, DateTimeKind.Utc)
                  : null;
@@ -45,56 +44,75 @@ namespace EIMS.Application.Features.Customers.Queries
                 ? DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Utc)
                 : null;
 
-            // Danh sách trạng thái hợp lệ (đã phát hành, đã ký...)
+            // Invoice status valid (đã phát hành, đã ký...)
             var validDebtStatuses = new[] { 2, 8, 9, 12, 15 };
 
-            // --- 3. PREPARE QUERIES ---
-            
-            // Query cơ sở: Lấy hóa đơn của khách, trạng thái hợp lệ
+
+            // base query 
             var baseInvoiceQuery = _uow.InvoicesRepository.GetAllQueryable()
                 .Where(i => i.CustomerID == request.CustomerId && validDebtStatuses.Contains(i.InvoiceStatusID));
 
-            // 4. Calculate Summary (Dùng SUM trực tiếp trên DB để tối ưu)
-            // LƯU Ý: Không dùng i.RemainingAmount nếu nó không phải cột trong DB. Phải tính toán trực tiếp.
-            
+            // 4. Calculate Summary(sum on db)
+
             var summaryData = await baseInvoiceQuery
-                .Select(i => new 
+                .Select(i => new
                 {
                     i.TotalAmount,
-                    // Tính tổng đã trả cho từng hóa đơn
+                    // calculate paid amount
                     PaidAmount = i.Payments.Sum(p => p.AmountPaid),
                     i.PaymentDueDate,
-                    // Kiểm tra quá hạn ngay tại đây để dùng cho count
+                    // check overdue
                     IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow
                 })
                 .ToListAsync(cancellationToken);
 
-            // Tính toán trên RAM (vì data summary chỉ gồm các con số, rất nhẹ)
+            
             var summary = new CustomerDebtSummaryDto
             {
-                // Tổng số tiền hóa đơn
+                // total debt
                 TotalDebt = summaryData.Sum(x => x.TotalAmount - x.PaidAmount),
-                
-                // Tổng tiền đã thanh toán
+
+                // Total paid
                 TotalPaid = summaryData.Sum(x => x.PaidAmount),
-                
-                // Nợ quá hạn (Chỉ tính những khoản còn dư nợ > 0 và đã hết hạn)
+
+                // overdue debt (overdue and dbt >0)
                 OverdueDebt = summaryData
                     .Where(x => x.IsOverdue && (x.TotalAmount - x.PaidAmount) > 0)
                     .Sum(x => x.TotalAmount - x.PaidAmount)
             };
 
-            // 5. UNPAID INVOICES LIST (Danh sách hóa đơn chưa thanh toán)
-            // Lọc: Chỉ lấy hóa đơn còn nợ (Total > Paid)
+            // 5. UNPAID INVOICES LIST 
             var unpaidQuery = baseInvoiceQuery
                 .Where(i => i.TotalAmount > i.Payments.Sum(p => p.AmountPaid));
 
-            // Filter ngày tháng (nếu có)
+            // Filter
             if (fromDateUtc.HasValue) unpaidQuery = unpaidQuery.Where(i => i.IssuedDate >= fromDateUtc.Value);
             if (toDateUtc.HasValue) unpaidQuery = unpaidQuery.Where(i => i.IssuedDate <= toDateUtc.Value);
             if (!string.IsNullOrEmpty(request.SearchInvoiceNumber))
                 unpaidQuery = unpaidQuery.Where(i => i.InvoiceNumber.ToString().Contains(request.SearchInvoiceNumber));
+            bool isDesc = (request.SortOrder?.ToLower() != "asc"); 
 
+            // sort date default
+            unpaidQuery = isDesc
+                ? unpaidQuery.OrderByDescending(i => i.IssuedDate ?? i.CreatedAt)
+                : unpaidQuery.OrderBy(i => i.IssuedDate ?? i.CreatedAt);
+
+            if (!string.IsNullOrEmpty(request.SortBy))
+            {
+                switch (request.SortBy.ToLower())
+                {
+                    case "amount":
+                        unpaidQuery = isDesc
+                            ? unpaidQuery.OrderByDescending(i => i.TotalAmount)
+                            : unpaidQuery.OrderBy(i => i.TotalAmount);
+                        break;
+                    case "duedate":
+                        unpaidQuery = isDesc
+                            ? unpaidQuery.OrderByDescending(i => i.PaymentDueDate)
+                            : unpaidQuery.OrderBy(i => i.PaymentDueDate);
+                        break;
+                }
+            }
             int totalUnpaid = await unpaidQuery.CountAsync(cancellationToken);
 
             // Query lấy dữ liệu trang
@@ -106,23 +124,23 @@ namespace EIMS.Application.Features.Customers.Queries
                 {
                     InvoiceId = i.InvoiceID,
                     InvoiceNumber = i.InvoiceNumber.ToString(),
-                    InvoiceDate = i.SignDate ?? i.IssuedDate ?? i.CreatedAt, // Ưu tiên ngày ký
+                    InvoiceDate = i.SignDate ?? i.IssuedDate ?? i.CreatedAt, 
                     DueDate = i.PaymentDueDate,
                     TotalAmount = i.TotalAmount,
-                    
-                    // Tính toán trực tiếp trong Select
+
+                    //  Select calculate
                     PaidAmount = i.Payments.Sum(p => p.AmountPaid),
                     RemainingAmount = i.TotalAmount - i.Payments.Sum(p => p.AmountPaid),
-                    
+
                     PaymentStatus = (i.Payments.Sum(p => p.AmountPaid) > 0) ? "Partially Paid" : "Unpaid",
                     Description = i.Notes ?? "", // Map field Note
-                    
+
                     // Logic Overdue: (Hạn < Hiện tại)
                     IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow
                 })
                 .ToListAsync(cancellationToken);
 
-            // 6. PAYMENT HISTORY (Lịch sử thanh toán)
+            // 6. PAYMENT HISTORY
             var paymentQuery = _uow.InvoicePaymentRepository.GetAllQueryable()
                 .Include(p => p.Invoice)
                 .Where(p => p.Invoice.CustomerID == request.CustomerId);
@@ -152,9 +170,7 @@ namespace EIMS.Application.Features.Customers.Queries
             {
                 Customer = customerInfo,
                 Summary = summary,
-                // Đổi tên biến Invoices -> UnpaidInvoices theo yêu cầu
                 UnpaidInvoices = new PaginatedResult<UnpaidInvoiceItemDto>(unpaidItems, totalUnpaid, request.InvoicePageIndex, request.InvoicePageSize),
-                // Đổi tên biến Payments -> PaymentHistory theo yêu cầu
                 PaymentHistory = new PaginatedResult<PaymentHistoryItemDto>(paymentItems, totalPayments, request.PaymentPageIndex, request.PaymentPageSize)
             };
 
