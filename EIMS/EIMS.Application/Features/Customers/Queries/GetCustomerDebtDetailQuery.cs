@@ -22,5 +22,7 @@ namespace EIMS.Application.Features.Customers.Queries
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public string? SearchInvoiceNumber { get; set; }
+        public string? SortBy { get; set; } // "date", "amount", "dueDate"
+        public string? SortOrder { get; set; } // "asc", "desc"
     }
 }
