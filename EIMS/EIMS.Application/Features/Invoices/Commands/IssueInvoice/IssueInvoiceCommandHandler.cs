@@ -1,5 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Features.InvoicePayment.Commands;
+using EIMS.Domain.Constants;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -55,13 +57,20 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 invoice.IssuedDate = DateTime.UtcNow;
                 invoice.IssuerID = request.IssuerId;
                 if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
-                await _uow.InvoicesRepository.UpdateAsync(invoice);
-                await _uow.SaveChanges();
+                await _uow.InvoicesRepository.UpdateAsync(invoice);            
             }
-                await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
+            var history = new InvoiceHistory
+            {
+                InvoiceID = request.InvoiceId,
+                ActionType = InvoiceActionTypes.Issued,
+                PerformedBy = request.IssuerId,
+                Date = DateTime.UtcNow
+            };
+            await _uow.InvoiceHistoryRepository.CreateAsync(history);
+            await _uow.SaveChanges();
+            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             if (request.AutoCreatePayment && request.PaymentAmount > 0)
             {
-                // Tạo Command tạo Payment
                 var paymentCommand = new CreatePaymentCommand
                 {
                     InvoiceId = invoice.InvoiceID,

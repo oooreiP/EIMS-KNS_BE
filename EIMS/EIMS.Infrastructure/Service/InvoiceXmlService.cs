@@ -200,7 +200,7 @@ namespace EIMS.Infrastructure.Service
             using (var memoryStream = new MemoryStream())
             {
                 var ns = new XmlSerializerNamespaces();
-                ns.Add("hdon", "http://tempuri.org/HDonSchema.xsd");
+                ns.Add("", "http://tempuri.org/HDonSchema.xsd");
                 var serializer = new XmlSerializer(typeof(HDon));
                 serializer.Serialize(memoryStream, xmlModel, ns);
                 memoryStream.Position = 0;
