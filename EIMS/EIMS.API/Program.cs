@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using EIMS.API.Middleware;
 using EIMS.Application;
 using EIMS.Application.Common.Mapping;
@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PuppeteerSharp;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -108,6 +109,13 @@ builder.Services.AddSwaggerGen(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
+    var browserFetcher = new BrowserFetcher();
+    await browserFetcher.DownloadAsync();
+    Console.WriteLine("Đã tải xong trình duyệt!");
+}
 try
 {
     using (var scope = app.Services.CreateScope())

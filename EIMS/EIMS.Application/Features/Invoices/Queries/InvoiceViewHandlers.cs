@@ -12,43 +12,26 @@ namespace EIMS.Application.Features.Invoices.Queries
     public class InvoiceViewHandlers :
     IRequestHandler<GetInvoiceHtmlViewQuery, Result<string>>
     {
-        private readonly IUnitOfWork _uow;
-        private readonly IInvoiceXMLService _invoiceXmlService; // Service tải file/đọc file
-        private readonly IDocumentParserService _documentParserService; // Service convert XML->HTML
-        public InvoiceViewHandlers(
-            IUnitOfWork uow,
-            IInvoiceXMLService invoiceXmlService,
-            IDocumentParserService documentParserService)
+        private readonly IPdfService _pdfService; 
+        
+        public InvoiceViewHandlers(IPdfService pdfService)
         {
-            _uow = uow;
-            _invoiceXmlService = invoiceXmlService;
-            _documentParserService = documentParserService;
+            _pdfService = pdfService;
         }
 
         public async Task<Result<string>> Handle(GetInvoiceHtmlViewQuery request, CancellationToken cancellationToken)
         {
-            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
-            if (invoice == null)
-                return Result.Fail("Không tìm thấy hóa đơn.");
-
-            if (string.IsNullOrEmpty(invoice.XMLPath))
-                return Result.Fail("Hóa đơn chưa có file XML.");
-
             try
             {
-                string xmlContent = await _invoiceXmlService.DownloadStringAsync(invoice.XMLPath);
-                string html = ConvertToHtml(xmlContent,request.RootPath);
+                // Gọi hàm tạo HTML chúng ta vừa tách ra
+                string html = await _pdfService.GenerateInvoiceHtmlAsync(request.InvoiceId, request.RootPath);
+
                 return Result.Ok(html);
             }
             catch (Exception ex)
             {
-                return Result.Fail($"Lỗi khi đọc file XML: {ex.Message}");
+                return Result.Fail($"Lỗi hiển thị hóa đơn: {ex.Message}");
             }
-        }
-        private string ConvertToHtml(string xmlContent, string rootPath)
-        {
-            string xsltPath = Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
-            return _documentParserService.TransformXmlToHtml(xmlContent, xsltPath);
         }
     }
 }
