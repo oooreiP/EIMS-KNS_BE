@@ -4,6 +4,7 @@ using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.Results;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.DTOs.XMLModels.ThongDiep;
+using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
@@ -135,9 +136,15 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             {
                 invoice.InvoiceStatusID = 8; // Ví dụ: Bị từ chối
             }
-            // ... Thêm các trạng thái InvoiceStatusID khác (PROCESSING, FAILED) nếu cần
-
             await _uow.InvoicesRepository.UpdateAsync(invoice);
+            var history = new InvoiceHistory
+            {
+                InvoiceID = request.invoiceId,
+                ActionType = taxResponse.MLTDiep == "202" ? InvoiceActionTypes.CqtAccepted : InvoiceActionTypes.CqtRejected,
+                PerformedBy = invoice.IssuerID,
+                Date = DateTime.UtcNow
+            };
+            await _uow.InvoiceHistoryRepository.CreateAsync(history);
             await _uow.SaveChanges();
 
             // 8. TRẢ VỀ KẾT QUẢ

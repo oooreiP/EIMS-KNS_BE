@@ -1,5 +1,7 @@
 ﻿using EIMS.Application.Commons;
 using EIMS.Application.Commons.Interfaces;
+using EIMS.Domain.Constants;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using System;
@@ -69,6 +71,14 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             invoice.DigitalSignature = signedXmlContent.SignatureValue;
             invoice.SignDate = DateTime.UtcNow;
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
+            var history = new InvoiceHistory
+            {
+                InvoiceID = request.InvoiceId,
+                ActionType = InvoiceActionTypes.Signed,
+                PerformedBy = invoice.IssuerID,
+                Date = DateTime.UtcNow
+            };
+            await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
             await _unitOfWork.SaveChanges();
 
             if (invoice.InvoiceNumber == null) return Result.Fail("Lỗi: Không có số hóa đơn.");

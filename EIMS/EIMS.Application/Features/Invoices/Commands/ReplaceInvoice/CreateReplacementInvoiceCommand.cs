@@ -12,6 +12,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
     public class CreateReplacementInvoiceCommand : IRequest<Result<int>>
     {
         public int OriginalInvoiceId { get; set; }
+        public int? PerformedBy { get; set; }
         public string Reason { get; set; } 
         public int? CustomerId { get; set; }
         public string? Note { get; set; }

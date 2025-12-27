@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Features.Files.Commands;
+﻿using EIMS.Application.DTOs.File;
+using EIMS.Application.Features.Files.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +62,17 @@ namespace EIMS.API.Controllers
 
             // Return the URL to the frontend
             return Ok(new { Url = result.Value });
+        }
+        [HttpPost("pdf-from-html")]
+        public async Task<IActionResult> GeneratePdfFromHtml([FromBody] GeneratePdfFromHtmlRequest request)
+        {
+            var command = new ConvertHtmlToPdfCommand(request.HtmlContent);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(new { message = result.Errors[0].Message });
+
+            return File(result.Value, "application/pdf", "exported_document.pdf");
         }
         /// <summary>
         /// Generates and downloads the PDF version of the invoice.

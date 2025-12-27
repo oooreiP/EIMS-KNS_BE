@@ -308,5 +308,26 @@ namespace EIMS.API.Controllers
             if (result.IsFailed) return NotFound(result.Errors[0].Message);
             return Content(result.Value, "text/html", Encoding.UTF8);
         }
+        /// <summary>
+        /// Tải file PDF của hóa đơn (Convert từ XML)
+        /// GET: api/invoices/{id}/pdf
+        /// </summary>
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> DownloadPdf(int id)
+        {
+            string rootPath = _env.ContentRootPath;
+            var query = new GetInvoicePdfQuery(id, rootPath);
+            var result = await _mediator.Send(query);
+            if (result.IsFailed)
+            {
+                return BadRequest(new { message = result.Errors[0].Message });
+            }
+            var pdfDto = result.Value;
+            return File(
+                pdfDto.FileContent,
+                "application/pdf",
+                pdfDto.FileName
+            );
+        }
     }
 }
