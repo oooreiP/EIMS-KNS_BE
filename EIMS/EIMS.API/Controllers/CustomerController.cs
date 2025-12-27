@@ -157,7 +157,10 @@ namespace EIMS.API.Controllers
     [FromQuery] int invoicePageIndex = 1,
     [FromQuery] int invoicePageSize = 10,
     [FromQuery] int paymentPageIndex = 1,
-    [FromQuery] int paymentPageSize = 10)
+    [FromQuery] int paymentPageSize = 10,
+    [FromQuery] string? sortBy = null, // "date", "amount"
+    [FromQuery] string? sortOrder = null, // "asc", "desc"
+    [FromQuery] string? search = null)
         {
             var query = new GetCustomerDebtDetailQuery
             {
@@ -165,7 +168,10 @@ namespace EIMS.API.Controllers
                 InvoicePageIndex = invoicePageIndex,
                 InvoicePageSize = invoicePageSize,
                 PaymentPageIndex = paymentPageIndex,
-                PaymentPageSize = paymentPageSize
+                PaymentPageSize = paymentPageSize,
+                SortBy = sortBy,
+                SortOrder = sortOrder,
+                SearchInvoiceNumber = search
             };
 
             var result = await _mediator.Send(query);
