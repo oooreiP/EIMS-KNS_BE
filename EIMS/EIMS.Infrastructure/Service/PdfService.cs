@@ -8,6 +8,7 @@ using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 
 namespace EIMS.Infrastructure.Service
 {
@@ -28,18 +29,30 @@ namespace EIMS.Infrastructure.Service
 
         private async Task<byte[]> GeneratePdfBytesAsync(string htmlContent)
         {
-            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            string executablePath = null;
+
+            // Check if running on Linux (Docker container)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                executablePath = "/usr/bin/chromium";
+            }
+            // On Windows (Localhost), executablePath stays null, 
+            // so Puppeteer looks for the local revision you downloaded.
+            var launchOptions = new LaunchOptions
             {
                 Headless = true,
+                ExecutablePath = executablePath,
+                DumpIO = true, // Để xem log lỗi nếu có
                 Args = new[]
-                    {
+        {
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",               // Tắt GPU cho ổn định
-            "--font-render-hinting=none"   // Giúp font chữ render mượt hơn trên Linux
+            "--disable-dev-shm-usage", // QUAN TRỌNG: Chống tràn bộ nhớ /dev/shm
+            "--disable-gpu"
         }
-            });
+            };
+            launchOptions.Env["HOME"] = "/tmp";
+            await using var browser = await Puppeteer.LaunchAsync(launchOptions);
             await using var page = await browser.NewPageAsync();
             await page.SetContentAsync(htmlContent);
             await page.EvaluateExpressionAsync("document.fonts.ready");
