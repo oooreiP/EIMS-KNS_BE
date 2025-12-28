@@ -35,6 +35,7 @@ namespace EIMS.Application.Features.Customers.Commands
             // --- KEY FIX: Define Valid Debt Statuses ---
             // 2=Issued, 8=Signed, 9=Sent, 12=TaxApproved, 15=SendError
             var validStatuses = new[] { 2, 8, 9, 12, 15 };
+            var nowUtc = DateTime.UtcNow;
 
             // 3. Project directly to DTO
             var projection = query.Select(c => new CustomerDebtSummaryDto
@@ -48,37 +49,46 @@ namespace EIMS.Application.Features.Customers.Commands
 
                 // --- CALCULATIONS (Updated to use Valid Statuses + Real Columns) ---
 
-                // Total Debt: Sum of 'RemainingAmount' for VALID invoices
+               TotalPaid = c.Invoices
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID))
+                    .SelectMany(i => i.Payments)
+                    .Sum(p => p.AmountPaid),
+
                 TotalDebt = c.Invoices
                     .Where(i => validStatuses.Contains(i.InvoiceStatusID))
-                    .Sum(i => i.RemainingAmount),
-
-                // Overdue Debt: Valid invoices where DueDate < Now AND they still owe money
-                OverdueDebt = c.Invoices
-                    .Where(i => validStatuses.Contains(i.InvoiceStatusID) &&
-                                i.PaymentDueDate < DateTime.UtcNow)
-                    .Sum(i => i.RemainingAmount),
-
-                // Total Paid: Sum of 'PaidAmount' for VALID invoices
-                TotalPaid = c.Invoices
+                    .Sum(i => i.TotalAmount) 
+                    - 
+                    c.Invoices
                     .Where(i => validStatuses.Contains(i.InvoiceStatusID))
-                    .Sum(i => i.PaidAmount),
-                
-                // Last Payment: Look at payments linked to VALID invoices
+                    .SelectMany(i => i.Payments)
+                    .Sum(p => p.AmountPaid),
+
+                    // Logic: (Tiền HĐ - Tiền Trả) của những HĐ quá hạn
+                OverdueDebt = c.Invoices
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID) 
+                             && (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < nowUtc) // Kiểm tra ngày hết hạn
+                    .Sum(i => i.TotalAmount) 
+                    -
+                    c.Invoices
+                    .Where(i => validStatuses.Contains(i.InvoiceStatusID) 
+                             && (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < nowUtc)
+                    .SelectMany(i => i.Payments)
+                    .Sum(p => p.AmountPaid),
+
+                // 4. Ngày thanh toán gần nhất
                 LastPaymentDate = c.Invoices
                     .Where(i => validStatuses.Contains(i.InvoiceStatusID))
                     .SelectMany(i => i.Payments)
                     .Max(p => (DateTime?)p.PaymentDate),
 
-                // Counts
-                InvoiceCount = c.Invoices
-                    .Count(i => validStatuses.Contains(i.InvoiceStatusID)),
+                // 5. Số lượng hóa đơn
+                InvoiceCount = c.Invoices.Count(i => validStatuses.Contains(i.InvoiceStatusID)),
 
+                // 6. Số lượng HĐ chưa thanh toán (Total > Paid)
                 UnpaidInvoiceCount = c.Invoices
-                    .Count(i => validStatuses.Contains(i.InvoiceStatusID) && 
-                                i.PaymentStatusID != 3) // Assuming 3 = Paid
+                    .Count(i => validStatuses.Contains(i.InvoiceStatusID) 
+                             && i.TotalAmount > i.Payments.Sum(p => p.AmountPaid))
             });
-
             // 3. Apply "HasOverdue" Filter
             if (request.HasOverdue)
             {
