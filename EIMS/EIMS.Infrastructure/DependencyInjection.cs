@@ -31,6 +31,7 @@ namespace EIMS.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddHttpClient<IEmailService, EmailService>();
             services.AddHttpClient<IEmailSenderService, MailerSendService>();
+            services.AddScoped<IQrCodeService, QRCodeService>();
             services.AddScoped<ITaxApiClient, MockTaxApiClient>();
             services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
             services.AddScoped<IMinutesGenerator, MinutesGenerator>();

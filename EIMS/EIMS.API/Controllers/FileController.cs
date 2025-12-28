@@ -79,30 +79,30 @@ namespace EIMS.API.Controllers
         /// </summary>
         /// <param name="id">The Invoice ID</param>
         /// <returns>A PDF file download</returns>
-        [HttpGet("{id}/pdf")]
-        [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ExportPdf(int id)
-        {
-            var command = new GenerateInvoicePdfCommand(id);
-            var result = await _mediator.Send(command);
+        //[HttpGet("{id}/pdf")]
+        //[ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> ExportPdf(int id)
+        //{
+        //    var command = new GenerateInvoicePdfCommand(id);
+        //    var result = await _mediator.Send(command);
 
-            if (result.IsFailed)
-            {
-                // Check if it was a "Not Found" error
-                if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Invoice.NotFound"))
-                {
-                    return NotFound(new { message = result.Errors.First().Message });
-                }
+        //    if (result.IsFailed)
+        //    {
+        //        // Check if it was a "Not Found" error
+        //        if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Invoice.NotFound"))
+        //        {
+        //            return NotFound(new { message = result.Errors.First().Message });
+        //        }
 
-                return BadRequest(new { message = "Failed to generate PDF", errors = result.Errors.Select(e => e.Message) });
-            }
+        //        return BadRequest(new { message = "Failed to generate PDF", errors = result.Errors.Select(e => e.Message) });
+        //    }
 
-            // Return the PDF file
-            var pdfBytes = result.Value;
-            var fileName = $"Invoice_{id}.pdf";
-            return File(pdfBytes, "application/pdf", fileName);
-        }
+        //    // Return the PDF file
+        //    var pdfBytes = result.Value;
+        //    var fileName = $"Invoice_{id}.pdf";
+        //    return File(pdfBytes, "application/pdf", fileName);
+        //}
     }
 }
