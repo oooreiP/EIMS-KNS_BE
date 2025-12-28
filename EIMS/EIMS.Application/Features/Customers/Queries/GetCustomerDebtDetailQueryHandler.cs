@@ -35,6 +35,8 @@ namespace EIMS.Application.Features.Customers.Queries
 
             // 2. Map Customer Info
             var customerInfo = _mapper.Map<CustomerInfoDto>(customerEntity);
+            customerInfo.Email = customerEntity.ContactEmail;
+            customerInfo.Phone = customerEntity.ContactPhone;
 
             // Date UTC 
             DateTime? fromDateUtc = request.FromDate.HasValue
@@ -43,15 +45,15 @@ namespace EIMS.Application.Features.Customers.Queries
             DateTime? toDateUtc = request.ToDate.HasValue
                 ? DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Utc)
                 : null;
-
+            var validDebtStatus = 2;
             // Invoice status valid (đã phát hành, đã ký...)
             var validDebtStatuses = new[] { 2, 8, 9, 12, 15 };
 
 
             // base query 
             var baseInvoiceQuery = _uow.InvoicesRepository.GetAllQueryable()
-                .Where(i => i.CustomerID == request.CustomerId && validDebtStatuses.Contains(i.InvoiceStatusID));
-
+                  .Include(i => i.InvoiceStatus)
+                  .Where(i => i.CustomerID == request.CustomerId && i.InvoiceStatusID == validDebtStatus);
             // 4. Calculate Summary(sum on db)
 
             var summaryData = await baseInvoiceQuery
@@ -62,13 +64,19 @@ namespace EIMS.Application.Features.Customers.Queries
                     PaidAmount = i.Payments.Sum(p => p.AmountPaid),
                     i.PaymentDueDate,
                     // check overdue
-                    IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow
+                    IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow,
+                    MaxPaymentDate = i.Payments.Any() ? i.Payments.Max(p => p.PaymentDate) : (DateTime?)null
                 })
                 .ToListAsync(cancellationToken);
 
-
             var summary = new CustomerDebtSummaryDto
             {
+                CustomerId = customerEntity.CustomerID,
+                CustomerName = customerEntity.CustomerName,
+                TaxCode = customerEntity.TaxCode,
+                Email = customerEntity.ContactEmail,
+                Phone = customerEntity.ContactPhone,
+                Address = customerEntity.Address,
                 // total debt
                 TotalDebt = summaryData.Sum(x => x.TotalAmount - x.PaidAmount),
 
@@ -78,7 +86,13 @@ namespace EIMS.Application.Features.Customers.Queries
                 // overdue debt (overdue and dbt >0)
                 OverdueDebt = summaryData
                     .Where(x => x.IsOverdue && (x.TotalAmount - x.PaidAmount) > 0)
-                    .Sum(x => x.TotalAmount - x.PaidAmount)
+                    .Sum(x => x.TotalAmount - x.PaidAmount),
+                InvoiceCount = summaryData.Count,
+                UnpaidInvoiceCount = summaryData.Count(x => x.TotalAmount > x.PaidAmount),
+
+                LastPaymentDate = summaryData.Any()
+                    ? summaryData.Max(x => x.MaxPaymentDate)
+                    : null
             };
 
             // 5. UNPAID INVOICES LIST 
@@ -136,7 +150,9 @@ namespace EIMS.Application.Features.Customers.Queries
                     Description = i.Notes ?? "", // Map field Note
 
                     // Logic Overdue: (Hạn < Hiện tại)
-                    IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow
+                    IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow,
+                    InvoiceStatusID = i.InvoiceStatusID,
+                    InvoiceStatus = i.InvoiceStatus.StatusName ?? "Issued"
                 })
                 .ToListAsync(cancellationToken);
 
@@ -155,21 +171,23 @@ namespace EIMS.Application.Features.Customers.Queries
                 .Take(request.PaymentPageSize)
                 .Select(p => new
                 {
-                    p.PaymentID, // Chú ý: Entity thường tên là InvoicePaymentID hoặc PaymentID
+                    p.PaymentID,
                     p.PaymentDate,
                     p.AmountPaid,
                     p.PaymentMethod,
                     p.TransactionCode,
                     p.InvoiceID,
                     InvoiceNumber = p.Invoice.InvoiceNumber,
-                    p.Note, // ✅ Field Note
-                    p.CreatedBy // ✅ Field UserId (người tạo)
+                    p.Note,
+                    p.CreatedBy
                 })
                 .ToListAsync(cancellationToken);
+
+            // Get Users Dictionary
             var userIds = rawPayments.Where(p => p.CreatedBy.HasValue)
-                                 .Select(p => p.CreatedBy.Value)
-                                 .Distinct()
-                                 .ToList();
+                                     .Select(p => p.CreatedBy.Value)
+                                     .Distinct()
+                                     .ToList();
 
             var userDict = new Dictionary<int, string>();
             if (userIds.Any())
@@ -178,26 +196,23 @@ namespace EIMS.Application.Features.Customers.Queries
                     .Where(u => userIds.Contains(u.UserID))
                     .ToDictionaryAsync(u => u.UserID, u => u.FullName ?? u.FullName, cancellationToken);
             }
-            var paymentItems = await paymentQuery
-                .OrderByDescending(p => p.PaymentDate)
-                .Skip((request.PaymentPageIndex - 1) * request.PaymentPageSize)
-                .Take(request.PaymentPageSize)
-                .Select(p => new PaymentHistoryItemDto
-                {
-                    PaymentId = p.PaymentID,
-                    PaymentDate = p.PaymentDate,
-                    AmountPaid = p.AmountPaid,
-                    PaymentMethod = p.PaymentMethod ?? "Unknown", // Handle null
-                    TransactionCode = p.TransactionCode ?? "",
-                    InvoiceNumber = p.Invoice.InvoiceNumber.ToString(), // Để biết trả cho hóa đơn nào
-                    InvoiceId = p.InvoiceID,
-                    Note = p.Note ?? "",
-                    UserId = p.CreatedBy,
-                    UserName = (p.CreatedBy.HasValue && userDict.ContainsKey(p.CreatedBy.Value))
+
+            // Map In-Memory
+            var paymentItems = rawPayments.Select(p => new PaymentHistoryItemDto
+            {
+                PaymentId = p.PaymentID,
+                PaymentDate = p.PaymentDate,
+                AmountPaid = p.AmountPaid,
+                PaymentMethod = p.PaymentMethod ?? "Unknown",
+                TransactionCode = p.TransactionCode ?? "",
+                InvoiceNumber = p.InvoiceNumber.ToString(),
+                InvoiceId = p.InvoiceID,
+                Note = p.Note ?? "",
+                UserId = p.CreatedBy,
+                UserName = (p.CreatedBy.HasValue && userDict.ContainsKey(p.CreatedBy.Value))
                            ? userDict[p.CreatedBy.Value]
                            : "System"
-                })
-                .ToListAsync(cancellationToken);
+            }).ToList();
 
             // 7. Construct Final Response
             var response = new CustomerDebtDetailDto
