@@ -66,7 +66,7 @@ namespace EIMS.Application.Features.Customers.Queries
                 })
                 .ToListAsync(cancellationToken);
 
-            
+
             var summary = new CustomerDebtSummaryDto
             {
                 // total debt
@@ -90,7 +90,7 @@ namespace EIMS.Application.Features.Customers.Queries
             if (toDateUtc.HasValue) unpaidQuery = unpaidQuery.Where(i => i.IssuedDate <= toDateUtc.Value);
             if (!string.IsNullOrEmpty(request.SearchInvoiceNumber))
                 unpaidQuery = unpaidQuery.Where(i => i.InvoiceNumber.ToString().Contains(request.SearchInvoiceNumber));
-            bool isDesc = (request.SortOrder?.ToLower() != "asc"); 
+            bool isDesc = (request.SortOrder?.ToLower() != "asc");
 
             // sort date default
             unpaidQuery = isDesc
@@ -124,7 +124,7 @@ namespace EIMS.Application.Features.Customers.Queries
                 {
                     InvoiceId = i.InvoiceID,
                     InvoiceNumber = i.InvoiceNumber.ToString(),
-                    InvoiceDate = i.SignDate ?? i.IssuedDate ?? i.CreatedAt, 
+                    InvoiceDate = i.SignDate ?? i.IssuedDate ?? i.CreatedAt,
                     DueDate = i.PaymentDueDate,
                     TotalAmount = i.TotalAmount,
 
@@ -149,7 +149,35 @@ namespace EIMS.Application.Features.Customers.Queries
             if (toDateUtc.HasValue) paymentQuery = paymentQuery.Where(p => p.PaymentDate <= toDateUtc.Value);
 
             int totalPayments = await paymentQuery.CountAsync(cancellationToken);
+            var rawPayments = await paymentQuery
+                .OrderByDescending(p => p.PaymentDate)
+                .Skip((request.PaymentPageIndex - 1) * request.PaymentPageSize)
+                .Take(request.PaymentPageSize)
+                .Select(p => new
+                {
+                    p.PaymentID, // Chú ý: Entity thường tên là InvoicePaymentID hoặc PaymentID
+                    p.PaymentDate,
+                    p.AmountPaid,
+                    p.PaymentMethod,
+                    p.TransactionCode,
+                    p.InvoiceID,
+                    InvoiceNumber = p.Invoice.InvoiceNumber,
+                    p.Note, // ✅ Field Note
+                    p.CreatedBy // ✅ Field UserId (người tạo)
+                })
+                .ToListAsync(cancellationToken);
+            var userIds = rawPayments.Where(p => p.CreatedBy.HasValue)
+                                 .Select(p => p.CreatedBy.Value)
+                                 .Distinct()
+                                 .ToList();
 
+            var userDict = new Dictionary<int, string>();
+            if (userIds.Any())
+            {
+                userDict = await _uow.UserRepository.GetAllQueryable()
+                    .Where(u => userIds.Contains(u.UserID))
+                    .ToDictionaryAsync(u => u.UserID, u => u.FullName ?? u.FullName, cancellationToken);
+            }
             var paymentItems = await paymentQuery
                 .OrderByDescending(p => p.PaymentDate)
                 .Skip((request.PaymentPageIndex - 1) * request.PaymentPageSize)
@@ -161,7 +189,13 @@ namespace EIMS.Application.Features.Customers.Queries
                     AmountPaid = p.AmountPaid,
                     PaymentMethod = p.PaymentMethod ?? "Unknown", // Handle null
                     TransactionCode = p.TransactionCode ?? "",
-                    InvoiceNumber = p.Invoice.InvoiceNumber.ToString() // Để biết trả cho hóa đơn nào
+                    InvoiceNumber = p.Invoice.InvoiceNumber.ToString(), // Để biết trả cho hóa đơn nào
+                    InvoiceId = p.InvoiceID,
+                    Note = p.Note ?? "",
+                    UserId = p.CreatedBy,
+                    UserName = (p.CreatedBy.HasValue && userDict.ContainsKey(p.CreatedBy.Value))
+                           ? userDict[p.CreatedBy.Value]
+                           : "System"
                 })
                 .ToListAsync(cancellationToken);
 
