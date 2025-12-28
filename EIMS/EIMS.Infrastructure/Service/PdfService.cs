@@ -8,6 +8,7 @@ using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 
 namespace EIMS.Infrastructure.Service
 {
@@ -28,17 +29,28 @@ namespace EIMS.Infrastructure.Service
 
         private async Task<byte[]> GeneratePdfBytesAsync(string htmlContent)
         {
+            
+          string executablePath = null;
+
+            // Check if running on Linux (Docker container)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                executablePath = "/usr/bin/chromium";
+            }
+            // On Windows (Localhost), executablePath stays null, 
+            // so Puppeteer looks for the local revision you downloaded.
+
             await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
-                Args = new[]
-                    {
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",               // Tắt GPU cho ổn định
-            "--font-render-hinting=none"   // Giúp font chữ render mượt hơn trên Linux
-        }
+                ExecutablePath = executablePath, // Point to the installed Chrome
+                Args = new[] 
+                { 
+                    "--no-sandbox", 
+                    "--disable-setuid-sandbox", // Required for Docker
+                    "--disable-dev-shm-usage",  // Prevents memory crashes in Docker
+                    "--disable-gpu" 
+                }
             });
             await using var page = await browser.NewPageAsync();
             await page.SetContentAsync(htmlContent);
