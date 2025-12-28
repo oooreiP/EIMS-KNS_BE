@@ -15,13 +15,16 @@ namespace EIMS.Infrastructure.Service
     public class PdfService : IPdfService
     {
         private readonly IUnitOfWork _uow;
-        private readonly IInvoiceXMLService _xmlService; 
+        private readonly IInvoiceXMLService _xmlService;
+        private readonly IQrCodeService _qrService;
         public PdfService(
         IUnitOfWork uow,
-        IInvoiceXMLService xmlService)
+        IInvoiceXMLService xmlService,
+        IQrCodeService qrService)
         {
             _uow = uow;
             _xmlService = xmlService;
+            _qrService = qrService;
         }
 
         private async Task<byte[]> GeneratePdfBytesAsync(string htmlContent)
@@ -51,6 +54,7 @@ namespace EIMS.Infrastructure.Service
             });
             await using var page = await browser.NewPageAsync();
             await page.SetContentAsync(htmlContent);
+            await page.EvaluateExpressionAsync("document.fonts.ready");
             var pdfBytes = await page.PdfDataAsync(new PdfOptions
             {
                 Format = PaperFormat.A4,
@@ -62,15 +66,9 @@ namespace EIMS.Infrastructure.Service
                     Left = "10mm",
                     Right = "10mm"
                 },
-                // Cấu hình Footer (Puppeteer dùng HTML template cho footer)
                 DisplayHeaderFooter = true,
-                // Header để rỗng
                 HeaderTemplate = "<div></div>",
-                // Footer: class 'pageNumber' và 'totalPages' là biến của Puppeteer
-                FooterTemplate = @"
-                <div style='font-size: 9px; font-family: sans-serif; width: 100%; text-align: right; margin-right: 10mm;'>
-                    Trang <span class='pageNumber'></span> / <span class='totalPages'></span>
-                </div>",
+                FooterTemplate = @"<div style='font-size:9px; font-family:sans-serif; width:100%; text-align:right; margin-right:10mm;'>Trang <span class='pageNumber'></span>/<span class='totalPages'></span></div>",
             });
 
             return pdfBytes;
@@ -123,6 +121,20 @@ namespace EIMS.Infrastructure.Service
             string logoUrl = !string.IsNullOrEmpty(invoice.Template.LogoUrl)
                 ? invoice.Template.LogoUrl
                 : "";
+            string qrContent = "";
+            string mccqt = invoice.TaxAuthorityCode ?? "";
+            if (!string.IsNullOrEmpty(invoice.QRCodeData))
+            {
+                qrContent = $"http://159.223.64.31/swagger/view?code={invoice.QRCodeData}";
+            }
+            else
+            {
+                // Fallback: Thông tin cơ bản
+                qrContent = $"{invoice.InvoiceNumber}|{invoice.TotalAmount}";
+            }
+            string qrBase64 = _qrService.GenerateQrImageBase64(qrContent);
+
+            args.AddParam("QrCodeData", "", qrBase64);
             var style = config.Style ?? new StyleSettings();
             args.AddParam("ColorTheme", "", style.ColorTheme ?? "#0056b3");
             args.AddParam("FontFamily", "", style.FontFamily ?? "Times New Roman");
