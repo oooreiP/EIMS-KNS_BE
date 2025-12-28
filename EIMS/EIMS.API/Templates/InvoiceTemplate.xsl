@@ -10,7 +10,7 @@
 	<xsl:param name="FontFamily" select="'Times New Roman'"/>
 	<xsl:param name="IsBilingual" select="'false'"/>
 	<xsl:param name="IsDraft" select="'false'"/>
-
+	<xsl:param name="QrCodeData" select="''"/>
 	<xsl:param name="ShowQrCode" select="'true'"/>
 	<xsl:param name="ShowLogo" select="'true'"/>
 	<xsl:param name="ShowSignature" select="'true'"/>
@@ -145,6 +145,26 @@
 							</xsl:choose>
 						</span>
 					</div>
+				<xsl:if test="$ShowQrCode = 'true'">
+						<div style="margin-top: 5px;">
+							<xsl:if test="$QrCodeData != ''">
+								<xsl:choose>
+									<xsl:when test="starts-with($QrCodeData, 'data:image')">
+										 <img src="{$QrCodeData}" style="width: 70px; height: 70px;" />
+									</xsl:when>
+									<xsl:otherwise>
+										 <img src="data:image/png;base64,{$QrCodeData}" style="width: 70px; height: 70px;" />
+									</xsl:otherwise>
+								</xsl:choose>
+							</xsl:if>
+            
+							<xsl:if test="$QrCodeData = ''">
+								<div style="display: inline-block; border: 1px dashed #999; padding: 5px; background: #f9f9f9;">
+									<div style="width: 60px; height: 60px; line-height: 60px; text-align: center; font-size: 10px; color: #666;">QR CODE</div>
+								</div>
+							</xsl:if>
+						</div>
+					</xsl:if>
 				</td>
 			</tr>
 		</table>
@@ -205,14 +225,6 @@
 									<span class="italic">(Account No.)</span>
 								</xsl:if>:
 							</span> <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NBan']/*[local-name()='STKNHang']"/> <br/> tại <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NBan']/*[local-name()='TNHang']"/>
-						</div>
-					</xsl:if>
-				</td>
-
-				<td style="width: 25%; text-align: right; vertical-align: middle;">
-					<xsl:if test="$ShowQrCode = 'true'">
-						<div style="display: inline-block; border: 1px dashed #999; padding: 5px; background: #f9f9f9;">
-							<div style="width: 65px; height: 65px; line-height: 65px; text-align: center; font-size: 10px; color: #666;">QR CODE</div>
 						</div>
 					</xsl:if>
 				</td>
