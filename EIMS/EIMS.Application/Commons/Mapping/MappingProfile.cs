@@ -73,6 +73,27 @@ namespace EIMS.Application.Common.Mapping
                     src.StatementStatus != null ? src.StatementStatus.StatusName :
                     (src.StatusID == 5 ? "Paid" : src.StatusID == 4 ? "Partially Paid" : "Draft")))
                 .ForMember(dest => dest.Invoices, opt => opt.MapFrom(src => src.StatementDetails));
+                // Fix: Customer -> CustomerInfoDto
+            CreateMap<Customer, CustomerInfoDto>();
+
+            // Fix: Invoice Entity -> StatementInvoiceDto (For the invoices list)
+            CreateMap<Invoice, StatementInvoiceDto>()
+                  .ForMember(dest => dest.InvoiceID, opt => opt.MapFrom(src => src.InvoiceID))
+                  .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.InvoiceNumber))
+                  .ForMember(dest => dest.SignDate, opt => opt.MapFrom(src => src.SignDate))
+                  .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                  .ForMember(dest => dest.OwedAmount, opt => opt.MapFrom(src => src.RemainingAmount))
+                  .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => 
+                      src.PaymentStatus != null ? src.PaymentStatus.StatusName : "Unknown"));
+
+            // Fix: InvoicePayment Entity -> PaymentHistoryDto (For the payments list)
+            CreateMap<InvoicePayment, PaymentHistoryDto>()
+                .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentID))
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.AmountPaid))
+                .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber.ToString() : ""))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CreatedBy));
+                // Assuming you have a Creator navigation property to get the username
+                // .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Creator != null ? src.Creator.FullName : "System"));
         }
 
         private static string GetStatusName(int id) => id switch

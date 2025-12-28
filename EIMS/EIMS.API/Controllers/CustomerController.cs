@@ -152,15 +152,16 @@ namespace EIMS.API.Controllers
             return Ok(result.Value);
         }
         [HttpGet("{id}/debt-detail")]
-        // [Authorize(Roles = "Admin,Accountant")]
-        public async Task<IActionResult> GetCustomerDebtDetail(int id)
+        public async Task<IActionResult> GetDebtDetail(int id, [FromQuery] GetCustomerDebtDetailQuery query)
         {
-            var query = new GetCustomerDebtDetailQuery(id);
+            // Ensure the ID in the route matches the ID in the query
+            query.CustomerId = id;
+
             var result = await _mediator.Send(query);
 
             if (result.IsFailed)
             {
-                return NotFound(result.Errors);
+                return BadRequest(result.Errors);
             }
 
             return Ok(result.Value);
