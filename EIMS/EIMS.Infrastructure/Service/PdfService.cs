@@ -138,7 +138,7 @@ namespace EIMS.Infrastructure.Service
             args.AddParam("QrCodeData", "", qrBase64);
             var style = config.Style ?? new StyleSettings();
             args.AddParam("ColorTheme", "", style.ColorTheme ?? "#0056b3");
-            args.AddParam("FontFamily", "", style.FontFamily ?? "Times New Roman");
+            args.AddParam("FontFamily", "", style.FontFamily ?? "Liberation Serif");
             args.AddParam("LogoUrl", "", logoUrl);
             args.AddParam("BackgroundUrl", "", bgUrl);
             var disp = config.DisplaySettings;
