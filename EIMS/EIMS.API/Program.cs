@@ -109,13 +109,13 @@ builder.Services.AddSwaggerGen(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
-{
-    Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
-    var browserFetcher = new BrowserFetcher();
-    await browserFetcher.DownloadAsync();
-    Console.WriteLine("Đã tải xong trình duyệt!");
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
+//     var browserFetcher = new BrowserFetcher();
+//     await browserFetcher.DownloadAsync();
+//     Console.WriteLine("Đã tải xong trình duyệt!");
+// }
 try
 {
     using (var scope = app.Services.CreateScope())

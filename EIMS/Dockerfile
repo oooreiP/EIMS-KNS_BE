@@ -30,7 +30,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 
 # Set the working directory
 WORKDIR /app
-
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libgdiplus \
+    libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
 # Copy the published output from the build stage
 COPY --from=build-env /app/out .
 
