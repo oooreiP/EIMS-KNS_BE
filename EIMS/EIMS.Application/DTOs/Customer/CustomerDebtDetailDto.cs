@@ -80,6 +80,11 @@ public class UnpaidInvoiceItemDto
 
     [JsonPropertyName("isOverdue")]
     public bool IsOverdue { get; set; }
+    [JsonPropertyName("invoiceStatusID")]
+    public int InvoiceStatusID { get; set; }
+
+    [JsonPropertyName("invoiceStatus")]
+    public string InvoiceStatus { get; set; }
 }
 
 // Item lịch sử thanh toán
