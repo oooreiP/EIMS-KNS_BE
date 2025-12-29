@@ -92,7 +92,7 @@
 						</xsl:attribute>
 					</xsl:if>
 
-					<xsl:if test="$IsDraft = 'true' or string-length((//SHDon)[1]) = 0">
+					<xsl:if test="$IsDraft = 'true'">
 						<div class="watermark">BẢN NHÁP</div>
 					</xsl:if>
 
