@@ -69,9 +69,9 @@ namespace EIMS.Application.Commons.Mapping
                                 // ---- Người mua ----
                                 NMua = new Party
                                 {
-                                    Ten = invoice.Customer.CustomerName,
-                                    MST = invoice.Customer.TaxCode ?? "",
-                                    DChi = invoice.Customer.Address,
+                                    Ten = invoice.InvoiceCustomerName ?? invoice.Customer.CustomerName,
+                                    MST = invoice.InvoiceCustomerTaxCode ?? invoice.Customer.TaxCode ?? "",
+                                    DChi = invoice.InvoiceCustomerAddress ?? invoice.Customer.Address,
                                     DCTDTu = invoice.Customer.ContactEmail,
                                     SDThoai = invoice.Customer.ContactPhone ?? "",
                                     TNHang = "",

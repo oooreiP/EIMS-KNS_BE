@@ -36,5 +36,8 @@ namespace EIMS.Application.DTOs.Invoices
         public decimal PaidAmount { get; set; }
         public decimal RemainingAmount { get; set; }
         public string PaymentStatus { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerAddress { get; set; }
+        public string? TaxCode { get; set; }
     }
 }

@@ -60,6 +60,14 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     customer = await _unitOfWork.CustomerRepository.CreateCustomerAsync(customer);
                     await _unitOfWork.SaveChanges();
                 }
+                else
+                {
+                    customer = await _unitOfWork.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
+                    if (customer == null)
+                    {
+                        return Result.Fail(new Error($"Customer {request.CustomerID} not found"));
+                    }
+                }
                 var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
                 var products = await _unitOfWork.ProductRepository.GetAllQueryable()
                 .Where(p => productIds.Contains(p.ProductID))
@@ -126,7 +134,10 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     MinRows = request.MinRows ?? 5,
                     PaidAmount = 0,
                     RemainingAmount = totalAmount,
-                    InvoiceItems = processedItems
+                    InvoiceItems = processedItems,
+                    InvoiceCustomerName = customer.CustomerName,
+                    InvoiceCustomerAddress = customer.Address,
+                    InvoiceCustomerTaxCode = customer.TaxCode,
                 };
                 await _unitOfWork.InvoicesRepository.CreateInvoiceAsync(invoice);
                 await _unitOfWork.SaveChanges();
