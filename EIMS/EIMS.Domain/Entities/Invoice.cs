@@ -72,6 +72,9 @@ namespace EIMS.Domain.Entities
         public int MinRows { get; set; } = 5;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? AdjustmentReason { get; set; }
+        public string InvoiceCustomerName { get; set; }
+        public string InvoiceCustomerAddress { get; set; }
+        public string InvoiceCustomerTaxCode { get; set; }
 
         // --- Navigation Properties ---
         [JsonIgnore]

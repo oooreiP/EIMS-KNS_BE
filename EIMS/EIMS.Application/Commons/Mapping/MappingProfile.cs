@@ -37,6 +37,14 @@ namespace EIMS.Application.Common.Mapping
                         .ForMember(dest => dest.PaidAmount, opt => opt.MapFrom(src => src.PaidAmount))
                         // Ensure RemainingAmount is calculated
                         .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.RemainingAmount))
+                        .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
+        src.InvoiceCustomerName ?? (src.Customer != null ? src.Customer.CustomerName : "")))
+
+    .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src =>
+        src.InvoiceCustomerAddress ?? (src.Customer != null ? src.Customer.Address : "")))
+
+    .ForMember(dest => dest.TaxCode, opt => opt.MapFrom(src =>
+        src.InvoiceCustomerTaxCode ?? (src.Customer != null ? src.Customer.TaxCode : "")))
                         .ReverseMap(); CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
             CreateMap<CreateTemplateRequest, CreateTemplateCommand>();
@@ -73,7 +81,7 @@ namespace EIMS.Application.Common.Mapping
                     src.StatementStatus != null ? src.StatementStatus.StatusName :
                     (src.StatusID == 5 ? "Paid" : src.StatusID == 4 ? "Partially Paid" : "Draft")))
                 .ForMember(dest => dest.Invoices, opt => opt.MapFrom(src => src.StatementDetails));
-                // Fix: Customer -> CustomerInfoDto
+            // Fix: Customer -> CustomerInfoDto
             CreateMap<Customer, CustomerInfoDto>();
 
             // Fix: Invoice Entity -> StatementInvoiceDto (For the invoices list)
@@ -83,7 +91,7 @@ namespace EIMS.Application.Common.Mapping
                   .ForMember(dest => dest.SignDate, opt => opt.MapFrom(src => src.SignDate))
                   .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
                   .ForMember(dest => dest.OwedAmount, opt => opt.MapFrom(src => src.RemainingAmount))
-                  .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => 
+                  .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src =>
                       src.PaymentStatus != null ? src.PaymentStatus.StatusName : "Unknown"));
 
             // Fix: InvoicePayment Entity -> PaymentHistoryDto (For the payments list)
@@ -92,8 +100,8 @@ namespace EIMS.Application.Common.Mapping
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.AmountPaid))
                 .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber.ToString() : ""))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CreatedBy));
-                // Assuming you have a Creator navigation property to get the username
-                // .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Creator != null ? src.Creator.FullName : "System"));
+            // Assuming you have a Creator navigation property to get the username
+            // .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Creator != null ? src.Creator.FullName : "System"));
         }
 
         private static string GetStatusName(int id) => id switch

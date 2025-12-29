@@ -58,47 +58,39 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 invoice.Notes = request.Notes;
                 invoice.PaymentMethod = request.PaymentMethod;
                 // 2. Update Customer Data (Safety Check logic)
-                if (request.CustomerID.HasValue && request.CustomerID.Value > 0)
+                if (request.CustomerID.HasValue && request.CustomerID.Value > 0 && invoice.CustomerID != request.CustomerID.Value)
                 {
-                    if (invoice.CustomerID != request.CustomerID.Value)
-                        invoice.CustomerID = request.CustomerID.Value;
-                }
-                else
-                {
-                    bool detailsChanged =
-                        (request.CustomerName ?? request.ContactPerson) != invoice.Customer.CustomerName ||
-                        request.Address != invoice.Customer.Address ||
-                        request.TaxCode != invoice.Customer.TaxCode;
+                    // 1. Link to the new User Account
+                    invoice.CustomerID = request.CustomerID.Value;
 
-                    if (detailsChanged)
+                    // 2. Fetch that customer to get their default details
+                    var newCustomer = await _unitOfWork.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
+                    if (newCustomer != null)
                     {
-                        int usageCount = await _unitOfWork.InvoicesRepository.CountAsync(i => i.CustomerID == invoice.CustomerID);
-                        if (usageCount > 1)
-                        {
-                            var newCustomer = new Customer
-                            {
-                                CustomerName = request.CustomerName ?? request.ContactPerson ?? "Khách hàng mới",
-                                TaxCode = request.TaxCode ?? "",
-                                Address = request.Address ?? "",
-                                ContactEmail = invoice.Customer.ContactEmail,
-                                ContactPerson = request.ContactPerson,
-                                ContactPhone = invoice.Customer.ContactPhone
-                            };
-                            newCustomer = await _unitOfWork.CustomerRepository.CreateCustomerAsync(newCustomer);
-                            await _unitOfWork.SaveChanges();
-                            invoice.CustomerID = newCustomer.CustomerID;
-                        }
-                        else
-                        {
-                            var customerToUpdate = invoice.Customer;
-                            customerToUpdate.CustomerName = request.CustomerName ?? request.ContactPerson ?? customerToUpdate.CustomerName;
-                            customerToUpdate.TaxCode = request.TaxCode ?? customerToUpdate.TaxCode;
-                            customerToUpdate.Address = request.Address ?? customerToUpdate.Address;
-                            customerToUpdate.ContactPerson = request.ContactPhone ?? customerToUpdate.ContactPerson;
-                            await _unitOfWork.CustomerRepository.UpdateAsync(customerToUpdate);
-                        }
+                        // 3. Reset the snapshot to the new customer's defaults
+                        invoice.InvoiceCustomerName = newCustomer.CustomerName;
+                        invoice.InvoiceCustomerAddress = newCustomer.Address;
+                        invoice.InvoiceCustomerTaxCode = newCustomer.TaxCode;
                     }
                 }
+
+                // Case B: User Manually Edited Name/Address/TaxCode (Overrides everything)
+                // We update the SNAPSHOT fields on the invoice, but we keep the CustomerID the same.
+                // This ensures the Invoice stays in the User's "My Invoices" list, even if the address is custom.
+                
+                if (!string.IsNullOrEmpty(request.CustomerName)) 
+                    invoice.InvoiceCustomerName = request.CustomerName;
+                
+                if (!string.IsNullOrEmpty(request.Address)) 
+                    invoice.InvoiceCustomerAddress = request.Address;
+                
+                if (!string.IsNullOrEmpty(request.TaxCode)) 
+                    invoice.InvoiceCustomerTaxCode = request.TaxCode;
+
+                // Fallback: If snapshot fields are still null (e.g. old invoices), fill them from the current relation
+                if (string.IsNullOrEmpty(invoice.InvoiceCustomerName)) invoice.InvoiceCustomerName = invoice.Customer?.CustomerName;
+                if (string.IsNullOrEmpty(invoice.InvoiceCustomerAddress)) invoice.InvoiceCustomerAddress = invoice.Customer?.Address;
+                if (string.IsNullOrEmpty(invoice.InvoiceCustomerTaxCode)) invoice.InvoiceCustomerTaxCode = invoice.Customer?.TaxCode;
 
                 // 3. Update Items
                 // Fetch Products to get BasePrice and VATRate
