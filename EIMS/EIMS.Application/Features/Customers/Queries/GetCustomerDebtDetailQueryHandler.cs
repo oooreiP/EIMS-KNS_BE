@@ -96,41 +96,40 @@ namespace EIMS.Application.Features.Customers.Queries
             };
 
             // 5. UNPAID INVOICES LIST 
-            var unpaidQuery = baseInvoiceQuery
-                .Where(i => i.TotalAmount > i.Payments.Sum(p => p.AmountPaid));
+            var invoiceQuery = baseInvoiceQuery;
 
             // Filter
-            if (fromDateUtc.HasValue) unpaidQuery = unpaidQuery.Where(i => i.IssuedDate >= fromDateUtc.Value);
-            if (toDateUtc.HasValue) unpaidQuery = unpaidQuery.Where(i => i.IssuedDate <= toDateUtc.Value);
+            if (fromDateUtc.HasValue) invoiceQuery = invoiceQuery.Where(i => i.IssuedDate >= fromDateUtc.Value);
+            if (toDateUtc.HasValue) invoiceQuery = invoiceQuery.Where(i => i.IssuedDate <= toDateUtc.Value);
             if (!string.IsNullOrEmpty(request.SearchInvoiceNumber))
-                unpaidQuery = unpaidQuery.Where(i => i.InvoiceNumber.ToString().Contains(request.SearchInvoiceNumber));
+                invoiceQuery = invoiceQuery.Where(i => i.InvoiceNumber.ToString().Contains(request.SearchInvoiceNumber));
             bool isDesc = (request.SortOrder?.ToLower() != "asc");
 
             // sort date default
-            unpaidQuery = isDesc
-                ? unpaidQuery.OrderByDescending(i => i.IssuedDate ?? i.CreatedAt)
-                : unpaidQuery.OrderBy(i => i.IssuedDate ?? i.CreatedAt);
+            invoiceQuery = isDesc
+                ? invoiceQuery.OrderByDescending(i => i.IssuedDate ?? i.CreatedAt)
+                : invoiceQuery.OrderBy(i => i.IssuedDate ?? i.CreatedAt);
 
             if (!string.IsNullOrEmpty(request.SortBy))
             {
                 switch (request.SortBy.ToLower())
                 {
                     case "amount":
-                        unpaidQuery = isDesc
-                            ? unpaidQuery.OrderByDescending(i => i.TotalAmount)
-                            : unpaidQuery.OrderBy(i => i.TotalAmount);
+                        invoiceQuery = isDesc
+                            ? invoiceQuery.OrderByDescending(i => i.TotalAmount)
+                            : invoiceQuery.OrderBy(i => i.TotalAmount);
                         break;
                     case "duedate":
-                        unpaidQuery = isDesc
-                            ? unpaidQuery.OrderByDescending(i => i.PaymentDueDate)
-                            : unpaidQuery.OrderBy(i => i.PaymentDueDate);
+                        invoiceQuery = isDesc
+                            ? invoiceQuery.OrderByDescending(i => i.PaymentDueDate)
+                            : invoiceQuery.OrderBy(i => i.PaymentDueDate);
                         break;
                 }
             }
-            int totalUnpaid = await unpaidQuery.CountAsync(cancellationToken);
+            int totalUnpaid = await invoiceQuery.CountAsync(cancellationToken);
 
             // Query lấy dữ liệu trang
-            var unpaidItems = await unpaidQuery
+            var unpaidItems = await invoiceQuery
                 .OrderByDescending(i => i.IssuedDate) // Mới nhất lên đầu
                 .Skip((request.InvoicePageIndex - 1) * request.InvoicePageSize)
                 .Take(request.InvoicePageSize)
@@ -146,8 +145,10 @@ namespace EIMS.Application.Features.Customers.Queries
                     PaidAmount = i.Payments.Sum(p => p.AmountPaid),
                     RemainingAmount = i.TotalAmount - i.Payments.Sum(p => p.AmountPaid),
 
-                    PaymentStatus = (i.Payments.Sum(p => p.AmountPaid) > 0) ? "Partially Paid" : "Unpaid",
-                    Description = i.Notes ?? "", // Map field Note
+                    PaymentStatus = (i.Payments.Sum(p => p.AmountPaid) >= i.TotalAmount) ? "Paid" :
+                                    (i.Payments.Sum(p => p.AmountPaid) > 0) ? "Partially Paid" :
+                                    "Unpaid",
+                    Description = i.Notes ?? "", 
 
                     // Logic Overdue: (Hạn < Hiện tại)
                     IsOverdue = (i.PaymentDueDate ?? i.CreatedAt.AddDays(30)) < DateTime.UtcNow,
@@ -219,7 +220,7 @@ namespace EIMS.Application.Features.Customers.Queries
             {
                 Customer = customerInfo,
                 Summary = summary,
-                UnpaidInvoices = new PaginatedResult<UnpaidInvoiceItemDto>(unpaidItems, totalUnpaid, request.InvoicePageIndex, request.InvoicePageSize),
+                Invoices = new PaginatedResult<UnpaidInvoiceItemDto>(unpaidItems, totalUnpaid, request.InvoicePageIndex, request.InvoicePageSize),
                 PaymentHistory = new PaginatedResult<PaymentHistoryItemDto>(paymentItems, totalPayments, request.PaymentPageIndex, request.PaymentPageSize)
             };
 
