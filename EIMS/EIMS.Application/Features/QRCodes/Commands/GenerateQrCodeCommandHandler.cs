@@ -16,10 +16,12 @@ namespace EIMS.Application.Features.QRCodes.Commands
     public class GenerateQrCodeCommandHandler : IRequestHandler<GenerateQrCodeCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IQrCodeService _qrCodeService;
 
-        public GenerateQrCodeCommandHandler(IUnitOfWork unitOfWork)
+        public GenerateQrCodeCommandHandler(IUnitOfWork unitOfWork, IQrCodeService qrCodeService)
         {
             _unitOfWork = unitOfWork;
+            _qrCodeService = qrCodeService;
         }
 
         public async Task<Result<string>> Handle(GenerateQrCodeCommand request, CancellationToken cancellationToken)
@@ -27,9 +29,9 @@ namespace EIMS.Application.Features.QRCodes.Commands
             try
             {
                 var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceID);
-                var lookUpCode = GenerateLookupCode();
+                var lookUpCode = _qrCodeService.GenerateLookupCode();
                 string targetUrl = $"{request.PortalBaseUrl.TrimEnd('/')}/view?code={lookUpCode}";
-                string base64Image = GenerateQrImageBase64(targetUrl);
+                string base64Image = _qrCodeService.GenerateQrImageBase64(targetUrl);
                 invoice.QRCodeData = lookUpCode;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
@@ -39,24 +41,7 @@ namespace EIMS.Application.Features.QRCodes.Commands
             {
                 return Result.Fail<string>(new Error("Lỗi tạo QR tra cứu").CausedBy(ex));
             }
-        }
-
-        private string GenerateQrImageBase64(string content)
-        {
-            using var qrGenerator = new QRCodeGenerator();
-            using var qrCodeData = qrGenerator.CreateQrCode(content, QRCodeGenerator.ECCLevel.M);
-            using var qrCode = new PngByteQRCode(qrCodeData);
-            byte[] qrCodeBytes = qrCode.GetGraphic(20);
-
-            return Convert.ToBase64String(qrCodeBytes);
-        }
-        public static string GenerateLookupCode()
-        {
-            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            var random = new Random();
-            return new string(Enumerable.Repeat(chars, 10)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
+        }               
     }
 }
 

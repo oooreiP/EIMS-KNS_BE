@@ -41,7 +41,9 @@ COPY --from=build-env /app/out .
 
 # [FIX] Copy the template.html file explicitly from the build environment
 # COPY --from=build-env /app/template.html .
-
+RUN mkdir -p /usr/share/fonts/truetype/custom
+COPY --from=build-env /app/EIMS.API/Fonts /usr/share/fonts/truetype/custom/
+RUN fc-cache -f -v
 # Expose the port the application will listen on (ASP.NET Core defaults to 8080 in containers)
 EXPOSE 8080
 
