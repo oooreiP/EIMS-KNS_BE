@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251229174213_SnapshotFieldsInvoice")]
+    partial class SnapshotFieldsInvoice
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,29 +36,18 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<string>("Action")
                         .HasColumnType("text");
 
-                    b.Property<string>("NewValues")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OldValues")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RecordId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TableName")
+                    b.Property<string>("Details")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("TraceId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
+                    b.Property<int?>("UserID")
+                        .HasColumnType("integer");
 
                     b.HasKey("AuditID");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("AuditLogs");
                 });
@@ -1322,40 +1314,6 @@ namespace EIMS.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.SystemActivityLog", b =>
-                {
-                    b.Property<int>("LogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LogId"));
-
-                    b.Property<string>("ActionName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("IpAddress")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TraceId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.HasKey("LogId");
-
-                    b.ToTable("SystemActivityLogs");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.TaxApiLog", b =>
                 {
                     b.Property<int>("TaxLogID")
@@ -2323,6 +2281,15 @@ namespace EIMS.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("EIMS.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("EIMS.Domain.Entities.User", "User")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("UserID");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("EIMS.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.Company", "Company")
@@ -2738,6 +2705,8 @@ namespace EIMS.Infrastructure.Migrations
 
             modelBuilder.Entity("EIMS.Domain.Entities.User", b =>
                 {
+                    b.Navigation("AuditLogs");
+
                     b.Navigation("CreatedStatements");
 
                     b.Navigation("CreatedTemplates");
