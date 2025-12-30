@@ -38,6 +38,15 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             var invoiceStatus = await _unitOfWork.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
             if (invoiceStatus == null)
                 return Result.Fail(new Error("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
+            if (request.SalesID.HasValue)
+            {
+                var salesUser = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID.Value);
+                if (salesUser == null)
+                {
+                    return Result.Fail($"Salesperson with ID {request.SalesID} not found.");
+                }
+                if (salesUser.Role.RoleName != "Sale") return Result.Fail("Selected user is not a salesperson.");
+            }
             var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
             if (template == null)
                 return Result.Fail(new Error($"Template {request.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
@@ -119,7 +128,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
-                    // SalesID = request.SalesID,
+                    SalesID = request.SalesID,
                     Notes = request.Notes,
                     CompanyId = request.CompanyID,
                     SubtotalAmount = subtotal,
