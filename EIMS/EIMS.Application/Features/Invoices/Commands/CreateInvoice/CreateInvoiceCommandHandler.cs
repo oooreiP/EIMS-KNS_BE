@@ -142,7 +142,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
                 var fullInvoice = await _unitOfWork.InvoicesRepository
-                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
+                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus,Company");
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);

@@ -29,7 +29,7 @@ namespace EIMS.Application.Features.Files.Commands
             try
             {
                 var invoice = await _unitOfWork.InvoicesRepository
-                    .GetByIdAsync(request.InvoiceId, includeProperties: "Customer,InvoiceItems.Product");
+                    .GetByIdAsync(request.InvoiceId, includeProperties: "Customer,InvoiceItems.Product,Company");
 
                 if (invoice == null)
                     return Result.Fail(new Error("Invoice not found").WithMetadata("ErrorCode", "Invoice.NotFound"));

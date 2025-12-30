@@ -27,7 +27,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         public async Task<Result<long>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
         {
             // BƯỚC 1: VALIDATION NGHIỆP VỤ
-            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
+            var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus,Company");
             var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(invoice.TemplateID);
             var serial = await _unitOfWork.SerialRepository.GetByIdAndLockAsync(template.SerialID);
             if (serial == null)

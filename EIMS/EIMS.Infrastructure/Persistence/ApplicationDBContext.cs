@@ -1,15 +1,18 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 using EIMS.Domain.Enums;
+using EIMS.Infrastructure.Interceptors;
 using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Infrastructure.Persistence
 {
     public class ApplicationDbContext : DbContext, IApplicationDBContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        private readonly AuditableEntityInterceptor _auditableEntityInterceptor;
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, AuditableEntityInterceptor auditableEntityInterceptor)
             : base(options)
         {
+            _auditableEntityInterceptor = auditableEntityInterceptor;
         }
 
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -41,6 +44,11 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<PaymentStatus> PaymentStatuses { get; set; }
         public DbSet<TemplateFrame> TemplateFrames { get; set; }
         public DbSet<InvoiceStatementDetail> InvoiceStatementDetails { get; set; }
+        public DbSet<SystemActivityLog> SystemActivityLogs { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.AddInterceptors(_auditableEntityInterceptor);
+        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

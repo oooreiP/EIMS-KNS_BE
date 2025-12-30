@@ -22,6 +22,7 @@ namespace EIMS.Application.Commons.Interfaces
         IInvoicePaymentRepository InvoicePaymentRepository { get; } 
 
         IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; }
+        IBaseRepository<SystemActivityLog> SystemActivityLogRepository { get; }
         IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; }
         IBaseRepository<TaxApiLog> TaxApiLogRepository { get; }
         IBaseRepository<TaxApiStatus> TaxApiStatusRepository { get; }

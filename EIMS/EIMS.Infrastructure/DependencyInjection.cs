@@ -6,6 +6,7 @@ using EIMS.Application.Commons.Interfaces;
 using EIMS.Infrastructure.Security;
 using EIMS.Infrastructure.Service;
 using EIMS.Application.Commons.UnitOfWork;
+using EIMS.Infrastructure.Interceptors;
 
 namespace EIMS.Infrastructure
 {
@@ -17,7 +18,7 @@ namespace EIMS.Infrastructure
             services.AddDbContext<ApplicationDbContext>(options =>
               options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IApplicationDBContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-
+            services.AddScoped<AuditableEntityInterceptor>();
             //register security services
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -32,6 +33,8 @@ namespace EIMS.Infrastructure
             services.AddHttpClient<IEmailService, EmailService>();
             services.AddHttpClient<IEmailSenderService, MailerSendService>();
             services.AddScoped<IQrCodeService, QRCodeService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IActivityLogger, ActivityLogger>();
             services.AddScoped<ITaxApiClient, MockTaxApiClient>();
             services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
             services.AddScoped<IMinutesGenerator, MinutesGenerator>();
