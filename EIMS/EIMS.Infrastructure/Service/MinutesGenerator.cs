@@ -47,9 +47,9 @@ namespace EIMS.Infrastructure.Service
             string khmsHDon = prefix.PrefixID.ToString();
             string khHDon =
                 $"{serial.SerialStatus.Symbol}" +
-                $"{serial.Year}" +
-                $"{serial.Tail}" +
-                $"{serial.InvoiceType.Symbol}";
+                $"{serial.Year}" +                
+                $"{serial.InvoiceType.Symbol}" +
+                $"{serial.Tail}";
             var value = new Dictionary<string, object>()
             {
                 ["Day"] = date.Day.ToString("00"),

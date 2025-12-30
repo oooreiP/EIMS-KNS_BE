@@ -36,7 +36,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 // =========================================================================
                 // BƯỚC 1: LẤY DỮ LIỆU & VALIDATE
                 // =========================================================================
-                var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
+                var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
 
                 if (invoice == null)
                     return Result.Fail("Không tìm thấy hóa đơn.");
@@ -54,8 +54,8 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 string khHDon =
                     $"{serial.SerialStatus.Symbol}" +
                     $"{serial.Year}" +
-                    $"{serial.Tail}" +
-                    $"{serial.InvoiceType.Symbol}";
+                    $"{serial.InvoiceType.Symbol}" +
+                    $"{serial.Tail}";
                 // =========================================================================
                 // BƯỚC 2: TẠO MODEL XML TB04 (Theo cấu trúc chuẩn Image_30be13.png)
                 // =========================================================================

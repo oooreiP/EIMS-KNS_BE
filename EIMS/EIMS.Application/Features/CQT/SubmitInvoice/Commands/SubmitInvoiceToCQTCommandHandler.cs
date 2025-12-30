@@ -36,7 +36,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         CancellationToken cancellationToken)
         {
             // 1. Lấy dữ liệu và kiểm tra
-            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
+            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
             if (invoice == null)

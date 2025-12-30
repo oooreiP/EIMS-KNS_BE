@@ -139,10 +139,10 @@ namespace EIMS.Application.Features.Emails.Commands
             var emailTemplate = await _uow.EmailTemplateRepository.GetAllQueryable()
                 .FirstOrDefaultAsync(x => x.TemplateCode == templateCode && x.LanguageCode == "vi");
             string attachmentHtml = $@"
-    <li style='margin-bottom: 5px;'>
-        📎 <strong>{fileName}</strong> <br/>
-        <em style='color: #666; font-size: 12px;'>(File này được đính kèm theo email, vui lòng kiểm tra mục Attachments)</em>
-    </li>";
+                <li style='margin-bottom: 5px;'>
+                    📎 <strong>{fileName}</strong> <br/>
+                    <em style='color: #666; font-size: 12px;'>(File này được đính kèm theo email, vui lòng kiểm tra mục Attachments)</em>
+                </li>";
             if (emailTemplate == null) return Result.Fail($"Chưa cấu hình mẫu email {templateCode}");
 
             // 5. GỬI EMAIL (Tận dụng hàm EmailService nhưng cần chỉnh sửa chút để hỗ trợ Attachment dạng Byte[])

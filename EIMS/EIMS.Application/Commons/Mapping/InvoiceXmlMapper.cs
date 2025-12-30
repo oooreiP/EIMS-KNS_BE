@@ -29,11 +29,11 @@ namespace EIMS.Application.Commons.Mapping
             var serial = template.Serial;
             var prefix = serial.Prefix;
             string khmsHDon = prefix.PrefixID.ToString();
-            string khHDon =              
+            string khHDon =
                 $"{serial.SerialStatus.Symbol}" +
                 $"{serial.Year}" +
-                $"{serial.Tail}" +
-                $"{serial.InvoiceType.Symbol}";
+                $"{serial.InvoiceType.Symbol}" +
+                $"{serial.Tail}";               
             var model = new HDon
                     {
                         DLHDon = new DLHDon
@@ -58,13 +58,13 @@ namespace EIMS.Application.Commons.Mapping
                                 // ---- Người bán ----
                                 NBan = new Party
                                 {
-                                    Ten = "CÔNG TY CỔ PHẦN GIẢI PHÁP TỔNG THỂ KỶ NGUYÊN SỐ",
-                                    MST = "0311357436",
-                                    DChi = "26 Nguyễn Đình Khơi, Phường Tân Sơn Nhất, TP Hồ Chí Minh, Việt Nam",
+                                    Ten = invoice.Company.CompanyName,
+                                    MST = invoice.Company.TaxCode,
+                                    DChi = invoice.Company.Address,
                                     DCTDTu = "support@einvoice.vn",
-                                    SDThoai = "0382502857",
-                                    TNHang = "Ngân Hàng TMCP Ngoại Thương Việt Nam - Chi Nhánh Tân Bình",
-                                    STKNHang = "0441000627320"
+                                    SDThoai = invoice.Company.ContactPhone ?? "",
+                                    TNHang = invoice.Company.BankName ?? "",
+                                    STKNHang = invoice.Company.AccountNumber ?? ""
                                 },
                                 // ---- Người mua ----
                                 NMua = new Party

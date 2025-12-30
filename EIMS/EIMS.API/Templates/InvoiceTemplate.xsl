@@ -308,7 +308,10 @@
 							<span class="italic">(Payment Method)</span>
 						</xsl:if>:
 					</span>
-					<xsl:value-of select="*[local-name()='TTChung']/*[local-name()='HTHDon']"/>
+
+					<b>
+						<xsl:value-of select="*[local-name()='TTChung']/*[local-name()='HTTToan']"/>
+					</b>
 				</div>
 			</xsl:if>
 		</div>
