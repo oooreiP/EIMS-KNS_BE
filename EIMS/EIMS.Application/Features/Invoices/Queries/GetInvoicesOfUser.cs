@@ -17,6 +17,7 @@ namespace EIMS.Application.Features.Invoices.Queries
         public string? SearchTerm { get; set; }
         public string? RoleFilter { get; set; }
         public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
 

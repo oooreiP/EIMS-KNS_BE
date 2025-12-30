@@ -9,8 +9,8 @@ public class CustomerDebtDetailDto
     [JsonPropertyName("summary")]
     public CustomerDebtSummaryDto Summary { get; set; }
 
-    [JsonPropertyName("unpaidInvoices")]
-    public PaginatedResult<UnpaidInvoiceItemDto> UnpaidInvoices { get; set; }
+    [JsonPropertyName("invoices")]
+    public PaginatedResult<UnpaidInvoiceItemDto> Invoices { get; set; }
 
     [JsonPropertyName("paymentHistory")]
     public PaginatedResult<PaymentHistoryItemDto> PaymentHistory { get; set; }

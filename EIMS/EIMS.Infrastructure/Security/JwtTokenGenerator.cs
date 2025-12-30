@@ -29,6 +29,10 @@ namespace EIMS.Infrastructure.Security
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new(ClaimTypes.Role, user.Role.RoleName)
             };
+            if (user.CustomerID.HasValue)
+            {
+                claims.Add(new Claim("CustomerId", user.CustomerID.Value.ToString()));
+            }
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
