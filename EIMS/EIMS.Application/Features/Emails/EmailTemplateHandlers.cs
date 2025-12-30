@@ -166,28 +166,70 @@ namespace EIMS.Application.Features.Emails
         }
         public Task<Result<List<string>>> Handle(GetEmailTemplateVariablesQuery request, CancellationToken cancellationToken)
         {
+            var commonVariables = new List<string>
+                {
+                    "{{CustomerName}}",
+                    "{{AttachmentList}}", // Link tải file hoặc danh sách file đính kèm
+                    "{{CompanyName}}",
+                    "{{SupportEmail}}"
+                };
             var variables = new List<string>();
             switch (request.Category?.ToLower())
             {
                 case "invoice":
-                    variables.AddRange(new[] { "{{InvoiceNumber}}", "{{CustomerName}}", "{{TotalAmount}}", "{{DueDate}}", "{{InvoiceDate}}", "{{PaymentLink}}" });
+                    variables.AddRange(new[]
+                    {
+                "{{InvoiceNumber}}",
+                "{{TotalAmount}}",
+                "{{IssuedDate}}",    // Ngày lập hóa đơn (Ngày ký)
+                "{{CreatedAt}}",     // Ngày tạo trên hệ thống
+                "{{DueDate}}",       // Hạn thanh toán
+                "{{Message}}",       // Lời nhắn từ người gửi (User nhập lúc gửi mail)
+                "{{PaymentLink}}"    // Link thanh toán online (nếu có)
+            });
                     break;
+
                 case "payment":
-                    variables.AddRange(new[] { "{{ReceiptNumber}}", "{{PaymentDate}}", "{{AmountPaid}}", "{{CustomerName}}" });
+                    variables.AddRange(new[]
+                    {
+                "{{InvoiceNumber}}", // Nhắc nợ thì cần số hóa đơn
+                "{{TotalAmount}}",   // Số tiền nợ/đã trả
+                "{{AmountPaid}}",    // Số tiền vừa thanh toán
+                "{{PaymentDate}}",   // Ngày thanh toán
+                "{{ReceiptNumber}}", // Số phiếu thu
+                "{{Message}}"        // Lời nhắn nhắc nợ
+            });
                     break;
-                case "statement":
-                    variables.AddRange(new[] { "{{StatementPeriod}}", "{{OpeningBalance}}", "{{ClosingBalance}}", "{{CustomerName}}" });
+
+                case "minutes": // [MỚI] Dành cho biên bản điều chỉnh/thu hồi
+                    variables.AddRange(new[]
+                    {
+                "{{InvoiceNumber}}", // Số hóa đơn gốc bị điều chỉnh/thay thế
+                "{{IssuedDate}}",    // Ngày lập hóa đơn gốc
+                "{{Reason}}",        // Lý do điều chỉnh/thu hồi
+                "{{MinutesDate}}"    // Ngày lập biên bản
+            });
                     break;
+
                 case "system":
-                    variables.AddRange(new[] { "{{UserName}}", "{{ResetPasswordLink}}", "{{OtpCode}}", "{{CompanyName}}" });
+                    variables.AddRange(new[]
+                    {
+                "{{UserName}}",
+                "{{ResetPasswordLink}}",
+                "{{OtpCode}}"
+            });
                     break;
                 default:
-                    // Biến chung cho tất cả
-                    variables.AddRange(new[] { "{{CompanyName}}", "{{SupportEmail}}" });
                     break;
             }
 
-            return Task.FromResult(Result.Ok(variables));
+            var resultVariables = commonVariables
+                .Concat(variables)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            return Task.FromResult(Result.Ok(resultVariables));
         }
     }
 }
