@@ -15,6 +15,7 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<InvoiceType> InvoiceTypeRepository { get; }
         IBaseRepository<SerialStatus> SerialStatusRepository { get; }
         IBaseRepository<EmailTemplate> EmailTemplateRepository { get; }
+        IBaseRepository<AuditLog> AuditLogRepository { get; }
         IInvoiceStatementRepository InvoiceStatementRepository { get; }
         IUserRepository UserRepository { get; }
         ITemplateFrameRepository TemplateFrameRepository { get; }

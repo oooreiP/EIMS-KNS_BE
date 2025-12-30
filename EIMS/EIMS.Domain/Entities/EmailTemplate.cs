@@ -19,7 +19,12 @@ namespace EIMS.Domain.Entities
         [Required]
         [StringLength(10)]
         public string LanguageCode { get; set; } = "vi"; // "vi" hoặc "en"
-
+        [Required]
+        [StringLength(20)]
+        public string Category { get; set; }
+        [Required]
+        [StringLength(255)]
+        public string Name { get; set; }
         [Required]
         [StringLength(255)]
         public string Subject { get; set; } // Tiêu đề email (có chứa placeholder)
@@ -27,8 +32,11 @@ namespace EIMS.Domain.Entities
         [Required]
         public string BodyContent { get; set; } // Nội dung HTML (có chứa placeholder)
 
-        public string? Description { get; set; } // Mô tả cho Admin dễ quản lý
+        public bool IsSystemTemplate { get; set; } = false; // [cite: 8] Mặc định false
 
         public bool IsActive { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // [cite: 9]
+        public DateTime? UpdatedAt { get; set; } // [cite: 9]
     }
 }
