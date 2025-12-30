@@ -5,6 +5,7 @@ namespace EIMS.Application.DTOs.Authentication
     public class AuthResponse
     {
         public int UserID { get; set; }
+        public int? CustomerID { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
         public string Role { get; set; }
