@@ -39,6 +39,7 @@ namespace EIMS.Application.Features.Authentication.Commands
                 throw new InvalidOperationException($"Default role '{request.RoleName}' not found.");
             }
             var tempPassword = Path.GetRandomFileName().Replace(".", "").Substring(0, 8);
+            Console.WriteLine(tempPassword);
             var passwordHash = _passwordHasher.Hash(tempPassword);
             var newUser = new Domain.Entities.User
             {
