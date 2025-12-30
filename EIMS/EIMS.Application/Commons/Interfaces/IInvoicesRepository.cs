@@ -10,6 +10,6 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IInvoicesRepository : IBaseRepository<Invoice>
     {
         Task<Invoice> CreateInvoiceAsync(Invoice invoice);
-
+        public IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? column, string? direction);
     }
 }

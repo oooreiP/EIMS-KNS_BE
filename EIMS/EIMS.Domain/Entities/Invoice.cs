@@ -32,6 +32,8 @@ namespace EIMS.Domain.Entities
         [ForeignKey("IssuerID")]
 
         public int? IssuerID { get; set; }
+        [ForeignKey("SalesID")]
+        public int? SalesID { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
@@ -91,9 +93,9 @@ namespace EIMS.Domain.Entities
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal RemainingAmount { get; set; }
-        // [JsonIgnore]
-        // [InverseProperty("SalesInvoices")]
-        //public virtual User? Sales { get; set; }
+        [JsonIgnore]
+        [InverseProperty("SalesInvoices")] 
+        public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("Invoices")]
         public virtual Customer Customer { get; set; }

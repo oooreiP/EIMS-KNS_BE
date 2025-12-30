@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using AutoMapper.QueryableExtensions; // Important for ProjectTo
+using AutoMapper.QueryableExtensions;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Invoices;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,61 +17,113 @@ namespace EIMS.Application.Features.Invoices.Queries
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+
         public GetInvoicesOfUserHandler(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
             _mapper = mapper;
         }
+
         public async Task<Result<PaginatedList<InvoiceDTO>>> Handle(GetInvoicesOfUser request, CancellationToken cancellationToken)
         {
-            // 1. Fetch the logged-in User to get their Link to the Customer
-            // (Even though you added the Claim, looking it up here is safer to ensure the user wasn't just disabled)
-            var user = await _uow.UserRepository.GetByIdAsync(request.AuthenticatedUserId);
+            // 1. Fetch User with Role
+            var user = await _uow.UserRepository.GetAllQueryable()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == request.AuthenticatedUserId, cancellationToken);
 
-            if (user == null)
+            if (user == null) return Result.Fail("User not found.");
+
+            var query = _uow.InvoicesRepository.GetAllQueryable()
+                                    .Include(i => i.Customer)
+                                    .AsQueryable();
+            string role = user.Role?.RoleName ?? "";
+
+            // 2. APPLY PERMISSIONS
+            switch (role)
             {
-                return Result.Fail("User not found.");
+                case "HOD":
+                case "Accountant":
+                case "Admin":
+                case "Director":
+                    // "HOD and Accountant can see all the invoices"
+                    // No filter applied. They see everything.
+                    break;
+
+                case "Sale":
+                    // "Sales just can see the invoice they sale"
+                    // We filter by the SalesID column we just added
+                    query = query.Where(x => x.SalesID == user.UserID);
+                    break;
+
+                case "Customer":
+                    if (user.CustomerID == null)
+                        return Result.Fail("This account is not linked to any customer.");
+
+                    query = query.Where(x => x.CustomerID == user.CustomerID.Value);
+                    break;
+
+                default:
+                    // Safety Fallback: Unknown roles see NOTHING or only their own created items
+                    return Result.Ok(new PaginatedList<InvoiceDTO>(new List<InvoiceDTO>(), 0, request.PageNumber, request.PageSize));
+            }
+            // A. Date Range (Using CreatedAt, but you could use IssuedDate)
+            if (request.FromDate.HasValue)
+            {
+                // Ensure we compare start of day
+                var fromDate = request.FromDate.Value.Date;
+                query = query.Where(x => x.CreatedAt >= fromDate);
+            }
+            if (request.ToDate.HasValue)
+            {
+                // Ensure we compare end of day
+                var toDate = request.ToDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.CreatedAt <= toDate);
             }
 
-            // 2. Check if this User is actually a Customer
-            if (user.CustomerID == null)
+            // B. Statuses
+            if (request.InvoiceStatusId.HasValue)
             {
-                // If they are not linked to a customer (e.g. an Admin logged in), 
-                // For now, we return an empty list for safety.
-                return Result.Fail(new Error("This account the doesn't link to any customer").WithMetadata("GetCustomerInvocie","Get.CustomerInvoice.CustomerIdNotFound"));
+                query = query.Where(x => x.InvoiceStatusID == request.InvoiceStatusId.Value);
+            }
+            if (request.PaymentStatusId.HasValue)
+            {
+                query = query.Where(x => x.PaymentStatusID == request.PaymentStatusId.Value);
             }
 
-            // 3. Start building the Query
-            var query = _uow.InvoicesRepository.GetAllQueryable(); // Assuming your Repo has this or similar
-
-            // 4. CRITICAL: Filter by the User's CustomerID
-            query = query.Where(x => x.CustomerID == user.CustomerID.Value);
-
-            // 5. Apply Search (Optional)
+            // C. Amount Range
+            if (request.MinAmount.HasValue)
+            {
+                query = query.Where(x => x.TotalAmount >= request.MinAmount.Value);
+            }
+            if (request.MaxAmount.HasValue)
+            {
+                query = query.Where(x => x.TotalAmount <= request.MaxAmount.Value);
+            }
+            // 3. Search Logic
             if (!string.IsNullOrEmpty(request.SearchTerm))
             {
                 string search = request.SearchTerm.ToLower().Trim();
-                
-                // Search by Invoice Number, Snapshot Name, or Notes
                 query = query.Where(x => 
                     x.InvoiceNumber.ToString().Contains(search) || 
+                    (x.Notes != null && x.Notes.ToLower().Contains(search)) ||
+                    
+                    // Search Snapshot Name (if exists) OR Master Customer Name
                     (x.InvoiceCustomerName != null && x.InvoiceCustomerName.ToLower().Contains(search)) ||
-                    (x.Notes != null && x.Notes.ToLower().Contains(search))
+                    (x.Customer.CustomerName.ToLower().Contains(search))
                 );
             }
 
-            // 6. Ordering (Newest first)
-            query = query.OrderByDescending(x => x.CreatedAt);
+           // 5. SORTING
+            query = _uow.InvoicesRepository.ApplySorting(query, request.SortColumn, request.SortDirection);
 
-            // 7. Map to DTO
+            // 6. PAGINATION
             var dtoQuery = query.ProjectTo<InvoiceDTO>(_mapper.ConfigurationProvider);
-            // 8. Paginate
-            var paginatedResult = await PaginatedList<InvoiceDTO>.CreateAsync(
+            
+            return await PaginatedList<InvoiceDTO>.CreateAsync(
                 dtoQuery, 
                 request.PageNumber, 
                 request.PageSize
             );
-            return Result.Ok(paginatedResult);
         }
     }
 }

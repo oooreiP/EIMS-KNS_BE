@@ -329,7 +329,7 @@ namespace EIMS.API.Controllers
                 pdfDto.FileName
             );
         }
-        [HttpGet("customer")]
+        [HttpGet("user")]
         public async Task<IActionResult> GetMyInvoices([FromQuery] GetInvoicesOfUser query)
         {
             // 1. Read the claim you added
