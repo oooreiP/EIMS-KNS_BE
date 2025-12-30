@@ -32,8 +32,8 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // =========================================================================
             // BƯỚC 1: LẤY HÓA ĐƠN GỐC & VALIDATE
             // =========================================================================
-            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId);
-
+            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer");
+            var newCustomer = new Customer();
             if (originalInvoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn gốc.");
 
@@ -52,7 +52,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // Nếu User chọn khách hàng mới -> Kiểm tra tồn tại và dùng ID mới
             if (request.NewCustomerId.HasValue && request.NewCustomerId.Value != originalInvoice.CustomerID)
             {
-                var newCustomer = await _uow.CustomerRepository.GetByIdAsync(request.NewCustomerId.Value);
+                newCustomer = await _uow.CustomerRepository.GetByIdAsync(request.NewCustomerId.Value);
                 if (newCustomer == null)
                     return Result.Fail($"Khách hàng mới (ID: {request.NewCustomerId}) không tồn tại.");
 
@@ -85,6 +85,9 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 InvoiceStatusID = 1,
                 CreatedAt = DateTime.UtcNow,
                 PaymentDueDate = DateTime.UtcNow.AddDays(30),
+                InvoiceCustomerName = newCustomer.CustomerName ?? originalInvoice.Customer.CustomerName,
+                InvoiceCustomerAddress = newCustomer.Address ?? originalInvoice.Customer.Address,
+                InvoiceCustomerTaxCode = newCustomer.TaxCode ?? originalInvoice.Customer.TaxCode,
                 // InvoiceNumber = long.Parse(nextInvoiceNumber)
                 InvoiceNumber = nextInvoiceNumber,
             };

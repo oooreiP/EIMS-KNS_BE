@@ -229,7 +229,7 @@ namespace EIMS.Infrastructure.Service
             var replacements = new Dictionary<string, string>
         {
             { "{{CustomerName}}", invoice.Customer?.CustomerName ?? (displayLang == "en" ? "Customer" : "Quý khách") },
-            { "{{Message}}", request.CustomMessage ?? template.Description ?? "" }, 
+            { "{{Message}}", request.CustomMessage ?? template.Name ?? "" }, 
             { "{{InvoiceNumber}}", invoice.InvoiceNumber.ToString() },
             { "{{IssuedDate}}", invoice.IssuedDate?.ToString("dd/MM/yyyy") ?? "N/A" },
             { "{{CreatedAt}}", invoice.CreatedAt.ToString("dd/MM/yyyy") },

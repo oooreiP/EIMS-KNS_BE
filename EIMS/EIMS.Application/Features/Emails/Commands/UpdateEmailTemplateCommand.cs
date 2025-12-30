@@ -18,8 +18,8 @@ namespace EIMS.Application.Features.Emails.Commands
 
         [Required]
         public string BodyContent { get; set; } // HTML update
-
-        public string? Description { get; set; }
+        public string Category { get; set; }
+        public string? Name { get; set; }
         public bool IsActive { get; set; }
     }
 }
