@@ -17,6 +17,7 @@ using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Customer;
 using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
 using EIMS.Application.DTOs.InvoicePayment;
+using EIMS.Application.DTOs.LogsDTO;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -83,7 +84,8 @@ namespace EIMS.Application.Common.Mapping
                 .ForMember(dest => dest.Invoices, opt => opt.MapFrom(src => src.StatementDetails));
             // Fix: Customer -> CustomerInfoDto
             CreateMap<Customer, CustomerInfoDto>();
-
+            CreateMap<AuditLog, AuditLogDto>();
+            CreateMap<SystemActivityLog, SystemActivityLogDto>();
             // Fix: Invoice Entity -> StatementInvoiceDto (For the invoices list)
             CreateMap<Invoice, StatementInvoiceDto>()
                   .ForMember(dest => dest.InvoiceID, opt => opt.MapFrom(src => src.InvoiceID))

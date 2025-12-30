@@ -38,12 +38,18 @@ namespace EIMS.Infrastructure.Interceptors
         private void UpdateAuditFields(DbContext context)
         {
             if (context == null) return;
-            var userId = _currentUserService.UserId;
+
+            var userId = _currentUserService.UserId ?? "System"; // Handle null User
             var traceId = _httpContextAccessor.HttpContext?.TraceIdentifier;
-            var auditEntries = new List<AuditLog>();
+
+            // 1. LẤY SNAPSHOT: Lọc bỏ các bảng không cần Audit để tránh vòng lặp/lỗi
             var entries = context.ChangeTracker.Entries()
-            .Where(e => !(e.Entity is AuditLog) && !(e.Entity is SystemActivityLog) && !(e.Entity is RefreshToken)) // Bỏ qua bảng Log
-            .ToList(); 
+                .Where(e =>
+                    !(e.Entity is AuditLog) &&
+                    !(e.Entity is SystemActivityLog) &&
+                    !(e.Entity is RefreshToken))
+                .ToList();
+
             foreach (var entry in entries)
             {
                 if (entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
@@ -63,34 +69,51 @@ namespace EIMS.Infrastructure.Interceptors
 
                 foreach (var property in entry.Properties)
                 {
-                    string propertyName = property.Metadata.Name;
                     if (property.IsTemporary) continue;
 
-                    // Lấy Primary Key
+                    string propertyName = property.Metadata.Name;
                     if (property.Metadata.IsPrimaryKey())
                     {
                         auditEntry.RecordId = property.CurrentValue?.ToString();
+                        continue;
                     }
+
+                    var originalValue = property.OriginalValue;
+                    var currentValue = property.CurrentValue;
 
                     switch (entry.State)
                     {
                         case EntityState.Added:
-                            newValues[propertyName] = property.CurrentValue;
+                            newValues[propertyName] = currentValue;
                             break;
+
                         case EntityState.Deleted:
-                            oldValues[propertyName] = property.OriginalValue;
+                            oldValues[propertyName] = originalValue;
                             break;
+
                         case EntityState.Modified:
-                            if (property.IsModified)
+                            if (property.IsModified && !Equals(originalValue, currentValue))
                             {
-                                oldValues[propertyName] = property.OriginalValue;
-                                newValues[propertyName] = property.CurrentValue;
+                                oldValues[propertyName] = originalValue;
+                                newValues[propertyName] = currentValue;
                             }
                             break;
                     }
                 }
-                auditEntry.OldValues = oldValues.Count == 0 ? null : JsonSerializer.Serialize(oldValues);
-                auditEntry.NewValues = newValues.Count == 0 ? null : JsonSerializer.Serialize(newValues);
+                if (entry.State == EntityState.Modified && oldValues.Count == 0 && newValues.Count == 0)
+                {
+                    continue;
+                }
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+                    WriteIndented = false,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping // Giữ nguyên tiếng Việt có dấu
+                };
+
+                auditEntry.OldValues = oldValues.Count == 0 ? null : JsonSerializer.Serialize(oldValues, jsonOptions);
+                auditEntry.NewValues = newValues.Count == 0 ? null : JsonSerializer.Serialize(newValues, jsonOptions);
+
                 context.Set<AuditLog>().Add(auditEntry);
             }
         }
