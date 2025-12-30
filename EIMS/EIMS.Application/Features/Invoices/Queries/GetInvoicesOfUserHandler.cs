@@ -17,13 +17,11 @@ namespace EIMS.Application.Features.Invoices.Queries
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-
         public GetInvoicesOfUserHandler(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
             _mapper = mapper;
         }
-
         public async Task<Result<PaginatedList<InvoiceDTO>>> Handle(GetInvoicesOfUser request, CancellationToken cancellationToken)
         {
             // 1. Fetch the logged-in User to get their Link to the Customer
@@ -39,9 +37,8 @@ namespace EIMS.Application.Features.Invoices.Queries
             if (user.CustomerID == null)
             {
                 // If they are not linked to a customer (e.g. an Admin logged in), 
-                // you might want to return empty or handle differently. 
                 // For now, we return an empty list for safety.
-                return Result.Ok(new PaginatedList<InvoiceDTO>(new List<InvoiceDTO>(), 0, request.PageNumber, request.PageSize));
+                return Result.Fail(new Error("This account the doesn't link to any customer").WithMetadata("GetCustomerInvocie","Get.CustomerInvoice.CustomerIdNotFound"));
             }
 
             // 3. Start building the Query
@@ -67,16 +64,13 @@ namespace EIMS.Application.Features.Invoices.Queries
             query = query.OrderByDescending(x => x.CreatedAt);
 
             // 7. Map to DTO
-            // Ensure you have ProjectTo (requires AutoMapper.QueryableExtensions)
             var dtoQuery = query.ProjectTo<InvoiceDTO>(_mapper.ConfigurationProvider);
-
             // 8. Paginate
             var paginatedResult = await PaginatedList<InvoiceDTO>.CreateAsync(
                 dtoQuery, 
                 request.PageNumber, 
                 request.PageSize
             );
-
             return Result.Ok(paginatedResult);
         }
     }
