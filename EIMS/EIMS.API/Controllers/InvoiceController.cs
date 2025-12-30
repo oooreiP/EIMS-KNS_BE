@@ -329,5 +329,19 @@ namespace EIMS.API.Controllers
                 pdfDto.FileName
             );
         }
+        [HttpGet("customer")]
+        public async Task<IActionResult> GetMyInvoices([FromQuery] GetInvoicesOfUser query)
+        {
+            // 1. Read the claim you added
+            var claim = User.FindFirst("CustomerId");
+            if (claim != null && int.TryParse(claim.Value, out int cid))
+            {
+                query.CustomerId = cid;
+            }
+
+            // 2. Send
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 }
