@@ -19,12 +19,21 @@ namespace EIMS.API.Controllers
 
         // GET: api/email-templates?searchTerm=invoice
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? searchTerm)
+        public async Task<IActionResult> GetAll([FromQuery] GetEmailTemplatesQuery query)
         {
-            var result = await _mediator.Send(new GetEmailTemplatesQuery { SearchTerm = searchTerm });
+            var result = await _mediator.Send(query);
             return Ok(result.Value);
         }
+        // GET: api/email-templates/variables/invoice
+        [HttpGet("variables/{category}")]
+        public async Task<IActionResult> GetVariables(string category)
+        {
+            var query = new GetEmailTemplateVariablesQuery { Category = category };
+            var result = await _mediator.Send(query);
 
+            if (result.IsFailed) return BadRequest(result.Errors);
+            return Ok(result.Value);
+        }
         // GET: api/email-templates/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -43,6 +52,7 @@ namespace EIMS.API.Controllers
             return Ok(new { id = result.Value, message = "Tạo mẫu email thành công" });
         }
 
+        // PUT: api/email-templates/5
         // PUT: api/email-templates/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateEmailTemplateCommand command)

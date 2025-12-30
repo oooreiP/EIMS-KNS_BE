@@ -12,5 +12,8 @@ namespace EIMS.Application.Features.Emails.Queries
     public class GetEmailTemplatesQuery : IRequest<Result<IEnumerable<EmailTemplateDto>>>
     {
         public string? SearchTerm { get; set; }
+        public string? LanguageCode { get; set; } 
+        public string? Category { get; set; }     
+        public bool? IsActive { get; set; }       
     }
 }
