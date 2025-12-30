@@ -10,11 +10,11 @@ namespace EIMS.Application.Features.Authentication.Commands
     {
         private readonly IApplicationDBContext _context;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IEmailService _emailService;
+        private readonly IEmailSenderService _emailService;
 
         private const string DEFAULT_ROLE_NAME = "Accountant";
 
-        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailService emailService)
+        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailSenderService emailService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
