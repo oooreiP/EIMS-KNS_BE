@@ -399,7 +399,9 @@ namespace EIMS.Infrastructure.Persistence
             TemplateCode = "INVOICE_SEND",
             LanguageCode = "vi",
             Subject = "🔔 [Hóa đơn] #{{InvoiceNumber}} - Thông báo phát hành",
-            Description = "Mẫu gửi hóa đơn mặc định",
+            Category = "invoice",
+            IsSystemTemplate = true,
+            Name = "Mẫu gửi hóa đơn mặc định",
             IsActive = true,
             BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
                 <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>
@@ -420,7 +422,9 @@ namespace EIMS.Infrastructure.Persistence
             TemplateCode = "INVOICE_SEND",
             LanguageCode = "en",
             Subject = "🧾 [Invoice] #{{InvoiceNumber}} - Issued Notification",
-            Description = "Standard Invoice Email (English)",
+            Category = "invoice",
+            IsSystemTemplate = true,
+            Name = "Standard Invoice Email (English)",
             IsActive = true,
             BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
                 <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>
@@ -441,7 +445,9 @@ namespace EIMS.Infrastructure.Persistence
             TemplateCode = "PAYMENT_REMINDER",
             LanguageCode = "vi",
             Subject = "🔥 [NHẮC THANH TOÁN] Hóa đơn #{{InvoiceNumber}} quá hạn",
-            Description = "Mẫu nhắc nợ khẩn cấp",
+            Category = "payment",
+            IsSystemTemplate = true,
+            Name = "Mẫu nhắc nợ khẩn cấp",
             IsActive = true,
             BodyContent = @"<div style='font-family:Arial, sans-serif; border: 2px solid #dc3545; padding: 20px; max-width: 600px; margin: 0 auto;'>
                 <h2 style='color:#dc3545;'>⚠️ Thông báo Nhắc thanh toán</h2>
