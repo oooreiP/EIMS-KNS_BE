@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230141515_AddSaleToInvoice")]
+    partial class AddSaleToInvoice
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -251,29 +254,16 @@ namespace EIMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSystemTemplate")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LanguageCode")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Subject")
                         .IsRequired()
@@ -285,9 +275,6 @@ namespace EIMS.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.HasKey("EmailTemplateID");
 
                     b.ToTable("EmailTemplate");
@@ -297,12 +284,9 @@ namespace EIMS.Infrastructure.Migrations
                         {
                             EmailTemplateID = 1,
                             BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>Chúng tôi xin thông báo hóa đơn điện tử đã được phát hành:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Số hóa đơn:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Tổng tiền:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p>📂 <strong>File đính kèm:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Trân trọng,<br>EIMS Team</p>\r\n            </div>",
-                            Category = "invoice",
-                            CreatedAt = new DateTime(2025, 12, 30, 15, 32, 41, 151, DateTimeKind.Utc).AddTicks(7328),
+                            Description = "Mẫu gửi hóa đơn mặc định",
                             IsActive = true,
-                            IsSystemTemplate = true,
                             LanguageCode = "vi",
-                            Name = "Mẫu gửi hóa đơn mặc định",
                             Subject = "🔔 [Hóa đơn] #{{InvoiceNumber}} - Thông báo phát hành",
                             TemplateCode = "INVOICE_SEND"
                         },
@@ -310,12 +294,9 @@ namespace EIMS.Infrastructure.Migrations
                         {
                             EmailTemplateID = 2,
                             BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>We are pleased to inform you that your e-invoice has been issued:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p>📂 <strong>Attachments:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>\r\n            </div>",
-                            Category = "invoice",
-                            CreatedAt = new DateTime(2025, 12, 30, 15, 32, 41, 151, DateTimeKind.Utc).AddTicks(7334),
+                            Description = "Standard Invoice Email (English)",
                             IsActive = true,
-                            IsSystemTemplate = true,
                             LanguageCode = "en",
-                            Name = "Standard Invoice Email (English)",
                             Subject = "🧾 [Invoice] #{{InvoiceNumber}} - Issued Notification",
                             TemplateCode = "INVOICE_SEND"
                         },
@@ -323,12 +304,9 @@ namespace EIMS.Infrastructure.Migrations
                         {
                             EmailTemplateID = 3,
                             BodyContent = "<div style='font-family:Arial, sans-serif; border: 2px solid #dc3545; padding: 20px; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#dc3545;'>⚠️ Thông báo Nhắc thanh toán</h2>\r\n                <p>Kính gửi {{CustomerName}},</p>\r\n                <div style='background:#fff3cd; color:#856404; padding:10px; margin:10px 0;'>\r\n                    <strong>Lời nhắn:</strong> {{Message}}\r\n                </div>\r\n                <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>\r\n                <ul>{{AttachmentList}}</ul>\r\n            </div>",
-                            Category = "payment",
-                            CreatedAt = new DateTime(2025, 12, 30, 15, 32, 41, 151, DateTimeKind.Utc).AddTicks(7336),
+                            Description = "Mẫu nhắc nợ khẩn cấp",
                             IsActive = true,
-                            IsSystemTemplate = true,
                             LanguageCode = "vi",
-                            Name = "Mẫu nhắc nợ khẩn cấp",
                             Subject = "🔥 [NHẮC THANH TOÁN] Hóa đơn #{{InvoiceNumber}} quá hạn",
                             TemplateCode = "PAYMENT_REMINDER"
                         });

@@ -10,11 +10,11 @@ namespace EIMS.Application.Features.Authentication.Commands
     {
         private readonly IApplicationDBContext _context;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IEmailService _emailService;
+        private readonly IEmailSenderService _emailService;
 
         private const string DEFAULT_ROLE_NAME = "Accountant";
 
-        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailService emailService)
+        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailSenderService emailService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
@@ -53,27 +53,25 @@ namespace EIMS.Application.Features.Authentication.Commands
             };
             if (requestedRole.RoleName == "Customer")
             {
-                // 1. Validate required fields for a customer
-                if (string.IsNullOrWhiteSpace(request.TaxCode) ||
-                    string.IsNullOrWhiteSpace(request.CompanyName) ||
-                    string.IsNullOrWhiteSpace(request.Address))
-                {
-                    return Result.Fail(new Error("For 'Customer' role, TaxCode, CompanyName, and Address are required.")
-                        .WithMetadata("ErrorCode", "Auth.Register.CustomerInfoMissing"));
-                }
+                if (string.IsNullOrWhiteSpace(request.TaxCode))
+                    return Result.Fail("TaxCode is required.");
 
-                // 2. Check if this customer (by TaxCode) already exists
+                // 1. Check DB First
                 var existingCustomer = await _context.Customers
                     .FirstOrDefaultAsync(c => c.TaxCode == request.TaxCode, cancellationToken);
 
                 if (existingCustomer != null)
                 {
-                    // 3a. If customer exists, link this new user to them
                     newUser.CustomerID = existingCustomer.CustomerID;
                 }
                 else
                 {
-                    // 3b. If customer does not exist, create a new one
+                    // NOT FOUND: Now require the other fields to create it
+                    if (string.IsNullOrWhiteSpace(request.CompanyName) || string.IsNullOrWhiteSpace(request.Address))
+                    {
+                        return Result.Fail("TaxCode not found. Please provide CompanyName and Address to create a new Customer.");
+                    }
+
                     var newCustomer = new Customer
                     {
                         CustomerName = request.CompanyName,
@@ -104,16 +102,16 @@ namespace EIMS.Application.Features.Authentication.Commands
                 EmailBody = emailBody
             };
             _ = Task.Run(async () =>
-                       {
-                           try
                            {
-                               await _emailService.SendMailAsync(mailRequest);
-                           }
-                           catch (Exception ex)
-                           {
-                               Console.WriteLine($"Email send error: {ex.Message}");
-                           }
-                       });
+                               try
+                               {
+                                   await _emailService.SendMailAsync(mailRequest);
+                               }
+                               catch (Exception ex)
+                               {
+                                   Console.WriteLine($"Email send error: {ex.Message}");
+                               }
+                           });
             return Result.Ok(newUser.UserID);
         }
     }
