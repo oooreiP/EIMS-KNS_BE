@@ -20,9 +20,9 @@ namespace EIMS.Application.Features.Emails.Commands
 
         [Required]
         public string Subject { get; set; }
-
+        public string Category { get; set; }
         public string BodyContent { get; set; } = ""; 
-        public string? Description { get; set; }
+        public string? Name { get; set; }
         public bool IsActive { get; set; } = true;
     }
 }
