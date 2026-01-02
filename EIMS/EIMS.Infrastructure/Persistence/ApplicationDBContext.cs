@@ -380,6 +380,67 @@ namespace EIMS.Infrastructure.Persistence
                 new StatementStatus { StatusID = 6, StatusName = "Cancelled" },           // Cancelled (Mistake/Invalid) - Never delete!
                 new StatementStatus { StatusID = 7, StatusName = "Refunded" }        // Money returned to client
                         );
+            modelBuilder.Entity<NotificationStatus>().HasData(
+                new NotificationStatus { StatusID = 1, StatusName = "Chưa đọc" },
+                new NotificationStatus { StatusID = 2, StatusName = "Đã đọc" },
+                new NotificationStatus { StatusID = 3, StatusName = "Đã lưu trữ" }
+            );
+            modelBuilder.Entity<NotificationType>().HasData(
+        // Loại 1: Hệ thống (Icon: Info/Gear - Màu: Blue/Grey)
+        // Dành cho: Admin, All Users
+        new NotificationType
+        {
+            TypeID = 1,
+            TypeName = "Hệ thống" // System info, Maintenance, Welcome
+        },
+
+        // Loại 2: Hóa đơn (Icon: FileInvoice - Màu: Blue)
+        // Dành cho: Sales (Tạo), Accountant (Ký), Customer (Nhận)
+        new NotificationType
+        {
+            TypeID = 2,
+            TypeName = "Hóa đơn" // Issued, Signed, Cancelled, Adjusted
+        },
+
+        // Loại 3: Thanh toán (Icon: DollarSign/CreditCard - Màu: Green)
+        // Dành cho: Accountant (Nhận tiền), Customer (Thanh toán xong), Sales (Theo dõi doanh số)
+        new NotificationType
+        {
+            TypeID = 3,
+            TypeName = "Thanh toán" // Payment Success, Refund
+        },
+
+        // Loại 4: Nhắc nhở & Cảnh báo (Icon: Bell/ExclamationTriangle - Màu: Yellow/Red)
+        // Dành cho: Customer (Nợ quá hạn), Accountant (Deadline báo cáo)
+        new NotificationType
+        {
+            TypeID = 4,
+            TypeName = "Nhắc nhở" // Payment Overdue, Debt Reminder
+        },
+        // Loại 5: Quy trình Phê duyệt (Icon: ClipboardCheck - Màu: Purple)
+        // Dành cho: Chief Accountant (Duyệt biên bản), Admin (Duyệt user)
+        new NotificationType
+        {
+            TypeID = 5,
+            TypeName = "Phê duyệt" // Minutes Approval, User Request Approval
+        },
+
+        // Loại 6: Báo cáo & Đối soát (Icon: ChartBar - Màu: Cyan)
+        // Dành cho: Chief Accountant, Admin
+        new NotificationType
+        {
+            TypeID = 6,
+            TypeName = "Báo cáo" // Monthly Report Ready, Tax Report
+        },
+
+        // Loại 7: Bảo mật (Icon: ShieldLock - Màu: Red)
+        // Dành cho: All Users (Login alert, Password changed)
+        new NotificationType
+        {
+            TypeID = 7,
+            TypeName = "Bảo mật"
+        }
+    );
             modelBuilder.Entity<Company>().HasData(
         new Company
         {

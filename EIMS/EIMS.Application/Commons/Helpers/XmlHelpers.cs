@@ -11,8 +11,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using EIMS.Application.DTOs;
 using System.Security.Cryptography;
-using System.Collections.Concurrent; // <-- Để dùng ConcurrentDictionary (_serializerCache)
-namespace EIMS.Application.Commons
+using System.Collections.Concurrent;
+namespace EIMS.Application.Commons.Helpers
 {
     public static class XmlHelpers
     {
@@ -210,7 +210,7 @@ namespace EIMS.Application.Commons
         public static string GenerateMTDiep(string prefix, string? idPart = null)
         {
             string uuidPart = Guid.NewGuid().ToString("N").ToUpper();
-            string idString = idPart ?? ""; 
+            string idString = idPart ?? "";
             string mtDiep = prefix + idString + uuidPart;
             return mtDiep.Length > MtDiepLength ? mtDiep.Substring(0, MtDiepLength) : mtDiep;
         }

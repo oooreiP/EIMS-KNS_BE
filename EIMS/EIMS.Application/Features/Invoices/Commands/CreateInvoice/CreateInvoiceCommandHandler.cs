@@ -18,15 +18,17 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         private readonly IFileStorageService _fileStorageService;
         private readonly IEmailService _emailService;
         private readonly IInvoiceXMLService _invoiceXMLService;
+        private readonly INotificationService _notiService;
         private readonly IMapper _mapper;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileStorageService = fileStorageService;
             _emailService = emailService;
             _invoiceXMLService = invoiceXMLService;
+            _notiService = notiService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -40,7 +42,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 return Result.Fail(new Error("Invoice Status Id not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.SalesID.HasValue)
             {
-                var salesUser = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID.Value);
+                var salesUser = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID.Value,"Role");
                 if (salesUser == null)
                 {
                     return Result.Fail($"Salesperson with ID {request.SalesID} not found.");
@@ -139,6 +141,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     InvoiceStatusID = request.InvoiceStatusID,
                     PaymentStatusID = 1,
+                    PaymentDueDate = DateTime.UtcNow.AddDays(30),
                     IssuerID = null,
                     MinRows = request.MinRows ?? 5,
                     PaidAmount = 0,
@@ -166,6 +169,12 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
+                await _notiService.SendToUserAsync(invoice.CustomerID,
+                $"1 hóa đơn của bạn đã được khởi tạo. Vui lòng kiểm tra.",
+                typeId: 2);
+                await _notiService.SendToRoleAsync("HOD",
+                $"Có hóa đơn đã được khởi tạo. Vui lòng xác nhận.",
+                typeId: 2);
                 await _unitOfWork.SaveChanges();
                 var response = new CreateInvoiceResponse
                 {

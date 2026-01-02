@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Invoices;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using System;
@@ -15,7 +16,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
         public int OriginalInvoiceId { get; set; }
         public int? PerformedBy { get; set; }
         public string AdjustmentReason { get; set; }
-        public int? NewCustomerId { get; set; }
+        public EAdjustmentType AdjustmentType { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
     }
 }

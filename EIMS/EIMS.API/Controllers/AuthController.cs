@@ -1,9 +1,10 @@
-using System.Security.Authentication;
+﻿using System.Security.Authentication;
 using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Authentication;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
+using EIMS.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,12 +18,14 @@ namespace EIMS.API.Controllers
         private readonly IMapper _mapper;
         private readonly ISender _sender;
         private readonly IAuthCookieService _authCookieService;
+        private readonly INotificationService _notiService;
 
-        public AuthController(ISender sender, IAuthCookieService authCookieService, IMapper mapper)
+        public AuthController(ISender sender, IAuthCookieService authCookieService, IMapper mapper, INotificationService notiService)
         {
             _sender = sender;
             _authCookieService = authCookieService;
             _mapper = mapper;
+            _notiService = notiService;
         }
 
         [HttpPost("login")]
@@ -87,6 +90,9 @@ namespace EIMS.API.Controllers
                     Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
                 });
             }
+            await _notiService.SendToRoleAsync("Admin",
+               $"Có 1 người dùng mới được khởi tạo. Vui lòng kiểm tra.",
+               typeId: 2);
             return StatusCode(StatusCodes.Status201Created, "User creation successfully");
         }
         [HttpPost("change-password")]

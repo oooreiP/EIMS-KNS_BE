@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.Features.InvoiceStatements.Commands;
 using EIMS.Application.Features.InvoiceStatements.Queries;
@@ -88,6 +88,19 @@ namespace EIMS.API.Controllers
                 });
             }
             return Ok(result.Value);
+        }
+        [HttpPost("send-monthly-reminders")]
+        //[Authorize(Roles = "Accountant,HOD")]
+        public async Task<IActionResult> SendMonthlyReminders()
+        {
+            var command = new SendMonthlyDebtRemindersCommand();
+            var result = await _sender.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { message = $"Đã gửi thông báo nhắc nợ tới {result.Value} khách hàng." });
+            }
+            return BadRequest(result.Errors);
         }
     }
 }
