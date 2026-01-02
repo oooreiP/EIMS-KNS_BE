@@ -34,6 +34,9 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IBaseRepository<EmailTemplate> EmailTemplateRepository { get; set; }
         public IBaseRepository<SystemActivityLog> SystemActivityLogRepository { get; set; }
         public IBaseRepository<AuditLog> AuditLogRepository { get; set; }
+        public IBaseRepository<NotificationType> NotificationTypeRepository { get; set; }
+        public IBaseRepository<Notification> NotificationRepository { get; set; }
+        public IBaseRepository<NotificationStatus> NotificationStatusRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
             _db = db;
@@ -60,6 +63,9 @@ namespace EIMS.Application.Commons.UnitOfWork
             EmailTemplateRepository = new BaseRepository<EmailTemplate>(_db);
             SystemActivityLogRepository = new BaseRepository<SystemActivityLog>(_db);
             AuditLogRepository = new BaseRepository<AuditLog>(_db);
+            NotificationTypeRepository = new BaseRepository<NotificationType>(_db);
+            NotificationRepository = new BaseRepository<Notification>(_db);
+            NotificationStatusRepository = new BaseRepository<NotificationStatus>(_db);
         }
         public async Task SaveChanges()
         {

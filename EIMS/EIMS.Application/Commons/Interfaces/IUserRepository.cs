@@ -9,6 +9,8 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IUserRepository : IBaseRepository<User>
     {
         Task<User?> GetByEmailAsync(string email);
+        Task<List<User>> GetUsersByRoleAsync(string roleName);
         Task<bool> IsEmailUniqueAsync(string email);
+        Task<List<User>> GetUsersByCustomerIdAsync(int customerId);
     }
 }

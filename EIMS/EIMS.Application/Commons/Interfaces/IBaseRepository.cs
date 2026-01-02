@@ -20,5 +20,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<int> CountAsync(Expression<Func<T, bool>> predicate = null);
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, string includeProperties = "");
         IQueryable<T> GetAllQueryable(string includeProperties = "");
+        Task CreateRangeAsync(IEnumerable<T> entities);
+        void UpdateRange(IEnumerable<T> entities);
     }
 }

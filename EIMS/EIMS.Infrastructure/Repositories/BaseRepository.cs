@@ -127,5 +127,13 @@ namespace EIMS.Infrastructure.Repositories
             }
             return query;
         }
+        public async Task CreateRangeAsync(IEnumerable<T> entities)
+        {
+            await dbSet.AddRangeAsync(entities);
+        }
+        public void UpdateRange(IEnumerable<T> entities)
+        {
+            dbSet.UpdateRange(entities);
+        }
     }
 }

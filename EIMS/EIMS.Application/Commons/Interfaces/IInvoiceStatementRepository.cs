@@ -10,5 +10,6 @@ namespace EIMS.Application.Commons.Interfaces
     {
         Task<InvoiceStatement?> GetByIdWithInvoicesAsync(int id);
         Task<List<InvoiceStatement>> GetStatementsContainingInvoiceAsync(int invoiceId);
+        Task<List<InvoiceStatement>> GetUnpaidStatementsInMonthAsync(int month, int year);
     }
 }
