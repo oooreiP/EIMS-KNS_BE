@@ -17,22 +17,29 @@ namespace EIMS.Application.Commons.Behaviors
 
         public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
         {
-            // Check if the current command is one that needs authentication
             if (request is IAuthenticatedCommand authenticatedCommand)
             {
-                var userIdString = _httpContextAccessor.HttpContext?
-                   .User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var user = _httpContextAccessor.HttpContext?.User;
 
-                if (!int.TryParse(userIdString, out int userId))
+                if (user != null)
                 {
-                    throw new ApplicationException("User ID not found in token.");
-                }
+                    // 1. Populate UserID (You likely already have this)
+                    var userIdString = _httpContextAccessor.HttpContext?
+                    .User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                authenticatedCommand.AuthenticatedUserId = userId;
+                    if (!int.TryParse(userIdString, out int userId))
+                    {
+                        throw new ApplicationException("User ID not found in token.");
+                    }
+
+                    var customerIdClaim = user.FindFirst("CustomerId");
+                    if (customerIdClaim != null && int.TryParse(customerIdClaim.Value, out int customerId))
+                    {
+                        authenticatedCommand.CustomerId = customerId;
+                    }
+                }
             }
-            // Continue to the next behavior or the handler
             return await next();
         }
-
     }
 }

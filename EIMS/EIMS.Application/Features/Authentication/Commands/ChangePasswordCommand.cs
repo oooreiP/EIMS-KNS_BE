@@ -9,5 +9,6 @@ namespace EIMS.Application.Features.Authentication.Commands
         public string CurrentPassword { get; set; }
         public string NewPassword { get; set; }
         public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
