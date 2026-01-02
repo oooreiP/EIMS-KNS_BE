@@ -31,7 +31,7 @@ namespace EIMS.Application.Commons.Behaviors
                     {
                         throw new ApplicationException("User ID not found in token.");
                     }
-
+                    authenticatedCommand.AuthenticatedUserId = userId;
                     var customerIdClaim = user.FindFirst("CustomerId");
                     if (customerIdClaim != null && int.TryParse(customerIdClaim.Value, out int customerId))
                     {
