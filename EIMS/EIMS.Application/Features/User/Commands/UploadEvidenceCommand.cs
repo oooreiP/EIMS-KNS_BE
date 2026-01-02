@@ -13,5 +13,6 @@ namespace EIMS.Application.Features.User.Commands
     {
         public int AuthenticatedUserId { get; set; }
         public IFormFile EvidenceFile { get; set; } // Or ICollection<IFormFile> for multiple
+        public int? CustomerId { get; set; }
     }
 }

@@ -19,5 +19,6 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
         public string? LogoUrl { get; set; }
         public object LayoutDefinition { get; set; }
         public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
