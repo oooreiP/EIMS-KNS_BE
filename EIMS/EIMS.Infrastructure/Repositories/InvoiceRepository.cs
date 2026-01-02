@@ -123,7 +123,7 @@ namespace EIMS.Infrastructure.Repositories
         public async Task<AdminDashboardDto> GetAdminDashboardStatsAsync(CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var sixMonthsAgo = now.AddMonths(-6);
 
             // 1. Base Query (NoTracking for speed)
