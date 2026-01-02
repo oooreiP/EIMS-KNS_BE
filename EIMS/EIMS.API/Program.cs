@@ -78,6 +78,7 @@ builder.Services.Configure<EmailSMTPSettings>(builder.Configuration.GetSection("
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
 // builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -143,7 +144,7 @@ app.UseHttpsRedirection();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapControllers();
 
 app.Run();
