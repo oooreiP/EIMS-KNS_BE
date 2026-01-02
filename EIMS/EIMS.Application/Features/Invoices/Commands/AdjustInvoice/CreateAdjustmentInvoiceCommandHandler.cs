@@ -4,6 +4,7 @@ using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
 using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using System;
@@ -20,19 +21,20 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
         private readonly IEmailService _emailService;
-
-        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, IEmailService emailService)
+        private readonly INotificationService _notiService;
+        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, IEmailService emailService, INotificationService notiService)
         {
             _uow = uow;
             _fileStorageService = fileStorageService;
             _emailService = emailService;
+            _notiService = notiService;
         }
         public async Task<Result<int>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
         {
             // =========================================================================
             // BƯỚC 1: LẤY HÓA ĐƠN GỐC & VALIDATE
             // =========================================================================
-            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer");
+            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer,Company");
             var newCustomer = new Customer();
             if (originalInvoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn gốc.");
@@ -45,27 +47,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 return Result.Fail($"Trạng thái hóa đơn gốc (ID: {originalInvoice.InvoiceStatusID}) không hợp lệ để điều chỉnh. Chỉ hỗ trợ hóa đơn Đã phát hành.");
             }
             // =========================================================================
-            // BƯỚC 2: XÁC ĐỊNH KHÁCH HÀNG (Hỗ trợ sửa sai MST)
-            // =========================================================================
-            int targetCustomerId = originalInvoice.CustomerID;
-
-            // Nếu User chọn khách hàng mới -> Kiểm tra tồn tại và dùng ID mới
-            if (request.NewCustomerId.HasValue && request.NewCustomerId.Value != originalInvoice.CustomerID)
-            {
-                newCustomer = await _uow.CustomerRepository.GetByIdAsync(request.NewCustomerId.Value);
-                if (newCustomer == null)
-                    return Result.Fail($"Khách hàng mới (ID: {request.NewCustomerId}) không tồn tại.");
-
-                targetCustomerId = request.NewCustomerId.Value;
-            }
-            var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(originalInvoice.TemplateID);
-            if (template == null)
-                return Result.Fail(new Error($"Template {originalInvoice.TemplateID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-            var serial = await _uow.SerialRepository.GetByIdAndLockAsync(template.SerialID);
-            if (serial == null)
-                return Result.Fail(new Error($"Template {serial.SerialID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-            serial.CurrentInvoiceNumber += 1;
-            long nextInvoiceNumber = serial.CurrentInvoiceNumber;            // =========================================================================
             // BƯỚC 3: KHỞI TẠO HÓA ĐƠN ĐIỀU CHỈNH (HEADER)
             // =========================================================================
             var adjInvoice = new Invoice
@@ -81,15 +62,15 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 TemplateID = originalInvoice.TemplateID,
                 CompanyId = originalInvoice.CompanyId,
                 IssuerID = originalInvoice.IssuerID,
-                CustomerID = targetCustomerId,
+                CustomerID = originalInvoice.CustomerID,
+                SalesID = originalInvoice.SalesID,
+                InvoiceCustomerName = originalInvoice.InvoiceCustomerName,
+                InvoiceCustomerAddress = originalInvoice.InvoiceCustomerAddress,
+                InvoiceCustomerTaxCode = originalInvoice.InvoiceCustomerTaxCode,
                 InvoiceStatusID = 1,
                 CreatedAt = DateTime.UtcNow,
                 PaymentDueDate = DateTime.UtcNow.AddDays(30),
-                InvoiceCustomerName = newCustomer.CustomerName ?? originalInvoice.Customer.CustomerName,
-                InvoiceCustomerAddress = newCustomer.Address ?? originalInvoice.Customer.Address,
-                InvoiceCustomerTaxCode = newCustomer.TaxCode ?? originalInvoice.Customer.TaxCode,
-                // InvoiceNumber = long.Parse(nextInvoiceNumber)
-                InvoiceNumber = nextInvoiceNumber,
+                PaymentStatusID = 1
             };
             decimal totalSubtotal = 0;
             decimal totalVAT = 0;
@@ -103,9 +84,14 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     if (product == null) return Result.Fail($"Sản phẩm ID {itemDto.ProductID} không tồn tại.");
 
                     // Tính toán: Chấp nhận số ÂM cho điều chỉnh giảm
-                    decimal amount = (decimal)itemDto.Quantity * itemDto.UnitPrice ?? 0;
+                    decimal quantity = (decimal)itemDto.Quantity;
+                    decimal unitPrice = itemDto.UnitPrice ?? 0;
                     decimal vatRate = itemDto.OverrideVATRate ?? product.VATRate ?? 0;
-                    // Tính tiền thuế
+                    if (request.AdjustmentType == EAdjustmentType.Decrease)
+                    {
+                        if (unitPrice > 0) unitPrice = -unitPrice; 
+                    }
+                    decimal amount = quantity * unitPrice;
                     decimal vatAmount = amount * (vatRate / 100m);
 
                     var invoiceItem = new InvoiceItem
@@ -187,6 +173,33 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             fullInvoice.XMLPath = uploadResult.Value.Url;
             await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
             await _uow.SaveChanges();
+            var notificationsToCreate = new List<Notification>();
+            if (originalInvoice.Customer != null)
+            {
+                var users = await _uow.UserRepository.GetUsersByCustomerIdAsync(originalInvoice.CustomerID);
+                string content = $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị ĐIỀU CHỈNH. Lý do: {request.AdjustmentReason}";
+                foreach (var user in users)
+                {
+                    notificationsToCreate.Add(new Notification
+                    {
+                        UserID = user.UserID,
+                        Content = content,
+                        NotificationStatusID = 1,
+                        NotificationTypeID = 2,
+                        Time = DateTime.UtcNow
+                    });
+                    await _notiService.SendRealTimeAsync(
+                        user.UserID,
+                        content,
+                        2
+                    );
+                }
+                if (notificationsToCreate.Any())
+                {
+                    await _uow.NotificationRepository.CreateRangeAsync(notificationsToCreate);
+                    await _uow.SaveChanges();
+                }
+            }
             await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 10);
             return Result.Ok(adjInvoice.InvoiceID);
         }

@@ -7,6 +7,8 @@ using EIMS.Infrastructure.Security;
 using EIMS.Infrastructure.Service;
 using EIMS.Application.Commons.UnitOfWork;
 using EIMS.Infrastructure.Interceptors;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using EIMS.Infrastructure.Service.BackgroundServices;
 
 namespace EIMS.Infrastructure
 {
@@ -23,6 +25,7 @@ namespace EIMS.Infrastructure
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddHttpContextAccessor();
+            services.AddHostedService<DebtReminderWorker>();
             services.AddScoped<IAuthCookieService, AuthCookieService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IDocumentParserService, DocumentParserService>();
@@ -39,6 +42,7 @@ namespace EIMS.Infrastructure
             services.AddScoped<IInvoiceXMLService, InvoiceXmlService>();
             services.AddScoped<IMinutesGenerator, MinutesGenerator>();
             services.AddScoped<IPdfService, PdfService>();
+            services.AddScoped<INotificationService, NotificationService>();
             return services;
 
         }

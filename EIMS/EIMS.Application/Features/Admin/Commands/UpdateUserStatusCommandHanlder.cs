@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Domain.Enums;
@@ -12,10 +12,12 @@ namespace EIMS.Application.Features.Admin.Commands
     {
         private readonly IApplicationDBContext _context;
         private readonly IEmailService _emailService;
-        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IEmailService emailService)
+        private readonly INotificationService _notificationService;
+        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IEmailService emailService, INotificationService notificationService)
         {
             _context = context;
             _emailService = emailService;
+            _notificationService = notificationService;
         }
         public async Task<Result> Handle(UpdateUserStatusCommand request, CancellationToken cancellationToken)
         {
@@ -34,6 +36,7 @@ namespace EIMS.Application.Features.Admin.Commands
                 emailSubject = "EIMS Account Activated!";
                 emailBody = $"<p>Dear {user.FullName},</p><p>Good news! Your account for EIMS has been successfully activated by an administrator. " +
                             $"You can now fully access the system at [Your Login URL Here].</p><p>Thank you.</p>";
+                await _notificationService.SendToUserAsync(user.UserID, $"Chào {user.FullName} đây là tài khoản đã được chúng tôi cung cấp, anh/chị có thể dùng nó để quản lý hóa đơn của mình.", 1);
             }
             else
             {
