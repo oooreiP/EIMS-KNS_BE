@@ -14,5 +14,6 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
         public int Month { get; set; }
         public int Year { get; set; }
         public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
