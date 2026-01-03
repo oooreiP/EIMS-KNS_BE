@@ -128,11 +128,6 @@
 						tháng <xsl:value-of select="substring(*[local-name()='TTChung']/*[local-name()='NLap'], 6, 2)"/>
 						năm <xsl:value-of select="substring(*[local-name()='TTChung']/*[local-name()='NLap'], 1, 4)"/>
 					</div>
-					<xsl:if test="$ReferenceText != ''">
-						<div style="font-weight: bold; font-style: italic; margin-top: 5px; text-align: center;">
-							(<xsl:value-of select="$ReferenceText"/>)
-						</div>
-					</xsl:if>
 				</td>
 				<td style="width: 30%; text-align: right;">
 					<div>
@@ -172,6 +167,15 @@
 					</xsl:if>
 				</td>
 			</tr>
+			<xsl:if test="$ReferenceText != ''">
+				<tr>
+					<td colspan="3" style="text-align: center; padding-top: 5px; padding-bottom: 10px;">
+						<div style="font-weight: bold; font-style: italic; font-size: 14px; color: #333;">
+							(<xsl:value-of select="$ReferenceText"/>)
+						</div>
+					</td>
+				</tr>
+			</xsl:if>
 		</table>
 
 		<table class="seller-table">
@@ -346,13 +350,42 @@
 							<xsl:value-of select="*[local-name()='DVTinh']"/>
 						</td>
 						<td class="text-right">
-							<xsl:value-of select="format-number(*[local-name()='SLuong'], '###.##0,##', 'vnd')"/>
+							<xsl:choose>
+								<xsl:when test="*[local-name()='SLuong'] &lt; 0">
+									<span style="color: red;">
+										(<xsl:value-of select="format-number(*[local-name()='SLuong'] * -1, '###.##0,##', 'vnd')"/>)
+									</span>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="format-number(*[local-name()='SLuong'], '###.##0,##', 'vnd')"/>
+								</xsl:otherwise>
+							</xsl:choose>
 						</td>
+
 						<td class="text-right">
-							<xsl:value-of select="format-number(*[local-name()='DGia'], '###.##0,##', 'vnd')"/>
+							<xsl:choose>
+								<xsl:when test="*[local-name()='DGia'] &lt; 0">
+									<span style="color: red;">
+										(<xsl:value-of select="format-number(*[local-name()='DGia'] * -1, '###.##0,##', 'vnd')"/>)
+									</span>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="format-number(*[local-name()='DGia'], '###.##0,##', 'vnd')"/>
+								</xsl:otherwise>
+							</xsl:choose>
 						</td>
+
 						<td class="text-right">
-							<xsl:value-of select="format-number(*[local-name()='ThTien'], '###.##0,##', 'vnd')"/>
+							<xsl:choose>
+								<xsl:when test="*[local-name()='ThTien'] &lt; 0">
+									<span style="color: red;">
+										(<xsl:value-of select="format-number(*[local-name()='ThTien'] * -1, '###.##0,##', 'vnd')"/>)
+									</span>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="format-number(*[local-name()='ThTien'], '###.##0,##', 'vnd')"/>
+								</xsl:otherwise>
+							</xsl:choose>
 						</td>
 						<td class="text-center">
 							<xsl:value-of select="*[local-name()='TSuat']"/>%
