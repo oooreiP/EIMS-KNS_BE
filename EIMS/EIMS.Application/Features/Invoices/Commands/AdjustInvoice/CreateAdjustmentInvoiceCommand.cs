@@ -11,12 +11,11 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
 {
-    public class CreateAdjustmentInvoiceCommand : IRequest<Result<int>>
+    public class CreateAdjustmentInvoiceCommand : IRequest<Result<AdjustmentInvoiceDetailDto>>
     {
         public int OriginalInvoiceId { get; set; }
+        public string ReferenceText { get; set; }
         public int? PerformedBy { get; set; }
-        public string AdjustmentReason { get; set; }
-        public EAdjustmentType AdjustmentType { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
     }
 }

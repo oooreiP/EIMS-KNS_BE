@@ -3,7 +3,7 @@
 
 	<xsl:output method="html" indent="yes" encoding="utf-8"/>
 	<xsl:decimal-format name="vnd" decimal-separator="," grouping-separator="."/>
-
+	<xsl:param name="ReferenceText" />
 	<xsl:param name="LogoUrl" select="''"/>
 	<xsl:param name="BackgroundUrl" select="''"/>
 	<xsl:param name="ColorTheme" select="'#0056b3'"/>
@@ -128,6 +128,11 @@
 						tháng <xsl:value-of select="substring(*[local-name()='TTChung']/*[local-name()='NLap'], 6, 2)"/>
 						năm <xsl:value-of select="substring(*[local-name()='TTChung']/*[local-name()='NLap'], 1, 4)"/>
 					</div>
+					<xsl:if test="$ReferenceText != ''">
+						<div style="font-weight: bold; font-style: italic; margin-top: 5px; text-align: center;">
+							(<xsl:value-of select="$ReferenceText"/>)
+						</div>
+					</xsl:if>
 				</td>
 				<td style="width: 30%; text-align: right;">
 					<div>

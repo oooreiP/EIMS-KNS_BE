@@ -134,7 +134,11 @@ namespace EIMS.Infrastructure.Service
                 qrContent = $"{invoice.InvoiceNumber}|{invoice.TotalAmount}";
             }
             string qrBase64 = _qrService.GenerateQrImageBase64(qrContent);
-
+            string refText = invoice.AdjustmentReason ?? "";
+            if (refText.Length > 29)
+            {
+                args.AddParam("ReferenceText", "", refText);
+            }
             args.AddParam("QrCodeData", "", qrBase64);
             var style = config.Style ?? new StyleSettings();
             args.AddParam("ColorTheme", "", style.ColorTheme ?? "#0056b3");
