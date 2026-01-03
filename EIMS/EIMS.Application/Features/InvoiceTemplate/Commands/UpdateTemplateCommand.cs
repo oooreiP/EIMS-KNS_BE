@@ -17,5 +17,6 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
         public string? LogoUrl { get; set; }
         public bool IsActive { get; set; }
         public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
