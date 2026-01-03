@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
+using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.Features.Invoices.Commands.ReplaceInvoice;
 using EIMS.Domain.Constants;
@@ -16,7 +17,7 @@ using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
 {
-    public class CreateAdjustmentInvoiceCommandHandler : IRequestHandler<CreateAdjustmentInvoiceCommand, Result<int>>
+    public class CreateAdjustmentInvoiceCommandHandler : IRequestHandler<CreateAdjustmentInvoiceCommand, Result<AdjustmentInvoiceDetailDto>>
     {
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
@@ -29,12 +30,12 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             _emailService = emailService;
             _notiService = notiService;
         }
-        public async Task<Result<int>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
+        public async Task<Result<AdjustmentInvoiceDetailDto>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
         {
             // =========================================================================
             // BƯỚC 1: LẤY HÓA ĐƠN GỐC & VALIDATE
             // =========================================================================
-            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer,Company");
+            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer,Company,InvoiceItems.Product");
             var newCustomer = new Customer();
             if (originalInvoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn gốc.");
@@ -46,15 +47,16 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 return Result.Fail($"Trạng thái hóa đơn gốc (ID: {originalInvoice.InvoiceStatusID}) không hợp lệ để điều chỉnh. Chỉ hỗ trợ hóa đơn Đã phát hành.");
             }
+            if (string.IsNullOrWhiteSpace(request.ReferenceText) || request.ReferenceText.Length < 30) 
+                return Result.Fail("Vui lòng nhập lý do điều chỉnh/dòng tham chiếu đầy đủ.");
             // =========================================================================
             // BƯỚC 3: KHỞI TẠO HÓA ĐƠN ĐIỀU CHỈNH (HEADER)
             // =========================================================================
             var adjInvoice = new Invoice
             {
-                // 1: Gốc, 2: Điều chỉnh, 3: Thay thế
                 InvoiceType = 2,
                 OriginalInvoiceID = originalInvoice.InvoiceID,
-                AdjustmentReason = request.AdjustmentReason,
+                AdjustmentReason = request.ReferenceText,
                 TaxAuthorityCode = null,
                 DigitalSignature = null,
                 SignDate = null,
@@ -72,46 +74,77 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 PaymentDueDate = DateTime.UtcNow.AddDays(30),
                 PaymentStatusID = 1
             };
-            decimal totalSubtotal = 0;
-            decimal totalVAT = 0;
-
-            // Nếu danh sách items rỗng -> Đây là điều chỉnh thông tin thuần túy (Tiền = 0)
-            if (request.AdjustmentItems != null && request.AdjustmentItems.Any())
+            decimal totalAdjSubtotal = 0;
+            decimal totalAdjVAT = 0;
+            if (request.AdjustmentItems != null)
             {
                 foreach (var itemDto in request.AdjustmentItems)
                 {
+                    // Tìm sản phẩm gốc để đối chiếu số lượng (Validation)
+                    var originalItem = originalInvoice.InvoiceItems
+                        .FirstOrDefault(x => x.ProductID == itemDto.ProductID);
+
+                    var origQty = originalItem?.Quantity ?? 0;
+                    decimal origPrice = originalItem?.UnitPrice ?? 0;
+
+                    // Lấy thông tin sản phẩm hiện tại (để lấy VAT mới nhất nếu cần)
                     var product = await _uow.ProductRepository.GetByIdAsync(itemDto.ProductID);
-                    if (product == null) return Result.Fail($"Sản phẩm ID {itemDto.ProductID} không tồn tại.");
 
-                    // Tính toán: Chấp nhận số ÂM cho điều chỉnh giảm
-                    decimal quantity = (decimal)itemDto.Quantity;
-                    decimal unitPrice = itemDto.UnitPrice ?? 0;
-                    decimal vatRate = itemDto.OverrideVATRate ?? product.VATRate ?? 0;
-                    if (request.AdjustmentType == EAdjustmentType.Decrease)
+                    // --- [LOGIC VALIDATION] ---
+                    // Số cuối = Số Gốc + Số Điều Chỉnh
+                    var finalQty = origQty + itemDto.Quantity;
+
+                    // Rule: Số lượng cuối không được Âm
+                    if (finalQty < 0)
                     {
-                        if (unitPrice > 0) unitPrice = -unitPrice; 
+                        return Result.Fail($"Sản phẩm {product?.Name ?? itemDto.ProductID.ToString()}: Số lượng điều chỉnh giảm quá lớn. (Gốc: {origQty}, Giảm: {itemDto.Quantity} -> Còn: {finalQty})");
                     }
-                    decimal amount = quantity * unitPrice;
-                    decimal vatAmount = amount * (vatRate / 100m);
 
-                    var invoiceItem = new InvoiceItem
+                    // Rule: Đơn giá cuối không được Âm (trừ trường hợp chiết khấu đặc biệt, nhưng thường là không)
+                    decimal adjPrice = itemDto.UnitPrice ?? 0; // Giá chênh lệch
+                    decimal finalPrice = origPrice + adjPrice;
+                    if (finalPrice < 0)
+                    {
+                        return Result.Fail($"Sản phẩm {product?.Name}: Đơn giá sau điều chỉnh bị âm.");
+                    }
+
+                    // --- [TÍNH TOÁN TIỀN CHÊNH LỆCH] ---
+                    // Ở đây ta lưu "Con số chênh lệch" vào DB
+                    // Nếu User nhập giá mới, ta phải tự trừ ra giá cũ. 
+                    // Nhưng theo DTO ở trên, ta giả định FE gửi lên "Chênh lệch" (AdjustmentQuantity/Price).
+
+                    decimal vatRate = itemDto.OverrideVATRate ?? product?.VATRate ?? originalItem?.Product?.VATRate ?? 0;
+
+                    // Thành tiền chênh lệch = SL_Adj * Price_Adj (Sai logic)
+                    // Logic đúng: Amount_Adj = (Qty_Final * Price_Final) - (Qty_Orig * Price_Orig)
+
+                    decimal originalAmount = (decimal)origQty * origPrice;
+                    decimal finalAmount = (decimal)finalQty * finalPrice;
+                    decimal adjustmentAmount = finalAmount - originalAmount;
+
+                    decimal adjustmentVAT = adjustmentAmount * (vatRate / 100m);
+
+                    // Tạo Item (Lưu số chênh lệch)
+                    var newItem = new InvoiceItem
                     {
                         ProductID = itemDto.ProductID,
-                        Quantity = itemDto.Quantity,
-                        UnitPrice = itemDto.UnitPrice ?? 0,
-                        Amount = amount,         // Có thể < 0
-                        VATAmount = vatAmount    // Có thể < 0
+                        Quantity = itemDto.Quantity, // Lưu phần chênh lệch (VD: -2)
+                        UnitPrice = adjPrice,                  // Lưu phần chênh lệch giá (VD: 0 hoặc -1000)
+                        Amount = adjustmentAmount,             // Lưu tiền chênh lệch (Có thể Âm)
+                        VATAmount = adjustmentVAT              // Lưu thuế chênh lệch (Có thể Âm)
                     };
 
-                    adjInvoice.InvoiceItems.Add(invoiceItem);
+                    adjInvoice.InvoiceItems.Add(newItem);
 
-                    totalSubtotal += amount;
-                    totalVAT += vatAmount;
+                    totalAdjSubtotal += adjustmentAmount;
+                    totalAdjVAT += adjustmentVAT;
                 }
             }
-            adjInvoice.SubtotalAmount = totalSubtotal;
-            adjInvoice.VATAmount = totalVAT;
-            adjInvoice.TotalAmount = totalSubtotal + totalVAT;
+
+            adjInvoice.SubtotalAmount = totalAdjSubtotal;
+            adjInvoice.VATAmount = totalAdjVAT;
+            adjInvoice.TotalAmount = totalAdjSubtotal + totalAdjVAT;
+            var adjustmentType = (adjInvoice.TotalAmount >= 0) ? 1 : 2;
             if (!adjInvoice.InvoiceItems.Any())
             {
                 adjInvoice.VATRate = originalInvoice.VATRate;
@@ -177,7 +210,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             if (originalInvoice.Customer != null)
             {
                 var users = await _uow.UserRepository.GetUsersByCustomerIdAsync(originalInvoice.CustomerID);
-                string content = $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị ĐIỀU CHỈNH. Lý do: {request.AdjustmentReason}";
+                string content = $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị ĐIỀU CHỈNH. Lý do: Sai Số tiền";
                 foreach (var user in users)
                 {
                     notificationsToCreate.Add(new Notification
@@ -201,7 +234,98 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 }
             }
             await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 10);
-            return Result.Ok(adjInvoice.InvoiceID);
+            var responseDto = new AdjustmentInvoiceDetailDto
+            {
+                InvoiceId = adjInvoice.InvoiceID,
+                CreatedAt = adjInvoice.CreatedAt,
+                ReferenceText = adjInvoice.AdjustmentReason,
+                AdjustmentType = adjustmentType,
+                Items = new List<AdjustmentItemDto>(),
+                FinancialSummary = new FinancialSummaryDto()
+            };
+            decimal sumOrigAmount = 0;
+            decimal sumOrigVAT = 0;
+
+            decimal sumAdjAmount = 0;
+            decimal sumAdjVAT = 0;
+
+            decimal sumFinalAmount = 0;
+            decimal sumFinalVAT = 0;
+            // A. Map Items (Tính toán 3 cột)
+            foreach (var adjItem in adjInvoice.InvoiceItems)
+            {
+                var orgItem = originalInvoice.InvoiceItems.FirstOrDefault(x => x.ProductID == adjItem.ProductID);
+                var product = adjItem.Product; // Đã gán ở trên
+
+                // 1. Tính toán số liệu từng dòng
+                // GỐC
+                double itemOrigQty = orgItem?.Quantity ?? 0;
+                decimal itemOrigPrice = orgItem?.UnitPrice ?? 0;
+                decimal itemOrigAmount = orgItem?.Amount ?? 0;
+                decimal itemOrigVAT = orgItem?.VATAmount ?? 0; // Lấy VAT gốc từ DB cũ
+
+                // ĐIỀU CHỈNH
+                double itemAdjQty = adjItem.Quantity;
+                decimal itemAdjPrice = adjItem.UnitPrice;
+                decimal itemAdjAmount = adjItem.Amount;
+                decimal itemAdjVAT = adjItem.VATAmount;
+
+                // CUỐI
+                double itemFinalQty = itemOrigQty + itemAdjQty;
+                decimal itemFinalPrice = (itemAdjPrice != 0) ? itemOrigPrice + itemAdjPrice : itemOrigPrice;
+                decimal itemFinalAmount = itemOrigAmount + itemAdjAmount;
+                decimal itemFinalVAT = itemOrigVAT + itemAdjVAT; // Cộng thuế
+
+                // 2. Cộng dồn vào biến tổng (QUAN TRỌNG)
+                sumOrigAmount += itemOrigAmount;
+                sumOrigVAT += itemOrigVAT;
+
+                sumAdjAmount += itemAdjAmount;
+                sumAdjVAT += itemAdjVAT;
+
+                sumFinalAmount += itemFinalAmount;
+                sumFinalVAT += itemFinalVAT;
+
+                // 3. Add vào list items
+                responseDto.Items.Add(new AdjustmentItemDto
+                {
+                    ProductName = product?.Name ?? "Unknown",
+                    Unit = product?.Unit ?? "",
+
+                    // Gốc
+                    OriginalQuantity = itemOrigQty,
+                    OriginalUnitPrice = itemOrigPrice,
+                    OriginalAmount = itemOrigAmount,
+
+                    // Điều chỉnh
+                    AdjustmentQuantity = itemAdjQty,
+                    AdjustmentUnitPrice = itemAdjPrice,
+                    AdjustmentAmount = itemAdjAmount,
+
+                    // Cuối
+                    FinalQuantity = itemFinalQty,
+                    FinalUnitPrice = itemFinalPrice,
+                    FinalAmount = itemFinalAmount
+                });
+            }
+
+            // B. Map Summary (Dùng biến đã cộng dồn -> Đảm bảo khớp 100% với Items)
+            responseDto.FinancialSummary = new FinancialSummaryDto
+            {
+                // Cột 1: Gốc
+                OriginalTotalAmount = sumOrigAmount + sumOrigVAT, // Tổng tiền thanh toán gốc
+                OriginalVATAmount = sumOrigVAT,
+
+                // Cột 2: Điều chỉnh
+                AdjustmentTotalAmount = sumAdjAmount + sumAdjVAT, // Tổng tiền điều chỉnh
+                AdjustmentVATAmount = sumAdjVAT,
+
+                // Cột 3: Cuối
+                FinalTotalAmount = sumFinalAmount + sumFinalVAT,  // Tổng tiền phải thanh toán cuối cùng
+                FinalVATAmount = sumFinalVAT
+            };
+
+            return Result.Ok(responseDto);
         }
     }
 }
