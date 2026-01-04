@@ -14,7 +14,9 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
     public class CreateAdjustmentInvoiceCommand : IRequest<Result<AdjustmentInvoiceDetailDto>>
     {
         public int OriginalInvoiceId { get; set; }
+        public int? TemplateId { get; set; }
         public string ReferenceText { get; set; }
+        public string? AdjustmentReason { get; set; }
         public int? PerformedBy { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
     }

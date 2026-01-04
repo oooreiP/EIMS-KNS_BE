@@ -10,6 +10,8 @@ namespace EIMS.Domain.Entities
 
         [ForeignKey("Invoice")]
         public int InvoiceID { get; set; }
+        [ForeignKey("OriginalInvoiceItem")]
+        public int? OriginalInvoiceItemID { get; set; }
 
         [ForeignKey("Product")]
         public int ProductID { get; set; }
@@ -25,6 +27,7 @@ namespace EIMS.Domain.Entities
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal VATAmount { get; set; }
+        public bool IsAdjustmentItem { get; set; } = false;
 
         // --- Navigation Properties ---
         [InverseProperty("InvoiceItems")]
@@ -32,5 +35,7 @@ namespace EIMS.Domain.Entities
 
         [InverseProperty("InvoiceItems")]
         public virtual Product Product { get; set; }
+        [ForeignKey("OriginalInvoiceItemID")]
+        public virtual Invoice? OriginalInvoiceItem { get; set; }
     }
 }
