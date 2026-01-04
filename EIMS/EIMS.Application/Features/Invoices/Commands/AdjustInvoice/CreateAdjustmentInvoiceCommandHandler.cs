@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using EIMS.Application.Commons;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.XMLModels;
@@ -56,12 +57,13 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 InvoiceType = 2,
                 OriginalInvoiceID = originalInvoice.InvoiceID,
-                AdjustmentReason = request.ReferenceText,
+                AdjustmentReason = request.AdjustmentReason,
+                ReferenceNote = request.ReferenceText,
                 TaxAuthorityCode = null,
                 DigitalSignature = null,
                 SignDate = null,
                 IssuedDate = null,
-                TemplateID = originalInvoice.TemplateID,
+                TemplateID = request.TemplateId ?? originalInvoice.TemplateID,
                 CompanyId = originalInvoice.CompanyId,
                 IssuerID = originalInvoice.IssuerID,
                 CustomerID = originalInvoice.CustomerID,
@@ -127,6 +129,8 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     // Tạo Item (Lưu số chênh lệch)
                     var newItem = new InvoiceItem
                     {
+                        IsAdjustmentItem = true,
+                        OriginalInvoiceItemID = originalItem.InvoiceItemID,
                         ProductID = itemDto.ProductID,
                         Quantity = itemDto.Quantity, // Lưu phần chênh lệch (VD: -2)
                         UnitPrice = adjPrice,                  // Lưu phần chênh lệch giá (VD: 0 hoặc -1000)
@@ -144,6 +148,8 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             adjInvoice.SubtotalAmount = totalAdjSubtotal;
             adjInvoice.VATAmount = totalAdjVAT;
             adjInvoice.TotalAmount = totalAdjSubtotal + totalAdjVAT;
+            adjInvoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAdjSubtotal + totalAdjVAT);
+
             var adjustmentType = (adjInvoice.TotalAmount >= 0) ? 1 : 2;
             if (!adjInvoice.InvoiceItems.Any())
             {
