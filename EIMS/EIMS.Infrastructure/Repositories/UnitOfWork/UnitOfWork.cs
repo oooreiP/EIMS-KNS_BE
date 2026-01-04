@@ -24,6 +24,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IInvoiceTemplateRepository InvoiceTemplateRepository { get; set; }
         public IBaseRepository<Prefix> PrefixRepository { get; set; }
         public IBaseRepository<InvoiceType> InvoiceTypeRepository { get; set; }
+        public IBaseRepository<InvoiceItem> InvoiceItemRepository { get; set; }
         public IBaseRepository<SerialStatus> SerialStatusRepository { get; set; }
         public IInvoiceStatementRepository InvoiceStatementRepository { get; private set; }
         public IUserRepository UserRepository { get; set; }
@@ -60,6 +61,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             TemplateFrameRepository = new TemplateFrameRepository(_db);
             CompanyRepository = new CompanyRepository(_db);
             InvoicePaymentRepository = new InvoicePaymentRepository(_db);
+            InvoiceItemRepository = new BaseRepository<InvoiceItem>(_db);
             EmailTemplateRepository = new BaseRepository<EmailTemplate>(_db);
             SystemActivityLogRepository = new BaseRepository<SystemActivityLog>(_db);
             AuditLogRepository = new BaseRepository<AuditLog>(_db);
