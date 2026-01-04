@@ -134,8 +134,8 @@ namespace EIMS.Infrastructure.Service
                 qrContent = $"{invoice.InvoiceNumber}|{invoice.TotalAmount}";
             }
             string qrBase64 = _qrService.GenerateQrImageBase64(qrContent);
-            string refText = invoice.AdjustmentReason ?? "";
-            if (refText.Length > 29)
+            string refText = invoice.ReferenceNote ?? "";
+            if (refText.Length > 0)
             {
                 args.AddParam("ReferenceText", "", refText);
             }

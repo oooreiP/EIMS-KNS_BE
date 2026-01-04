@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using EIMS.Application.Commons;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Constants;
@@ -164,7 +165,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             newInvoice.SubtotalAmount = totalSubtotal;
             newInvoice.VATAmount = totalVAT;
             newInvoice.TotalAmount = totalSubtotal + totalVAT;
-
+            newInvoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalSubtotal + totalVAT);
             if (distinctVatRates.Count == 0)
             {
                 newInvoice.VATRate = 0;
