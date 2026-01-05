@@ -174,10 +174,17 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 await _uow.SaveChanges();
             }
-            catch (DbUpdateException ex)
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
             {
-                var sqlError = ex.InnerException?.Message ?? ex.Message;
-                throw new Exception("LỖI SQL SERVER: " + sqlError);
+                var msg = ex.Message;
+                var inner = ex.InnerException;
+                while (inner != null)
+                {
+                    msg += " | INNER: " + inner.Message;
+                    inner = inner.InnerException;
+                }
+                // Dòng này sẽ in toang hoác lỗi ra màn hình cho bạn thấy
+                throw new Exception($"🔥 LỖI THỰC SỰ LÀ: {msg}");
             }
             var logForOld = new InvoiceHistory
             {
@@ -222,10 +229,17 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 await _uow.SaveChanges();
             }
-            catch (DbUpdateException ex)
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
             {
-                var sqlError = ex.InnerException?.Message ?? ex.Message;
-                throw new Exception("LỖI SQL SERVER: " + sqlError);
+                var msg = ex.Message;
+                var inner = ex.InnerException;
+                while (inner != null)
+                {
+                    msg += " | INNER: " + inner.Message;
+                    inner = inner.InnerException;
+                }
+                // Dòng này sẽ in toang hoác lỗi ra màn hình cho bạn thấy
+                throw new Exception($"🔥 LỖI THỰC SỰ LÀ: {msg}");
             }
             var notificationsToCreate = new List<Notification>();
             if (originalInvoice.Customer != null)
@@ -255,10 +269,17 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     {
                         await _uow.SaveChanges();
                     }
-                    catch (DbUpdateException ex)
+                    catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
                     {
-                        var sqlError = ex.InnerException?.Message ?? ex.Message;
-                        throw new Exception("LỖI SQL SERVER: " + sqlError);
+                        var msg = ex.Message;
+                        var inner = ex.InnerException;
+                        while (inner != null)
+                        {
+                            msg += " | INNER: " + inner.Message;
+                            inner = inner.InnerException;
+                        }
+                        // Dòng này sẽ in toang hoác lỗi ra màn hình cho bạn thấy
+                        throw new Exception($"🔥 LỖI THỰC SỰ LÀ: {msg}");
                     }
                 }
             }
