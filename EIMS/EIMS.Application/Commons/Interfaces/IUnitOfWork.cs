@@ -13,6 +13,7 @@ namespace EIMS.Application.Commons.Interfaces
         IInvoiceTemplateRepository InvoiceTemplateRepository { get; }
         IBaseRepository<Prefix> PrefixRepository { get; }
         IBaseRepository<InvoiceType> InvoiceTypeRepository { get; }
+        IBaseRepository<InvoiceItem> InvoiceItemRepository { get; }
         IBaseRepository<SerialStatus> SerialStatusRepository { get; }
         IBaseRepository<EmailTemplate> EmailTemplateRepository { get; }
         IBaseRepository<AuditLog> AuditLogRepository { get; }

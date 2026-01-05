@@ -9,6 +9,7 @@ using EIMS.Domain.Entities;
 using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -167,10 +168,17 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 originalInvoice.InvoiceStatusID = 10;
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
-                await _uow.SaveChanges();
             }
             await _uow.InvoicesRepository.CreateAsync(adjInvoice);
-            await _uow.SaveChanges();
+            try
+            {
+                await _uow.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                var sqlError = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception("LỖI SQL SERVER: " + sqlError);
+            }
             var logForOld = new InvoiceHistory
             {
                 InvoiceID = originalInvoice.InvoiceID,        // 100
@@ -193,7 +201,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // 3. Thêm vào DB
             await _uow.InvoiceHistoryRepository.CreateAsync(logForOld);
             await _uow.InvoiceHistoryRepository.CreateAsync(logForNew);
-            await _uow.SaveChanges();
             var fullInvoice = await _uow.InvoicesRepository
                    .GetByIdAsync(adjInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
             var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
@@ -211,7 +218,15 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 return Result.Fail(uploadResult.Errors);
             fullInvoice.XMLPath = uploadResult.Value.Url;
             await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
-            await _uow.SaveChanges();
+            try
+            {
+                await _uow.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                var sqlError = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception("LỖI SQL SERVER: " + sqlError);
+            }
             var notificationsToCreate = new List<Notification>();
             if (originalInvoice.Customer != null)
             {

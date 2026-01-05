@@ -35,7 +35,6 @@ namespace EIMS.Domain.Entities
 
         [InverseProperty("InvoiceItems")]
         public virtual Product Product { get; set; }
-        [ForeignKey("OriginalInvoiceItemID")]
         public virtual Invoice? OriginalInvoiceItem { get; set; }
     }
 }
