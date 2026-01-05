@@ -251,7 +251,15 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 if (notificationsToCreate.Any())
                 {
                     await _uow.NotificationRepository.CreateRangeAsync(notificationsToCreate);
-                    await _uow.SaveChanges();
+                    try
+                    {
+                        await _uow.SaveChanges();
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        var sqlError = ex.InnerException?.Message ?? ex.Message;
+                        throw new Exception("LỖI SQL SERVER: " + sqlError);
+                    }
                 }
             }
             await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 10);
