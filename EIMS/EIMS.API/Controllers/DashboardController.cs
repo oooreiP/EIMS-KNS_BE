@@ -34,7 +34,16 @@ namespace EIMS.API.Controllers
         {
             var query = new GetAdminDashboardQuery();
             var result = await _mediator.Send(query);
-            if(result.IsFailed)
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+            return Ok(result.Value);
+        }
+        [HttpGet("sales")]
+        public async Task<IActionResult> GetSalesDashboard()
+        {
+            var query = new GetSalesDashboardQuery();
+            var result = await _mediator.Send(query);
+            if (result.IsFailed)
                 return BadRequest(result.Errors);
             return Ok(result.Value);
         }
