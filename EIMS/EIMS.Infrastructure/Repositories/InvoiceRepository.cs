@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Dashboard;
 using EIMS.Application.DTOs.Dashboard.Admin;
+using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -234,6 +235,78 @@ namespace EIMS.Infrastructure.Repositories
             foreach (var item in result.RevenueTrend)
             {
                 item.Month = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(item.MonthNumber) + " " + item.Year;
+            }
+
+            return result;
+        }
+        public async Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            // Fix for PostgreSQL: Specify UTC Kind explicitly
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // 1. Base Query: Filter ONLY invoices belonging to this Sales Person
+            var query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.SalesID == salesPersonId);
+
+            // 2. Calculate Aggregates (Single DB Trip)
+            // Status IDs: 1=Unpaid, 2=Partially Paid, 3=Paid, 4=Overdue
+            var stats = await query
+                .GroupBy(x => 1)
+                .Select(g => new
+                {
+                    // All Time
+                    TotalCount = g.Count(),
+                    TotalRev = g.Sum(i => i.TotalAmount),
+                    TotalPaid = g.Sum(i => i.PaidAmount),
+                    TotalPending = g.Sum(i => i.RemainingAmount),
+
+                    // This Month
+                    MonthRev = g.Where(i => i.CreatedAt >= startOfMonth).Sum(i => i.TotalAmount),
+                    MonthCount = g.Count(i => i.CreatedAt >= startOfMonth),
+
+                    // Status Counts
+                    PaidCount = g.Count(i => i.PaymentStatusID == 3),
+                    UnpaidCount = g.Count(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2),
+                    OverdueCount = g.Count(i => i.PaymentStatusID == 4 || (i.PaymentStatusID != 3 && i.PaymentDueDate < now))
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            // 3. Fetch Recent 5 Invoices for this Sales Person
+            var recent = await query
+                .OrderByDescending(i => i.CreatedAt)
+                .Take(5)
+                .Select(i => new SalesInvoiceSimpleDto
+                {
+                    InvoiceId = i.InvoiceID,
+                    InvoiceNumber = i.InvoiceNumber,
+                    CustomerName = i.Customer.CustomerName, // Include Customer Name
+                    CreatedDate = i.CreatedAt,
+                    TotalAmount = i.TotalAmount,
+                    Status = i.PaymentStatus.StatusName ?? "Unknown" // Assuming PaymentStatus entity has StatusName
+                })
+                .ToListAsync(cancellationToken);
+
+            // 4. Map to DTO
+            var result = new SalesDashboardDto
+            {
+                RecentSales = recent
+            };
+
+            if (stats != null)
+            {
+                result.TotalInvoicesGenerated = stats.TotalCount;
+                result.TotalRevenue = stats.TotalRev;
+                result.TotalCollected = stats.TotalPaid;
+                result.TotalDebt = stats.TotalPending;
+
+                result.ThisMonthRevenue = stats.MonthRev;
+                result.ThisMonthInvoiceCount = stats.MonthCount;
+
+                result.PaidCount = stats.PaidCount;
+                result.UnpaidCount = stats.UnpaidCount;
+                result.OverdueCount = stats.OverdueCount;
             }
 
             return result;
