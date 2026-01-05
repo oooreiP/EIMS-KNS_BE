@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.DTOs.Dashboard;
+using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -14,5 +15,6 @@ namespace EIMS.Application.Commons.Interfaces
         public IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? column, string? direction);
         Task<CustomerDashboardDto> GetCustomerDashboardStatsAsync(int customerId);
         Task<AdminDashboardDto> GetAdminDashboardStatsAsync(CancellationToken cancellationToken);
+        Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken);
     }
 }
