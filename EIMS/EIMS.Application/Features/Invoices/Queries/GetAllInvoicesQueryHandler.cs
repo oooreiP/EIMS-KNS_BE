@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Invoices;
@@ -58,15 +59,16 @@ namespace EIMS.Application.Features.Invoices.Queries
             var paginatedInvoices = await PaginatedList<Invoice>.CreateAsync(query, request.PageIndex, request.PageSize);
 
             // 6. Map to DTOs
-            var invoiceDtos = _mapper.Map<List<InvoiceDTO>>(paginatedInvoices.Items);
+            var invoiceDtos = query.ProjectTo<InvoiceDTO>(_mapper.ConfigurationProvider);
 
-            // 7. Return PaginatedList of DTOs
-            return new PaginatedList<InvoiceDTO>(
+            var paginatedResult = await PaginatedList<InvoiceDTO>.CreateAsync(
                 invoiceDtos,
                 paginatedInvoices.TotalCount,
                 paginatedInvoices.PageIndex,
                 request.PageSize 
             );
+
+            return paginatedResult;
         }
     }
 }
