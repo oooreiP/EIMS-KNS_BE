@@ -23,13 +23,11 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
     {
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
-        private readonly IEmailService _emailService;
         private readonly INotificationService _notiService;
-        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, IEmailService emailService, INotificationService notiService)
+        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, INotificationService notiService)
         {
             _uow = uow;
-            _fileStorageService = fileStorageService;
-            _emailService = emailService;
+            _fileStorageService = fileStorageService;          
             _notiService = notiService;
         }
         public async Task<Result<AdjustmentInvoiceDetailDto>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
@@ -293,7 +291,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     }
                 }
             }
-            await _emailService.SendStatusUpdateNotificationAsync(adjInvoice.InvoiceID, 10);
             var responseDto = new AdjustmentInvoiceDetailDto
             {
                 InvoiceId = adjInvoice.InvoiceID,
