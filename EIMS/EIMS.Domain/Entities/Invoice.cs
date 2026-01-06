@@ -34,7 +34,7 @@ namespace EIMS.Domain.Entities
         public int? IssuerID { get; set; }
         [ForeignKey("SalesID")]
         public int? SalesID { get; set; }
-        public int InvoiceType { get; set; } = 1;
+        public int InvoiceType { get; set; } = 0;
         public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
         public DateTime? SignDate { get; set; }
