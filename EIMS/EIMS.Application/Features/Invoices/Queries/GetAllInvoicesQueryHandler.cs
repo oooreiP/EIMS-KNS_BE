@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Invoices.Queries
         {
             // 1. Get Queryable from Repository including necessary navigation properties
             // Ensure these property names match your Entity navigation properties strictly
-            var query = _unitOfWork.InvoicesRepository.GetAllQueryable(includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product,PaymentStatus");
+            var query = _unitOfWork.InvoicesRepository.GetAllQueryable(includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product,PaymentStatus,TaxApiLogs.TaxApiStatus");
 
             // 2. Filter by Status
             if (request.StatusId.HasValue)
@@ -63,8 +63,9 @@ namespace EIMS.Application.Features.Invoices.Queries
 
             var paginatedResult = await PaginatedList<InvoiceDTO>.CreateAsync(
                 invoiceDtos,
-                request.PageIndex,
-                request.PageSize
+                paginatedInvoices.TotalCount,
+                paginatedInvoices.PageIndex,
+                request.PageSize 
             );
 
             return paginatedResult;
