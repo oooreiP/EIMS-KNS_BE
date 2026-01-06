@@ -40,7 +40,18 @@ namespace EIMS.Application.Common.Mapping
                         .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.RemainingAmount))
                         .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
         src.InvoiceCustomerName ?? (src.Customer != null ? src.Customer.CustomerName : "")))
-
+                        .ForMember(dest => dest.OriginalInvoiceSignDate, opt => opt.MapFrom(src => 
+                src.OriginalInvoice != null ? src.OriginalInvoice.SignDate : null))
+           .ForMember(dest => dest.OriginalInvoiceSymbol, opt => opt.MapFrom(src =>
+                (src.OriginalInvoice != null
+                 && src.OriginalInvoice.Template != null
+                 && src.OriginalInvoice.Template.Serial != null)
+                ? src.OriginalInvoice.Template.Serial.Prefix.PrefixID
+                  + src.OriginalInvoice.Template.Serial.SerialStatus.Symbol
+                  + src.OriginalInvoice.Template.Serial.Year
+                  + src.OriginalInvoice.Template.Serial.InvoiceType.Symbol
+                  + src.OriginalInvoice.Template.Serial.Tail
+                : null))
     .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src =>
         src.InvoiceCustomerAddress ?? (src.Customer != null ? src.Customer.Address : "")))
 
