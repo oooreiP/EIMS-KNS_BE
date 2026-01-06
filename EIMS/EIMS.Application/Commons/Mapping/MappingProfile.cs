@@ -39,14 +39,30 @@ namespace EIMS.Application.Common.Mapping
                         // Ensure RemainingAmount is calculated
                         .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.RemainingAmount))
                         .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
-        src.InvoiceCustomerName ?? (src.Customer != null ? src.Customer.CustomerName : "")))
+                                src.InvoiceCustomerName ?? (src.Customer != null ? src.Customer.CustomerName : "")))
 
-    .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src =>
-        src.InvoiceCustomerAddress ?? (src.Customer != null ? src.Customer.Address : "")))
+                            .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src =>
+                                src.InvoiceCustomerAddress ?? (src.Customer != null ? src.Customer.Address : "")))
 
-    .ForMember(dest => dest.TaxCode, opt => opt.MapFrom(src =>
-        src.InvoiceCustomerTaxCode ?? (src.Customer != null ? src.Customer.TaxCode : "")))
-                        .ReverseMap(); CreateMap<CreateSerialCommand, Serial>();
+                            .ForMember(dest => dest.TaxCode, opt => opt.MapFrom(src =>
+                                src.InvoiceCustomerTaxCode ?? (src.Customer != null ? src.Customer.TaxCode : "")))
+                                .ForMember(dest => dest.TaxStatusCode, opt => opt.MapFrom(src => 
+        src.TaxApiLogs.OrderByDescending(l => l.Timestamp).FirstOrDefault() != null 
+            ? src.TaxApiLogs.OrderByDescending(l => l.Timestamp).FirstOrDefault().TaxApiStatus.Code // Assuming Status has 'Code'
+            : "NOT_SENT")) // Default if no logs exist
+            
+    .ForMember(dest => dest.TaxStatusDescription, opt => opt.MapFrom(src => 
+        src.TaxApiLogs.OrderByDescending(l => l.Timestamp).FirstOrDefault() != null 
+            ? src.TaxApiLogs.OrderByDescending(l => l.Timestamp).FirstOrDefault().TaxApiStatus.StatusName 
+            : "Chưa gửi CQT"))
+            .ForMember(dest => dest.TaxStatusColor, opt => opt.MapFrom(src =>
+                    GetStatusColor(
+                        src.TaxApiLogs.OrderByDescending(l => l.Timestamp)
+                        .Select(l => l.TaxApiStatusID) 
+                        .FirstOrDefault() 
+                    )))
+                        .ReverseMap();
+                         CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
             CreateMap<CreateTemplateRequest, CreateTemplateCommand>();
             CreateMap<CreateTemplateCommand, InvoiceTemplate>();
@@ -130,6 +146,29 @@ namespace EIMS.Application.Common.Mapping
             if (string.IsNullOrEmpty(code)) return 0;
             var digits = new string(code.Where(char.IsDigit).ToArray());
             return long.TryParse(digits, out var n) ? n : 0;
+        }
+        private static string GetStatusColor(int statusId)
+        {
+            return statusId switch
+            {
+                // SUCCESS (Green)
+                // 4=Approved, 10=Valid TB01, 30=Code Granted KQ01
+                4 or 10 or 30 => "success", 
+
+                // PROCESSING (Blue/Orange)
+                // 1=Pending, 2=Received, 6=Processing, 32=No Result
+                1 or 2 or 6 or 32 => "processing",
+
+                // ERROR (Red)
+                // 3=Rejected, 5=System Error, 9=Tech Error, 31=Code Rejected
+                // 11-21 = Specific Validation Errors
+                3 or 5 or 9 or 31 => "error",
+                >= 11 and <= 21 => "error",
+
+                // DEFAULT (Gray)
+                // 0 (Not Sent), 7 (Not Found), 8 (Draft), 33 (Not Found KQ)
+                _ => "default" 
+            };
         }
     }
 }

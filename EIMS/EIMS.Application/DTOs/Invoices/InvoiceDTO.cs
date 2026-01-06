@@ -39,5 +39,8 @@ namespace EIMS.Application.DTOs.Invoices
         public string? CustomerName { get; set; }
         public string? CustomerAddress { get; set; }
         public string? TaxCode { get; set; }
+        public string TaxStatusCode { get; set; } 
+        public string TaxStatusDescription { get; set; } 
+        public string TaxStatusColor { get; set; } 
     }
 }
