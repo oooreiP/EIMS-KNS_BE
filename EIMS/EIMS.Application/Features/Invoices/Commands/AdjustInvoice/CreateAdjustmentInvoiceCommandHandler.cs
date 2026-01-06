@@ -37,7 +37,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             // =========================================================================
             // BƯỚC 1: LẤY HÓA ĐƠN GỐC & VALIDATE
             // =========================================================================
-            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer,Company,InvoiceItems.Product");
+            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(request.OriginalInvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus,Company");
             var newCustomer = new Customer();
             if (originalInvoice == null)
                 return Result.Fail("Không tìm thấy hóa đơn gốc.");
@@ -49,8 +49,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             {
                 return Result.Fail($"Trạng thái hóa đơn gốc (ID: {originalInvoice.InvoiceStatusID}) không hợp lệ để điều chỉnh. Chỉ hỗ trợ hóa đơn Đã phát hành.");
             }
-            if (string.IsNullOrWhiteSpace(request.ReferenceText) || request.ReferenceText.Length < 30) 
-                return Result.Fail("Vui lòng nhập lý do điều chỉnh/dòng tham chiếu đầy đủ.");
             // =========================================================================
             // BƯỚC 3: KHỞI TẠO HÓA ĐƠN ĐIỀU CHỈNH (HEADER)
             // =========================================================================
@@ -59,7 +57,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 InvoiceType = 2,
                 OriginalInvoiceID = originalInvoice.InvoiceID,
                 AdjustmentReason = request.AdjustmentReason,
-                ReferenceNote = request.ReferenceText,
                 TaxAuthorityCode = null,
                 DigitalSignature = null,
                 SignDate = null,
@@ -169,6 +166,20 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 originalInvoice.InvoiceStatusID = 10;
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
             }
+            string typeText = adjInvoice.TotalAmount >= 0 ? "tăng" : "giảm";
+            var template = originalInvoice.Template;
+            var serial = template.Serial;
+            var prefix = serial.Prefix;
+            string khmsHDon = prefix.PrefixID.ToString();
+            string khHDon =
+                $"{serial.SerialStatus.Symbol}" +
+                $"{serial.Year}" +
+                $"{serial.InvoiceType.Symbol}" +
+                $"{serial.Tail}";
+            string soHoaDon = originalInvoice.InvoiceNumber.Value.ToString("D7");
+            DateTime ngayGoc = originalInvoice.IssuedDate ?? originalInvoice.SignDate ?? originalInvoice.CreatedAt;
+            string autoReferenceText = $"Điều chỉnh {typeText} cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {soHoaDon} ngày {ngayGoc.Day:00} tháng {ngayGoc.Month:00} năm {ngayGoc.Year}";
+            adjInvoice.ReferenceNote = autoReferenceText;
             await _uow.InvoicesRepository.CreateAsync(adjInvoice);
             try
             {
@@ -211,7 +222,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             var fullInvoice = await _uow.InvoicesRepository
                    .GetByIdAsync(adjInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
             var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
-
             var serializer = new XmlSerializer(typeof(HDon));
             var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
             var xmlPath = Path.Combine(Path.GetTempPath(), fileName);
