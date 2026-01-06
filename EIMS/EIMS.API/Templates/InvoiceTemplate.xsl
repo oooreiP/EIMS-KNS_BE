@@ -44,7 +44,7 @@
 					/* Header */
 					.header-table { width: 100%; border: none; margin-bottom: 20px; }
 					.header-table td { vertical-align: top; }
-					.invoice-title { font-size: 24px; margin: 0; text-transform: uppercase; font-weight: bold; color: <xsl:value-of select="$ColorTheme"/>; }
+					.invoice-title { font-size: 21px; margin: 0; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: <xsl:value-of select="$ColorTheme"/>; }
 
 					/* Info Section (Sửa lại style cho list dọc) */
 					.seller-table { width: 100%; border: none; margin-bottom: 10px; }
@@ -108,12 +108,12 @@
 
 		<table class="header-table">
 			<tr>
-				<td style="width: 30%;">
+				<td style="width: 20%;">
 					<xsl:if test="$ShowLogo = 'true' and $LogoUrl != ''">
 						<img src="{$LogoUrl}" style="max-width: 150px; height: auto;" />
 					</xsl:if>
 				</td>
-				<td style="width: 40%; text-align: center;">
+				<td style="width: 50%; text-align: center;">
 					<div class="invoice-title">HÓA ĐƠN GIÁ TRỊ GIA TĂNG</div>
 					<xsl:if test="$IsBilingual = 'true'">
 						<div class="italic">(VAT INVOICE)</div>
