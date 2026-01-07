@@ -18,6 +18,7 @@ using EIMS.Application.DTOs.Customer;
 using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
 using EIMS.Application.DTOs.InvoicePayment;
 using EIMS.Application.DTOs.LogsDTO;
+using EIMS.Application.DTOs.InvoiceItems;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -88,6 +89,12 @@ namespace EIMS.Application.Common.Mapping
                 .ForMember(dest => dest.Unit, opt => opt.MapFrom(src =>
                     src.Product != null ? src.Product.Unit : ""))
                 .ReverseMap();
+            CreateMap<InvoiceItem, GetInvoiceItemsDTO>()
+               .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src =>
+                   src.Product != null ? src.Product.Name : "Unknown Product"))
+               .ForMember(dest => dest.Unit, opt => opt.MapFrom(src =>
+                   src.Product != null ? src.Product.Unit : ""))
+               .ReverseMap();
             CreateMap<Customer, CustomerDto>();
             CreateMap<UpdateInvoiceRequest, UpdateInvoiceCommand>();
             CreateMap<InvoicePayment, InvoicePaymentDTO>();

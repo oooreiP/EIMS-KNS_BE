@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.DTOs.InvoiceItems;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.InvoiceItems.Queries
 {
-    public class GetInvoiceItemsByInvoiceIdHandler : IRequestHandler<GetInvoiceItemsByInvoiceIdQuery, Result<List<InvoiceItemDto>>>
+    public class GetInvoiceItemsByInvoiceIdHandler : IRequestHandler<GetInvoiceItemsByInvoiceIdQuery, Result<List<GetInvoiceItemsDTO>>>
     {
         private readonly IUnitOfWork _uow;
 
@@ -20,13 +21,13 @@ namespace EIMS.Application.Features.InvoiceItems.Queries
             _uow = uow;
         }
 
-        public async Task<Result<List<InvoiceItemDto>>> Handle(GetInvoiceItemsByInvoiceIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<List<GetInvoiceItemsDTO>>> Handle(GetInvoiceItemsByInvoiceIdQuery request, CancellationToken cancellationToken)
         {
             var items = await _uow.InvoiceItemRepository.GetAllQueryable()
                 .AsNoTracking() 
                 .Where(x => x.InvoiceID == request.InvoiceId)
                 .Include(x => x.Product) // Chỉ cần Include Product để lấy tên
-                .Select(x => new InvoiceItemDto
+                .Select(x => new GetInvoiceItemsDTO
                 {
                     InvoiceItemID = x.InvoiceItemID,
                     InvoiceID = x.InvoiceID,
