@@ -74,6 +74,7 @@ namespace EIMS.API.Controllers
             }
 
             return Ok(result.Value);
+        }
         [HttpGet("hodInvoices")]
         public async Task<IActionResult> GetPublishedInvoices([FromQuery] GetInvoicesHodQuery query)
         {

@@ -38,7 +38,7 @@ namespace EIMS.Application.Features.Invoices.Queries
             if (request.PaymentStatusId.HasValue)
             {
                 query = query.Where(x => x.PaymentStatusID == request.PaymentStatusId.Value);
-            }   
+            }
             // 3. Filter by Search Term
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
@@ -55,17 +55,14 @@ namespace EIMS.Application.Features.Invoices.Queries
             // 4. Order by created date descending
             query = query.OrderByDescending(x => x.CreatedAt);
 
-            // 5. Create PaginatedList of Entities
-            var paginatedInvoices = await PaginatedList<Invoice>.CreateAsync(query, request.PageIndex, request.PageSize);
 
             // 6. Map to DTOs
             var invoiceDtos = query.ProjectTo<InvoiceDTO>(_mapper.ConfigurationProvider);
 
             var paginatedResult = await PaginatedList<InvoiceDTO>.CreateAsync(
                 invoiceDtos,
-                paginatedInvoices.TotalCount,
-                paginatedInvoices.PageIndex,
-                request.PageSize 
+                request.PageIndex,
+                request.PageSize
             );
 
             return paginatedResult;
