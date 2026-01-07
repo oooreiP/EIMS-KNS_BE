@@ -62,7 +62,7 @@ namespace EIMS.API.Controllers
             var invoice = await _mediator.Send(new GetInvoiceByIdQuery(id));
             return invoice != null ? Ok(invoice) : NotFound();
         }
-        [HttpGet("published")]
+        [HttpGet("hodInvoices")]
         public async Task<IActionResult> GetPublishedInvoices([FromQuery] GetInvoicesHodQuery query)
         {
             if (string.IsNullOrEmpty(query.SortColumn))
