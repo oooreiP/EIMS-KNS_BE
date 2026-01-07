@@ -198,7 +198,7 @@ namespace EIMS.API.Controllers
                         Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                     });
                 }
-                return Ok(result.Value);
+                return Ok($"Cập nhật trạng thái của hoá đơn số {result.Value} thành công");
             }
         }
         /// <summary>
