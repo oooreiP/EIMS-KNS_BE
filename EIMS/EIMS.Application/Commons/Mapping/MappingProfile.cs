@@ -80,8 +80,7 @@ namespace EIMS.Application.Common.Mapping
     (src.OriginalInvoice != null && src.OriginalInvoice.InvoiceNumber == null ? 0 : 
     
     // Case 3: Has Original Invoice and it is numbered -> Return the ID
-    src.OriginalInvoiceID)
-                    ))
+    src.OriginalInvoiceID)))
                     .ForMember(dest => dest.OriginalInvoiceNumber, opt => opt.MapFrom(src => 
         src.OriginalInvoice != null ? src.OriginalInvoice.InvoiceNumber : null))
                         .ReverseMap();
