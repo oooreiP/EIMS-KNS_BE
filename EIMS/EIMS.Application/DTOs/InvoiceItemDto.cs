@@ -9,7 +9,7 @@ namespace EIMS.Application.DTOs
     public class InvoiceItemDto
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; }   // [Tiện ích] Tên sản phẩm
+        public string ProductName { get; set; } = string.Empty; // [Tiện ích] Tên sản phẩm
         public string? Unit { get; set; }          // [Tiện ích] Đơn vị tính
         public double Quantity { get; set; }     // Convert double -> decimal cho đồng bộ
         public decimal? Amount { get; set; }
