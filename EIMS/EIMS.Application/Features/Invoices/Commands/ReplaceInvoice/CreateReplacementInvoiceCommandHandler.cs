@@ -1,11 +1,14 @@
-﻿using EIMS.Application.Commons;
+﻿using AutoMapper;
+using EIMS.Application.Commons;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
+using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,245 +18,232 @@ using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
 {
-    public class CreateReplacementInvoiceCommandHandler : IRequestHandler<CreateReplacementInvoiceCommand, Result<int>>
+    public class CreateReplacementInvoiceHandler : IRequestHandler<CreateReplacementInvoiceCommand, Result<CreateInvoiceResponse>>
     {
         private readonly IUnitOfWork _uow;
-        private readonly IEmailService _emailService;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IEmailService _emailService;
+        private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly INotificationService _notiService;
-        private readonly IInvoiceXMLService _xMLService;
-        public CreateReplacementInvoiceCommandHandler(IUnitOfWork uow, IEmailService emailService, IFileStorageService fileStorageService, INotificationService notiService, IInvoiceXMLService xMLService)
+        private readonly IMapper _mapper;
+
+        public CreateReplacementInvoiceHandler(
+            IUnitOfWork uow,
+            IMapper mapper,
+            IFileStorageService fileStorageService,
+            IEmailService emailService,
+            IInvoiceXMLService invoiceXMLService,
+            INotificationService notiService)
         {
             _uow = uow;
-            _emailService = emailService;
+            _mapper = mapper;
             _fileStorageService = fileStorageService;
+            _emailService = emailService;
+            _invoiceXMLService = invoiceXMLService;
             _notiService = notiService;
-            _xMLService = xMLService;
         }
 
-        public async Task<Result<int>> Handle(CreateReplacementInvoiceCommand request, CancellationToken cancellationToken)
+        public async Task<Result<CreateInvoiceResponse>> Handle(CreateReplacementInvoiceCommand request, CancellationToken cancellationToken)
         {
-            var originalInvoice = await _uow.InvoicesRepository.GetByIdAsync(
-                request.OriginalInvoiceId,
-                includeProperties: "InvoiceItems,InvoiceItems.Product,Customer,Company"
-            );
+            if (request.Items == null || !request.Items.Any())
+                return Result.Fail(new Error("Invoice must has at least one item"));
+
+            if (request.TemplateID == null || request.TemplateID == 0)
+                return Result.Fail(new Error("Invoice must has a valid template id"));
+
+            var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
+            if (template == null) return Result.Fail($"Template {request.TemplateID} not found");
+            var originalInvoice = await _uow.InvoicesRepository.GetAllQueryable()
+                .Include(x => x.Template).ThenInclude(t => t.Serial)
+                .Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.InvoiceID == request.OriginalInvoiceId);
+
             if (originalInvoice == null) return Result.Fail("Không tìm thấy hóa đơn gốc.");
+
+            // Chỉ thay thế hóa đơn Đã phát hành (2) hoặc Đã điều chỉnh (11)
             if (originalInvoice.InvoiceStatusID != 2 && originalInvoice.InvoiceStatusID != 11)
                 return Result.Fail("Chỉ được thay thế hóa đơn đã phát hành.");
-            HDon? xmlData = null;
+
+            // Không thay thế hóa đơn đã bị Thay thế (3) hoặc Hủy (5)
+            if (originalInvoice.InvoiceStatusID == 3 || originalInvoice.InvoiceStatusID == 5)
+                return Result.Fail("Hóa đơn này đã bị thay thế hoặc hủy bỏ trước đó.");
+
+            string? xmlPath = null;
+            await using var transaction = await _uow.BeginTransactionAsync();
+
             try
             {
-                if (!string.IsNullOrEmpty(originalInvoice.XMLPath))
+                Customer? customer = null;
+                if (request.CustomerID == null || request.CustomerID == 0)
                 {
-                    // Tải file XML về stream
-                    var xmlContentString = await _xMLService.DownloadStringAsync(originalInvoice.XMLPath);
-                    if (!string.IsNullOrEmpty(xmlContentString))
+                    // Tạo khách hàng mới nếu user chọn "Khách lẻ/Mới"
+                    customer = new Customer
                     {
-                        var OriginalSerializer = new XmlSerializer(typeof(HDon));
-                        using (var reader = new StringReader(xmlContentString))
-                        {
-                            xmlData = (HDon)OriginalSerializer.Deserialize(reader);
-                        }
-                    }
+                        CustomerName = request.CustomerName ?? "Khách hàng chưa đặt tên",
+                        TaxCode = request.TaxCode ?? "",
+                        Address = request.Address ?? "Chưa cập nhật",
+                        ContactEmail = request.ContactEmail ?? "noemail@system.local",
+                        ContactPerson = request.ContactPerson,
+                        ContactPhone = request.ContactPhone ?? ""
+                    };
+                    customer = await _uow.CustomerRepository.CreateCustomerAsync(customer);
+                    await _uow.SaveChanges();
                 }
+                else
+                {
+                    // Lấy khách hàng cũ nhưng có thể update thông tin tạm thời trên hóa đơn
+                    // (Lưu ý: Code này đang lấy entity Customer gốc. Nếu muốn sửa trên hóa đơn mà ko sửa gốc,
+                    // cần gán vào các trường InvoiceCustomerName...)
+                    customer = await _uow.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
+                    if (customer == null) return Result.Fail($"Customer {request.CustomerID} not found");
+                }
+
+                // =========================================================================
+                // 4. TÍNH TOÁN ITEM & TIỀN (Logic từ CreateInvoice - Làm lại bảng mới)
+                // =========================================================================
+                var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+                var products = await _uow.ProductRepository.GetAllQueryable()
+                    .Where(p => productIds.Contains(p.ProductID))
+                    .ToListAsync(cancellationToken);
+
+                var productDict = products.ToDictionary(p => p.ProductID);
+                if (products.Count != productIds.Count) return Result.Fail("One or more products not found");
+
+                var processedItems = new List<InvoiceItem>();
+                foreach (var itemReq in request.Items)
+                {
+                    var productInfo = productDict[itemReq.ProductId];
+                    decimal finalAmount = (itemReq.Amount ?? 0) > 0
+                        ? itemReq.Amount!.Value
+                        : productInfo.BasePrice * (decimal)itemReq.Quantity;
+                    decimal finalVatAmount;
+                    if ((itemReq.VATAmount ?? 0) > 0)
+                    {
+                        finalVatAmount = itemReq.VATAmount!.Value;
+                    }
+                    else
+                    {
+                        decimal vatRate = productInfo.VATRate ?? 0;
+                        finalVatAmount = Math.Round(finalAmount * (vatRate / 100m), 2);
+                    }
+
+                    processedItems.Add(new InvoiceItem
+                    {
+                        ProductID = itemReq.ProductId,
+                        Quantity = itemReq.Quantity,
+                        Amount = finalAmount,
+                        VATAmount = finalVatAmount,
+                        UnitPrice = productInfo.BasePrice, // Hoặc itemReq.UnitPrice nếu cho phép sửa giá gốc
+                        IsAdjustmentItem = false // Thay thế là sinh ra item mới hoàn toàn, không phải item điều chỉnh
+                    });
+                }
+
+                decimal subtotal = processedItems.Sum(i => i.Amount);
+                decimal vatAmount = processedItems.Sum(i => i.VATAmount);
+                decimal totalAmount = subtotal + vatAmount;
+
+                // Override nếu request có gửi tổng (Logic cũ)
+                if ((request.Amount ?? 0) <= 0) request.Amount = subtotal;
+                if ((request.TaxAmount ?? 0) <= 0) request.TaxAmount = vatAmount;
+                if ((request.TotalAmount ?? 0) <= 0) request.TotalAmount = totalAmount;
+
+                decimal invoiceVatRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
+
+                // =========================================================================
+                // 5. CHUẨN BỊ SỐ HÓA ĐƠN & DÒNG THAM CHIẾU (Đặc trưng Replace)
+                // =========================================================================
+                var serial = await _uow.SerialRepository.GetByIdAndLockAsync(template.SerialID);
+                var oldSerial = originalInvoice.Template.Serial;
+                var prefix = oldSerial.Prefix;
+                string khmsHDon = prefix.PrefixID.ToString();
+                string khHDon =
+                    $"{oldSerial.SerialStatus.Symbol}" +
+                    $"{oldSerial.Year}" +
+                    $"{oldSerial.InvoiceType.Symbol}" +
+                    $"{oldSerial.Tail}";
+                string soHoaDon = originalInvoice.InvoiceNumber.Value.ToString("D7");
+                string refText = $"(Thay thế cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {originalInvoice.InvoiceNumber:D7} ngày {originalInvoice.IssuedDate:dd/MM/yyyy})";
+                var replacementInvoice = new Invoice
+                {
+                    InvoiceType = 3, // 3 = Replacement
+                    OriginalInvoiceID = originalInvoice.InvoiceID,
+                    AdjustmentReason = refText,
+                    CreatedAt = DateTime.UtcNow, // Thời gian hiện tại
+                    InvoiceStatusID = 1, // Draft
+                    TemplateID = request.TemplateID.Value,
+                    CustomerID = customer.CustomerID,
+                    SalesID = request.SalesID,
+                    Notes = request.Notes, // Ghi chú user nhập (Lý do thay thế ngắn gọn)
+                    CompanyId = request.CompanyID,
+                    PaymentMethod = request.PaymentMethod,
+                    ReferenceNote = refText,
+                    SubtotalAmount = subtotal,
+                    VATAmount = vatAmount,
+                    VATRate = invoiceVatRate,
+                    TotalAmount = totalAmount,
+                    TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
+                    PaymentStatusID = 1,
+                    PaymentDueDate = DateTime.UtcNow.AddDays(30),
+                    MinRows = request.MinRows ?? 5,
+                    PaidAmount = 0,
+                    RemainingAmount = totalAmount,
+                    InvoiceItems = processedItems,
+                    InvoiceCustomerName = request.CustomerName ?? customer.CustomerName,
+                    InvoiceCustomerAddress = request.Address ?? customer.Address,
+                    InvoiceCustomerTaxCode = request.TaxCode ?? customer.TaxCode,
+                };
+                originalInvoice.InvoiceStatusID = 3; // Replaced
+                await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
+                await _uow.InvoicesRepository.CreateInvoiceAsync(replacementInvoice);
+                await _uow.SaveChanges();
+                var history = new InvoiceHistory
+                {
+                    InvoiceID = replacementInvoice.InvoiceID,
+                    ActionType = "Replaced",
+                    ReferenceInvoiceID = originalInvoice.InvoiceID,
+                    Date = DateTime.UtcNow,
+                    PerformedBy = request.SignedBy
+                };
+                await _uow.InvoiceHistoryRepository.CreateAsync(history);
+                await _uow.SaveChanges();
+
+                await _uow.CommitAsync(); // Commit Transaction
+
+                // --- Sau khi commit mới sinh XML và gửi Noti ---
+
+                // Load lại full data để sinh XML
+                var fullInvoice = await _uow.InvoicesRepository.GetByIdAsync(
+                    replacementInvoice.InvoiceID,                   "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,InvoiceStatus,Company"
+                );
+                string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
+                fullInvoice.XMLPath = newXmlUrl;
+                await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+                await _uow.SaveChanges();
+                await _notiService.SendToUserAsync(replacementInvoice.CustomerID,
+                    $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị thay thế bởi hóa đơn mới.", typeId: 2);
+                var response = new CreateInvoiceResponse
+                {
+                    InvoiceID = fullInvoice.InvoiceID,
+                    CustomerID = fullInvoice.CustomerID,
+                    TotalAmount = fullInvoice.TotalAmount,
+                    TotalAmountInWords = fullInvoice.TotalAmountInWords,
+                    PaymentMethod = fullInvoice.PaymentMethod,
+                    Status = fullInvoice.InvoiceStatus.StatusName,
+                    XMLPath = fullInvoice.XMLPath
+                };
+
+                return Result.Ok(response);
             }
             catch (Exception ex)
             {
-                // _logger.LogWarning("Không đọc được XML gốc: " + ex.Message);
+                await _uow.RollbackAsync();
+                Console.WriteLine(ex.ToString());
+                return Result.Fail(new Error($"Failed to replace invoice: {ex.Message}").CausedBy(ex));
             }
-            int targetCustomerId = originalInvoice.CustomerID; // Mặc định ID cũ
-            string custName, custTax, custAddr;
-            // Ưu tiên 1: Lấy từ Request (Nếu user chọn khách mới)
-            if (request.CustomerId.HasValue && request.CustomerId != originalInvoice.CustomerID)
+            finally
             {
-                targetCustomerId = request.CustomerId.Value;
-                var newCustomer = await _uow.CustomerRepository.GetByIdAsync(targetCustomerId);
-                if (newCustomer == null) return Result.Fail("Khách hàng mới không tồn tại.");
-
-                custName = newCustomer.CustomerName;
-                custTax = newCustomer.TaxCode;
-                custAddr = newCustomer.Address;
+                if (!string.IsNullOrEmpty(xmlPath) && File.Exists(xmlPath)) File.Delete(xmlPath);
             }
-            // Ưu tiên 2: Lấy từ XML gốc (Nếu có) -> Chính xác pháp lý nhất
-            else if (xmlData != null && xmlData.DLHDon?.NDHDon?.NMua != null)
-            {
-                custName = xmlData.DLHDon.NDHDon.NMua.Ten;
-                custTax = xmlData.DLHDon.NDHDon.NMua.MST;
-                custAddr = xmlData.DLHDon.NDHDon.NMua.DChi;
-            }
-            // Ưu tiên 3: Fallback về DB của hóa đơn gốc
-            else
-            {
-                custName = originalInvoice.InvoiceCustomerName;
-                custTax = originalInvoice.InvoiceCustomerTaxCode;
-                custAddr = originalInvoice.InvoiceCustomerAddress;
-            }
-            string targetNote = request.Note ?? originalInvoice.Notes;
-            var newInvoice = new Invoice
-            {
-                InvoiceType = 3, // 3: Thay thế
-                OriginalInvoiceID = originalInvoice.InvoiceID,
-                AdjustmentReason = request.Reason,
-                CustomerID = targetCustomerId,
-                Notes = targetNote,
-                InvoiceCustomerName = custName,
-                InvoiceCustomerTaxCode = custTax,
-                InvoiceCustomerAddress = custAddr,
-                TemplateID = originalInvoice.TemplateID,
-                CompanyId = originalInvoice.CompanyId,
-                IssuerID = originalInvoice.IssuerID,
-                SalesID = originalInvoice.SalesID,
-                InvoiceStatusID = 1, // Draft
-                CreatedAt = DateTime.UtcNow,
-                PaymentStatusID = originalInvoice.PaymentStatusID,
-                PaymentMethod = originalInvoice.PaymentMethod,
-                SignDate = null,
-                IssuedDate = null,
-                DigitalSignature = null,
-                TaxAuthorityCode = null,
-            };
-            decimal totalSubtotal = 0;
-            decimal totalVAT = 0;
-            var distinctVatRates = new HashSet<decimal>();
-            if (request.Items != null && request.Items.Any())
-            {
-                foreach (var itemInput in request.Items)
-                {
-                    var product = await _uow.ProductRepository.GetByIdAsync(itemInput.ProductID);
-                    if (product == null) return Result.Fail($"Sản phẩm {itemInput.ProductID} không tồn tại.");
-                    decimal price = itemInput.UnitPrice ?? product.BasePrice;
-                    decimal vatRate = itemInput.OverrideVATRate ?? product?.VATRate ?? 0;
-                    distinctVatRates.Add(vatRate);
-                    decimal amount = (decimal)itemInput.Quantity * price;
-                    decimal vatAmount = amount * (vatRate / 100m);
-
-                    newInvoice.InvoiceItems.Add(new InvoiceItem
-                    {
-                        ProductID = itemInput.ProductID,
-                        Quantity = itemInput.Quantity,
-                        UnitPrice = price,
-                        Amount = amount,
-                        VATAmount = vatAmount
-                    });
-
-                    totalSubtotal += amount;
-                    totalVAT += vatAmount;
-                }
-            }
-            else
-            {
-                if (originalInvoice.InvoiceItems != null)
-                {
-                    foreach (var oldItem in originalInvoice.InvoiceItems)
-                    {
-                        decimal oldItemRate = oldItem.Product?.VATRate ?? 0;
-                        distinctVatRates.Add(oldItemRate);
-                        var newItem = new InvoiceItem
-                        {
-                            ProductID = oldItem.ProductID,
-                            Quantity = oldItem.Quantity,
-                            UnitPrice = oldItem.UnitPrice,
-                            Amount = oldItem.Amount,
-                            VATAmount = oldItem.VATAmount
-                        };
-                        newInvoice.InvoiceItems.Add(newItem);
-                        totalSubtotal += oldItem.Amount;
-                        totalVAT += oldItem.VATAmount;
-                    }
-                }
-            }
-            newInvoice.SubtotalAmount = totalSubtotal;
-            newInvoice.VATAmount = totalVAT;
-            newInvoice.TotalAmount = totalSubtotal + totalVAT;
-            newInvoice.TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalSubtotal + totalVAT);
-            if (distinctVatRates.Count == 0)
-            {
-                newInvoice.VATRate = 0;
-            }
-            else if (distinctVatRates.Count == 1)
-            {
-                newInvoice.VATRate = distinctVatRates.First();
-            }
-            else
-            {
-                // Trường hợp đa thuế suất (Có cả 8% và 10%)
-                // Theo quy định XML CQT: 
-                // Nếu hóa đơn hỗn hợp, thường để -1 (Khác) hoặc hệ thống phải chặn.
-                // Ở đây ta gán -1 để biểu thị "Nhiều thuế suất"
-                newInvoice.VATRate = -1;
-            }
-            await _uow.InvoicesRepository.CreateAsync(newInvoice);
-            await _uow.SaveChanges();
-            // Log 1: Gắn cho Hóa đơn CŨ
-            var logForOld = new InvoiceHistory
-            {
-                InvoiceID = originalInvoice.InvoiceID,        // 100
-                ActionType = InvoiceActionTypes.Replaced, // "Bị thay thế"
-                ReferenceInvoiceID = newInvoice.InvoiceID, // Trỏ đến 200
-                PerformedBy = request.PerformedBy ?? newInvoice.IssuerID,
-                Date = DateTime.UtcNow
-            };
-            // Log 2: Gắn cho Hóa đơn MỚI
-            var logForNew = new InvoiceHistory
-            {
-                InvoiceID = newInvoice.InvoiceID,           
-                ActionType = InvoiceActionTypes.Replacement, // "Là bản thay thế"
-                ReferenceInvoiceID = originalInvoice.InvoiceID,  
-                PerformedBy = request.PerformedBy ?? newInvoice.IssuerID,
-                Date = DateTime.UtcNow
-            };
-
-            // 3. Thêm vào DB
-            await _uow.InvoiceHistoryRepository.CreateAsync(logForOld);
-            await _uow.InvoiceHistoryRepository.CreateAsync(logForNew);
-            await _uow.SaveChanges();
-            var fullInvoice = await _uow.InvoicesRepository
-                   .GetByIdAsync(newInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
-            var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
-
-            var serializer = new XmlSerializer(typeof(HDon));
-            var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
-            var xmlPath = Path.Combine(Path.GetTempPath(), fileName);
-            await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
-            {
-                serializer.Serialize(fs, xmlModel);
-            }
-            await using var xmlStream = File.OpenRead(xmlPath);
-            var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
-            if (uploadResult.IsFailed)
-                return Result.Fail(uploadResult.Errors);
-            fullInvoice.XMLPath = uploadResult.Value.Url;
-            await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
-            await _uow.SaveChanges();
-            var notificationsToCreate = new List<Notification>();
-            if (originalInvoice.Customer != null)
-            {
-                var users = await _uow.UserRepository.GetUsersByCustomerIdAsync(originalInvoice.CustomerID);
-                string content = $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị THAY THẾ. Lý do: {request.Reason}";
-                foreach (var user in users)
-                {
-                    notificationsToCreate.Add(new Notification
-                    {
-                        UserID = user.UserID,
-                        Content = content,
-                        NotificationStatusID = 1,
-                        NotificationTypeID = 2,
-                        Time = DateTime.UtcNow
-                    });
-                    await _notiService.SendRealTimeAsync(
-                        user.UserID,
-                        content,
-                        2
-                    );
-                }
-                if (notificationsToCreate.Any())
-                {
-                    await _uow.NotificationRepository.CreateRangeAsync(notificationsToCreate);
-                    await _uow.SaveChanges();
-                }
-            }
-            await _emailService.SendStatusUpdateNotificationAsync(newInvoice.InvoiceID, 11);
-            return Result.Ok(newInvoice.InvoiceID);
         }
     }
 }
