@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.DTOs.InvoiceItem;
 using EIMS.Application.DTOs.Invoices;
 using FluentResults;
 using MediatR;
@@ -18,7 +19,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         public string? Address { get; set; }
         public string? Notes { get; set; }
         public string PaymentMethod { get; set; }
-        public List<InvoiceItemDto>? Items { get; set; }
+        public List<CreateInvoiceItemRequest>? Items { get; set; }
         public decimal? Amount { get; set; }
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
