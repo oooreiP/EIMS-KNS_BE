@@ -54,9 +54,19 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
             var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(request.TemplateID.Value);
             if (template == null) return Result.Fail($"Template {request.TemplateID} not found");
             var originalInvoice = await _uow.InvoicesRepository.GetAllQueryable()
-                .Include(x => x.Template).ThenInclude(t => t.Serial)
-                .Include(x => x.Customer)
-                .FirstOrDefaultAsync(x => x.InvoiceID == request.OriginalInvoiceId);
+                .Include(x => x.Template)
+        .ThenInclude(t => t.Serial)
+            .ThenInclude(s => s.Prefix)
+
+        // Nhánh 2: Lấy InvoiceType (Lặp lại đường dẫn đến Serial)
+        .Include(x => x.Template)
+            .ThenInclude(t => t.Serial)
+                .ThenInclude(s => s.InvoiceType) // <--- Thêm dòng này
+        .Include(x => x.Template)
+            .ThenInclude(t => t.Serial)
+              .ThenInclude(s => s.SerialStatus)
+        .Include(x => x.Customer)
+        .FirstOrDefaultAsync(x => x.InvoiceID == request.OriginalInvoiceId);
 
             if (originalInvoice == null) return Result.Fail("Không tìm thấy hóa đơn gốc.");
 
@@ -219,8 +229,18 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 fullInvoice.XMLPath = newXmlUrl;
                 await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _uow.SaveChanges();
-                await _notiService.SendToUserAsync(replacementInvoice.CustomerID,
-                    $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị thay thế bởi hóa đơn mới.", typeId: 2);
+                var linkedUsers = await _uow.UserRepository.GetUsersByCustomerIdAsync(fullInvoice.CustomerID);
+
+                if (linkedUsers != null && linkedUsers.Any())
+                {
+                    // Chỉ gửi nếu có User liên kết
+                    foreach (var user in linkedUsers)
+                    {
+                        await _notiService.SendToUserAsync(user.UserID, 
+                            $"Hóa đơn #{originalInvoice.InvoiceNumber} đã bị thay thế bởi hóa đơn mới {fullInvoice.InvoiceNumber}.",
+                            typeId: 2);
+                    }
+                }
                 var response = new CreateInvoiceResponse
                 {
                     InvoiceID = fullInvoice.InvoiceID,
