@@ -40,6 +40,7 @@ namespace EIMS.Infrastructure.Repositories
                 "number" => isAsc ? query.OrderBy(x => x.InvoiceNumber) : query.OrderByDescending(x => x.InvoiceNumber),
 
                 "status" => isAsc ? query.OrderBy(x => x.InvoiceStatusID) : query.OrderByDescending(x => x.InvoiceStatusID),
+                "payment" => isAsc ? query.OrderBy(x => x.PaymentStatusID) : query.OrderByDescending(x => x.PaymentStatusID),
 
                 // Sort by Snapshot Name, fallback to Master Name
                 "customer" => isAsc
