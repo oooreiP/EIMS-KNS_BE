@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs;
+using EIMS.Application.DTOs.InvoiceItems;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.InvoiceItems.Queries
 {
-    public class GetInvoiceItemsByCustomerIdHandler : IRequestHandler<GetInvoiceItemsByCustomerIdQuery, Result<List<InvoiceItemDto>>>
+    public class GetInvoiceItemsByCustomerIdHandler : IRequestHandler<GetInvoiceItemsByCustomerIdQuery, Result<List<GetInvoiceItemsDTO>>>
     {
         private readonly IUnitOfWork _uow;
 
@@ -20,14 +21,14 @@ namespace EIMS.Application.Features.InvoiceItems.Queries
             _uow = uow;
         }
 
-        public async Task<Result<List<InvoiceItemDto>>> Handle(GetInvoiceItemsByCustomerIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<List<GetInvoiceItemsDTO>>> Handle(GetInvoiceItemsByCustomerIdQuery request, CancellationToken cancellationToken)
         {
             var items = await _uow.InvoiceItemRepository.GetAllQueryable()
                 .AsNoTracking()
                 .Include(x => x.Invoice) 
                 .Where(x => x.Invoice.CustomerID == request.CustomerId)
                 .Include(x => x.Product)
-                .Select(x => new InvoiceItemDto
+                .Select(x => new GetInvoiceItemsDTO
                 {
                     InvoiceItemID = x.InvoiceItemID,
                     InvoiceID = x.InvoiceID,
