@@ -169,9 +169,16 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
-                await _notiService.SendToUserAsync(invoice.CustomerID,
-                $"1 hóa đơn của bạn đã được khởi tạo. Vui lòng kiểm tra.",
-                typeId: 2);
+                var linkedUsers = await _unitOfWork.UserRepository.GetUsersByCustomerIdAsync(invoice.CustomerID);
+                if (linkedUsers != null && linkedUsers.Any())
+                {
+                    foreach (var user in linkedUsers)
+                    {
+                        await _notiService.SendToUserAsync(user.UserID, 
+                            $"1 hóa đơn của bạn đã được khởi tạo. Vui lòng kiểm tra.",
+                            typeId: 2);
+                    }
+                }
                 await _notiService.SendToRoleAsync("HOD",
                 $"Có hóa đơn đã được khởi tạo. Vui lòng xác nhận.",
                 typeId: 2);
