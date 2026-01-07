@@ -82,6 +82,8 @@ namespace EIMS.Application.Common.Mapping
     // Case 3: Has Original Invoice and it is numbered -> Return the ID
     src.OriginalInvoiceID)
                     ))
+                    .ForMember(dest => dest.OriginalInvoiceNumber, opt => opt.MapFrom(src => 
+        src.OriginalInvoice != null ? src.OriginalInvoice.InvoiceNumber : null))
                         .ReverseMap();
                          CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();
