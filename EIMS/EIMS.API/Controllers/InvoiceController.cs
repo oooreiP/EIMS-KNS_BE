@@ -62,6 +62,18 @@ namespace EIMS.API.Controllers
             var invoice = await _mediator.Send(new GetInvoiceByIdQuery(id));
             return invoice != null ? Ok(invoice) : NotFound();
         }
+        [HttpGet("{id}/original")]
+        public async Task<IActionResult> GetOriginalInvoice(int id)
+        {
+            var query = new GetOriginalInvoiceQuery { ChildInvoiceId = id };
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
         [HttpGet("hodInvoices")]
         public async Task<IActionResult> GetPublishedInvoices([FromQuery] GetInvoicesHodQuery query)
         {
