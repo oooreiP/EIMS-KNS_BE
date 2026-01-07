@@ -24,7 +24,7 @@ namespace EIMS.Application.Features.Invoices.Queries
         {
             //base query
             var query = _uow.InvoicesRepository.GetAllQueryable(
-                includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product,PaymentStatus,TaxApiLogs.TaxApiStatus");
+                includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product,PaymentStatus,TaxApiLogs.TaxApiStatus,OriginalInvoice");
             query = query.Where( x => x.InvoiceStatusID != 1);
 
             //search term

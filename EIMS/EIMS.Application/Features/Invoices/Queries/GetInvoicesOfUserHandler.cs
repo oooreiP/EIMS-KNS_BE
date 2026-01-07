@@ -33,9 +33,9 @@ namespace EIMS.Application.Features.Invoices.Queries
 
             if (user == null) return Result.Fail("User not found.");
 
-            var query = _uow.InvoicesRepository.GetAllQueryable()
-                                    .Include(i => i.Customer)
-                                    .AsQueryable();
+            var query = _uow.InvoicesRepository.GetAllQueryable(
+                includeProperties: "Customer,InvoiceStatus,InvoiceItems.Product,PaymentStatus,TaxApiLogs.TaxApiStatus,OriginalInvoice"
+            );
             string role = user.Role?.RoleName ?? "";
 
             // 2. APPLY PERMISSIONS
