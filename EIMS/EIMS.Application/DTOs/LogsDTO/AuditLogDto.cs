@@ -8,8 +8,9 @@ namespace EIMS.Application.DTOs.LogsDTO
 {
     public class AuditLogDto
     {
-        public long Id { get; set; }
-        public string UserId { get; set; }
+        public int AuditID { get; set; }
+        public string TraceId { get; set; }
+        public int UserID { get; set; }
         public string UserName { get; set; } 
         public string Action { get; set; }
         public string TableName { get; set; }
