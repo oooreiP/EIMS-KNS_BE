@@ -15,7 +15,7 @@ namespace EIMS.Application.Features.AuditLogs.Queries
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
 
-        public string? UserId { get; set; }
+        public int? UserID { get; set; }
         public string? TableName { get; set; } // Lọc theo bảng (VD: Invoices)
         public string? Action { get; set; }    // Lọc theo hành động (VD: Modified)
         public string? SearchTerm { get; set; } // Tìm kiếm chung trong Old/New Values
