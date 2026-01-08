@@ -28,7 +28,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateStatus
             var statusExists = await _uow.TaxApiStatusRepository.GetAllQueryable()
                                         .AnyAsync(x => x.TaxApiStatusID == request.NewStatusId);
             int oldStatusId = invoice.InvoiceStatusID;
-
+            invoice.Notes = request.Note;
             if (oldStatusId == request.NewStatusId)
                 return Result.Ok();
             invoice.InvoiceStatusID = request.NewStatusId;
