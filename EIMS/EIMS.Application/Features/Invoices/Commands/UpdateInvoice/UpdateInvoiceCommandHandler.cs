@@ -44,8 +44,8 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 if (invoice == null)
                     return Result.Fail(new Error($"Invoice {request.InvoiceId} not found"));
 
-                if (invoice.InvoiceStatusID != 1)
-                    return Result.Fail(new Error($"Only Draft invoices can be updated."));
+                if (invoice.InvoiceStatusID != 1 || invoice.InvoiceStatusID != 16)
+                    return Result.Fail(new Error($"Only Draft and rejected invoices can be updated."));
                 if (invoice.CompanyId == null)
                 {
                     invoice.CompanyId = 1;
