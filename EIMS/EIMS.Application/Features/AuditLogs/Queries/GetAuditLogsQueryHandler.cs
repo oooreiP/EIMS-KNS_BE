@@ -23,9 +23,9 @@ namespace EIMS.Application.Features.AuditLogs.Queries
         public async Task<Result<PaginatedList<AuditLogDto>>> Handle(GetAuditLogsQuery request, CancellationToken cancellationToken)
         {
             var query = _uow.AuditLogRepository.GetAllQueryable();
-            if (!string.IsNullOrEmpty(request.UserId))
+            if (request.UserID != null)
             {
-                query = query.Where(x => x.UserId == request.UserId);
+                query = query.Where(x => x.UserID == request.UserID);
             }
 
             if (!string.IsNullOrEmpty(request.TableName))
