@@ -14,5 +14,7 @@ namespace EIMS.Application.DTOs.Dashboard
         public UserStatsDto UserStats { get; set; }
         public List<RevenueTrendDto> RevenueTrend { get; set; } = new();
         public List<TopCustomerDto> TopCustomers { get; set; } = new();
+        public List<RecentInvoiceDto> RecentInvoices { get; set; } = new();
+        public double RevenueGrowthPercentage { get; set; }
     }
 }
