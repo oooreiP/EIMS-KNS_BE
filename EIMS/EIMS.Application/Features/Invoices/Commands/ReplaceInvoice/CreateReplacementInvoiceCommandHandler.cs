@@ -182,7 +182,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     InvoiceStatusID = 1, // Draft
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer.CustomerID,
-                    SalesID = request.SalesID,
+                    SalesID = originalInvoice.SalesID,
                     Notes = request.Notes, // Ghi chú user nhập (Lý do thay thế ngắn gọn)
                     CompanyId = request.CompanyID,
                     PaymentMethod = request.PaymentMethod,
@@ -194,7 +194,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     PaymentStatusID = 1,
                     PaymentDueDate = DateTime.UtcNow.AddDays(30),
-                    MinRows = request.MinRows ?? 5,
+                    MinRows = originalInvoice.MinRows,
                     PaidAmount = 0,
                     RemainingAmount = totalAmount,
                     InvoiceItems = processedItems,
@@ -212,7 +212,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     ActionType = "Replaced",
                     ReferenceInvoiceID = originalInvoice.InvoiceID,
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.SignedBy
+                    PerformedBy = originalInvoice.IssuerID,
                 };
                 await _uow.InvoiceHistoryRepository.CreateAsync(history);
                 await _uow.SaveChanges();
