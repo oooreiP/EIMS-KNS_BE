@@ -20,9 +20,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public int? TemplateID { get; set; }
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
-        public int InvoiceStatusID { get; set; } = 1; // Mặc định là Draft
         public int CompanyID { get; set; } = 1;
-        public int? SalesID { get; set; }
 
         // Thông tin khách hàng (Cho phép sửa lại toàn bộ nếu sai)
         public string? CustomerName { get; set; }
@@ -30,7 +28,6 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public string? ContactEmail { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
-
         public string? Notes { get; set; } // Ghi chú thêm
         public string PaymentMethod { get; set; }
 
@@ -41,8 +38,5 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public decimal? Amount { get; set; }
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
-
-        public int? SignedBy { get; set; }
-        public int? MinRows { get; set; }
     }
 }
