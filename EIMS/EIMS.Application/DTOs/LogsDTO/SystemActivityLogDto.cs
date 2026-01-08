@@ -8,7 +8,7 @@ namespace EIMS.Application.DTOs.LogsDTO
 {
     public class SystemActivityLogDto
     {
-        public long Id { get; set; }
+        public int LogId { get; set; }
         public string UserId { get; set; }
         public string ActionName { get; set; }
         public string Description { get; set; }

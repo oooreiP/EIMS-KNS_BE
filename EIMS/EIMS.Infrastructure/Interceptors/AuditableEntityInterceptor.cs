@@ -39,9 +39,12 @@ namespace EIMS.Infrastructure.Interceptors
         {
             if (context == null) return;
 
-            var userId = _currentUserService.UserId ?? "System"; // Handle null User
+            int? userId = null;
             var traceId = _httpContextAccessor.HttpContext?.TraceIdentifier;
-
+            if (!string.IsNullOrEmpty(_currentUserService.UserId) && int.TryParse(_currentUserService.UserId, out int parsedId))
+            {
+                userId = parsedId;
+            }
             // 1. LẤY SNAPSHOT: Lọc bỏ các bảng không cần Audit để tránh vòng lặp/lỗi
             var entries = context.ChangeTracker.Entries()
                 .Where(e =>
@@ -58,7 +61,7 @@ namespace EIMS.Infrastructure.Interceptors
                 var auditEntry = new AuditLog
                 {
                     TableName = entry.Entity.GetType().Name,
-                    UserId = userId,
+                    UserID = userId,
                     Timestamp = DateTime.UtcNow,
                     Action = entry.State.ToString(), // "Added", "Modified", "Deleted"
                     TraceId = traceId ?? Guid.NewGuid().ToString()

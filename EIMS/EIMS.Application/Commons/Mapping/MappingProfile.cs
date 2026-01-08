@@ -129,7 +129,11 @@ namespace EIMS.Application.Common.Mapping
                 .ForMember(dest => dest.Invoices, opt => opt.MapFrom(src => src.StatementDetails));
             // Fix: Customer -> CustomerInfoDto
             CreateMap<Customer, CustomerInfoDto>();
-            CreateMap<AuditLog, AuditLogDto>();
+            CreateMap<AuditLog, AuditLogDto>()
+             .ForMember(dest => dest.AuditID, opt => opt.MapFrom(src => src.AuditID))
+             .ForMember(dest => dest.TraceId, opt => opt.MapFrom(src => src.TraceId))
+             // Map UserName từ bảng User liên kết
+             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : "System"));
             CreateMap<SystemActivityLog, SystemActivityLogDto>();
             // Fix: Invoice Entity -> StatementInvoiceDto (For the invoices list)
             CreateMap<Invoice, StatementInvoiceDto>()
