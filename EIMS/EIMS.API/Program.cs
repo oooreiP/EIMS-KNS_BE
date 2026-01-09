@@ -76,6 +76,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<EmailSMTPSettings>(builder.Configuration.GetSection("EmailSMTPSettings"));
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
+builder.Services.AddMemoryCache();
 // builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
 builder.Services.AddSignalR();
@@ -110,6 +111,15 @@ builder.Services.AddSwaggerGen(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
+var forwardOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+};
+
+forwardOptions.KnownNetworks.Clear(); 
+forwardOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardOptions);
 // using (var scope = app.Services.CreateScope())
 // {
 //     Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
