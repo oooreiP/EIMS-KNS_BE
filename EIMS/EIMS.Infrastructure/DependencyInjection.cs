@@ -24,6 +24,7 @@ namespace EIMS.Infrastructure
             //register security services
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddSingleton<ILookupCodeGenerator, LookupCodeGenerator>();
             services.AddHttpContextAccessor();
             services.AddHostedService<DebtReminderWorker>();
             services.AddScoped<IAuthCookieService, AuthCookieService>();
