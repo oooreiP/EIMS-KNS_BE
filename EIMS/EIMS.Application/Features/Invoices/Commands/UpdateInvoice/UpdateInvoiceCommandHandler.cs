@@ -129,7 +129,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     {
                         _logger.LogWarning("Invalid Amount {Qty} for Product {ProdId}", itemReq.Amount, itemReq.ProductId);
                         return Result.Fail(new Error($"Amount for product {itemReq.ProductId} must be greater than 0"));
-                    } if (itemReq.VATAmount <= 0)
+                    } if (itemReq.VATAmount < 0)
                     {
                         _logger.LogWarning("Invalid VATAmount {Qty} for Product {ProdId}", itemReq.VATAmount, itemReq.ProductId);
                         return Result.Fail(new Error($"VATAmount for product {itemReq.ProductId} must be greater than 0"));
