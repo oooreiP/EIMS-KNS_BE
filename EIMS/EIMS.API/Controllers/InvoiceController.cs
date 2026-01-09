@@ -101,10 +101,18 @@ namespace EIMS.API.Controllers
 
             var command = _mapper.Map<UpdateInvoiceCommand>(request);
             command.InvoiceId = id;
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdString, out int userId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) // Standard .NET
+                   ?? User.FindFirst("sub")                     // Standard JWT
+                   ?? User.FindFirst("UserID")                  // Custom
+                   ?? User.FindFirst("id");
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 command.AuthenticatedUserId = userId;
+            }
+            else
+            {
+                return Unauthorized(new { title = "Authentication Failed", detail = "User ID not found in token." });
             }
             var result = await _mediator.Send(command);
 
