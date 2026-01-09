@@ -11,12 +11,6 @@ namespace EIMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "UserId",
-                table: "AuditLogs",
-                newName: "UserID");           
-            migrationBuilder.Sql(@"ALTER TABLE ""AuditLogs"" ALTER COLUMN ""UserID"" TYPE integer USING ""UserID""::integer");
-
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
