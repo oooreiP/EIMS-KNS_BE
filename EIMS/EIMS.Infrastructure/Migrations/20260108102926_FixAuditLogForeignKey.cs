@@ -11,7 +11,6 @@ namespace EIMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"UPDATE ""AuditLogs"" SET ""UserID"" = NULL WHERE ""UserID"" !~ '^\d+$'");
             migrationBuilder.RenameColumn(
                 name: "UserId",
                 table: "AuditLogs",
