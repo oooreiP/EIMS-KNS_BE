@@ -109,17 +109,17 @@ namespace EIMS.Infrastructure.Migrations
                 columns: new[] { "CreatedAt", "PasswordHash" },
                 values: new object[] { new DateTime(2026, 1, 8, 10, 29, 24, 518, DateTimeKind.Utc).AddTicks(196), "$2a$11$r//pV6K1Gnw25C2zp.SaION9ed1tfMuRGnE2jTb5eQ93iRAm7pfZy" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_UserID",
-                table: "AuditLogs",
-                column: "UserID");
+            // migrationBuilder.CreateIndex(
+            //     name: "IX_AuditLogs_UserID",
+            //     table: "AuditLogs",
+            //     column: "UserID");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_AuditLogs_Users_UserID",
-                table: "AuditLogs",
-                column: "UserID",
-                principalTable: "Users",
-                principalColumn: "UserID");
+            // migrationBuilder.AddForeignKey(
+            //     name: "FK_AuditLogs_Users_UserID",
+            //     table: "AuditLogs",
+            //     column: "UserID",
+            //     principalTable: "Users",
+            //     principalColumn: "UserID");
         }
 
         /// <inheritdoc />
