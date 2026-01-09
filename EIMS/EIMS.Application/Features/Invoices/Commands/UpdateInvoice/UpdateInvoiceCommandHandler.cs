@@ -68,17 +68,18 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 if (request.CustomerID.HasValue && request.CustomerID.Value > 0 && invoice.CustomerID != request.CustomerID.Value)
                 {
                     // 1. Link to the new User Account
-                    invoice.CustomerID = request.CustomerID.Value;
 
                     // 2. Fetch that customer to get their default details
                     var newCustomer = await _unitOfWork.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
                     if (newCustomer != null)
                     {
+                        invoice.CustomerID = request.CustomerID.Value;
                         // 3. Reset the snapshot to the new customer's defaults
                         invoice.InvoiceCustomerName = newCustomer.CustomerName;
                         invoice.InvoiceCustomerAddress = newCustomer.Address;
                         invoice.InvoiceCustomerTaxCode = newCustomer.TaxCode;
                     }
+                    return Result.Fail(new Error($"Customer with id {request.CustomerID} not found"));
                 }
 
                 // Case B: User Manually Edited Name/Address/TaxCode (Overrides everything)
