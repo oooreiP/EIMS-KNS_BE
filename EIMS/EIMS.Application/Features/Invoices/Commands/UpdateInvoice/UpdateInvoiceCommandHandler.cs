@@ -8,6 +8,7 @@ using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
@@ -17,16 +18,19 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
         private readonly IMapper _mapper;
+        private readonly ILogger<UpdateInvoiceCommandHandler> _logger;
 
-        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper)
+        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper, ILogger<UpdateInvoiceCommandHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _fileStorageService = fileStorageService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<Result<int>> Handle(UpdateInvoiceCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("--- START UpdateInvoice: ID {InvoiceId} | Items: {ItemCount} ---", request.InvoiceId, request.Items?.Count ?? 0);
             if (request.Items == null || !request.Items.Any())
                 return Result.Fail(new Error("Invoice must have at least one item"));
 
@@ -44,8 +48,12 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 if (invoice == null)
                     return Result.Fail(new Error($"Invoice {request.InvoiceId} not found"));
 
-                if (invoice.InvoiceStatusID != 1 || invoice.InvoiceStatusID != 16)
+                if (invoice.InvoiceStatusID != 1 && invoice.InvoiceStatusID != 16)
                     return Result.Fail(new Error($"Only Draft and rejected invoices can be updated."));
+                string rawPayment = request.PaymentMethod;
+                invoice.PaymentMethod = (string.IsNullOrEmpty(rawPayment) || rawPayment.Trim().ToLower() == "string")
+                    ? "Tiền mặt"
+                    : rawPayment;
                 if (invoice.CompanyId == null)
                 {
                     invoice.CompanyId = 1;
@@ -56,7 +64,6 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     return Result.Fail("Cannot update an invoice that already has recorded payments. Delete the payments first.");
                 }
                 invoice.Notes = request.Notes;
-                invoice.PaymentMethod = request.PaymentMethod;
                 // 2. Update Customer Data (Safety Check logic)
                 if (request.CustomerID.HasValue && request.CustomerID.Value > 0 && invoice.CustomerID != request.CustomerID.Value)
                 {
@@ -77,14 +84,14 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 // Case B: User Manually Edited Name/Address/TaxCode (Overrides everything)
                 // We update the SNAPSHOT fields on the invoice, but we keep the CustomerID the same.
                 // This ensures the Invoice stays in the User's "My Invoices" list, even if the address is custom.
-                
-                if (!string.IsNullOrEmpty(request.CustomerName)) 
+
+                if (!string.IsNullOrEmpty(request.CustomerName))
                     invoice.InvoiceCustomerName = request.CustomerName;
-                
-                if (!string.IsNullOrEmpty(request.Address)) 
+
+                if (!string.IsNullOrEmpty(request.Address))
                     invoice.InvoiceCustomerAddress = request.Address;
-                
-                if (!string.IsNullOrEmpty(request.TaxCode)) 
+
+                if (!string.IsNullOrEmpty(request.TaxCode))
                     invoice.InvoiceCustomerTaxCode = request.TaxCode;
 
                 // Fallback: If snapshot fields are still null (e.g. old invoices), fill them from the current relation
@@ -113,6 +120,20 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 foreach (var itemReq in request.Items)
                 {
+                    if (itemReq.Quantity <= 0)
+                    {
+                        _logger.LogWarning("Invalid Quantity {Qty} for Product {ProdId}", itemReq.Quantity, itemReq.ProductId);
+                        return Result.Fail(new Error($"Quantity for product {itemReq.ProductId} must be greater than 0"));
+                    }
+                     if (itemReq.Amount <= 0)
+                    {
+                        _logger.LogWarning("Invalid Amount {Qty} for Product {ProdId}", itemReq.Amount, itemReq.ProductId);
+                        return Result.Fail(new Error($"Amount for product {itemReq.ProductId} must be greater than 0"));
+                    } if (itemReq.VATAmount <= 0)
+                    {
+                        _logger.LogWarning("Invalid VATAmount {Qty} for Product {ProdId}", itemReq.VATAmount, itemReq.ProductId);
+                        return Result.Fail(new Error($"VATAmount for product {itemReq.ProductId} must be greater than 0"));
+                    }
                     if (!productDict.ContainsKey(itemReq.ProductId)) continue;
 
                     var productInfo = productDict[itemReq.ProductId];
@@ -208,12 +229,14 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("SUCCESS: Invoice {InvoiceId} updated. Total Amount: {Total}", invoice.InvoiceID, totalAmount);
 
                 return Result.Ok(invoice.InvoiceID);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "ERROR: Failed to update Invoice {InvoiceId}", request.InvoiceId);
                 return Result.Fail(new Error($"Failed to update invoice: {ex.Message}").CausedBy(ex));
             }
             finally
