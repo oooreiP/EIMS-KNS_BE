@@ -93,7 +93,28 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 if (!string.IsNullOrEmpty(request.TaxCode))
                     invoice.InvoiceCustomerTaxCode = request.TaxCode;
+                int? issuerIdToUse = null;
 
+                if (request.SignedBy.HasValue && request.SignedBy.Value > 0)
+                {
+                    issuerIdToUse = request.SignedBy.Value;
+                }
+                else
+                {
+                    if (request.AuthenticatedUserId > 0)
+                    {
+                        issuerIdToUse = request.AuthenticatedUserId;
+                        _logger.LogInformation("Input was 0/Null. Auto-signing Invoice {Id} with Current User {UserId}", invoice.InvoiceID, issuerIdToUse);
+                    }
+                }
+                if (issuerIdToUse.HasValue && issuerIdToUse.Value > 0)
+                {
+                    invoice.IssuerID = issuerIdToUse.Value;
+                }
+                else
+                {
+                    invoice.IssuerID = null;
+                }
                 // Fallback: If snapshot fields are still null (e.g. old invoices), fill them from the current relation
                 if (string.IsNullOrEmpty(invoice.InvoiceCustomerName)) invoice.InvoiceCustomerName = invoice.Customer?.CustomerName;
                 if (string.IsNullOrEmpty(invoice.InvoiceCustomerAddress)) invoice.InvoiceCustomerAddress = invoice.Customer?.Address;
@@ -125,11 +146,12 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                         _logger.LogWarning("Invalid Quantity {Qty} for Product {ProdId}", itemReq.Quantity, itemReq.ProductId);
                         return Result.Fail(new Error($"Quantity for product {itemReq.ProductId} must be greater than 0"));
                     }
-                     if (itemReq.Amount <= 0)
+                    if (itemReq.Amount <= 0)
                     {
                         _logger.LogWarning("Invalid Amount {Qty} for Product {ProdId}", itemReq.Amount, itemReq.ProductId);
                         return Result.Fail(new Error($"Amount for product {itemReq.ProductId} must be greater than 0"));
-                    } if (itemReq.VATAmount < 0)
+                    }
+                    if (itemReq.VATAmount < 0)
                     {
                         _logger.LogWarning("Invalid VATAmount {Qty} for Product {ProdId}", itemReq.VATAmount, itemReq.ProductId);
                         return Result.Fail(new Error($"VATAmount for product {itemReq.ProductId} must be greater than 0"));
@@ -187,7 +209,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 invoice.RemainingAmount = totalAmount;
 
                 if (request.MinRows.HasValue) invoice.MinRows = request.MinRows.Value;
-                if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
+                // if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
 
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
@@ -223,7 +245,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     InvoiceID = invoice.InvoiceID,
                     ActionType = "Updated",
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.SignedBy,
+                    PerformedBy = invoice.IssuerID,
                 };
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
 

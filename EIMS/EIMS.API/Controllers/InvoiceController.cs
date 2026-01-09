@@ -13,7 +13,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text;
-
+using System.Security.Claims;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
@@ -101,7 +101,11 @@ namespace EIMS.API.Controllers
 
             var command = _mapper.Map<UpdateInvoiceCommand>(request);
             command.InvoiceId = id;
-
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdString, out int userId))
+            {
+                command.AuthenticatedUserId = userId;
+            }
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)
