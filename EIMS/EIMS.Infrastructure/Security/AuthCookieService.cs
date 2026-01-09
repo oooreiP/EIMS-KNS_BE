@@ -33,8 +33,8 @@ namespace EIMS.Infrastructure.Security
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    Secure = false,
+                    SameSite = SameSiteMode.Lax,
                     Expires = expires
                 };
                 response.Cookies.Append("refreshToken", token, cookieOptions);
