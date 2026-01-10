@@ -10,5 +10,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<byte[]> ConvertHtmlToPdfAsync(string htmlContent);
         Task<byte[]> ConvertXmlToPdfAsync(int invoiceId, string rootPath);
         Task<string> GenerateInvoiceHtmlAsync(int invoiceId, string rootPath);
+        Task<string> GenerateNotificationHtmlAsync(int notificationId, string rootPath);
+        Task<byte[]> ConvertNotificationToPdfAsync(int notificationId, string rootPath);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.DTOs.TaxAPIDTO;
 using EIMS.Application.Features.CQT.NotifyInvoiceError;
+using EIMS.Application.Features.CQT.Queries;
 using EIMS.Application.Features.CQT.SubmitInvoice.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -28,39 +29,71 @@ namespace EIMS.API.Controllers
                 : BadRequest(result.Errors);
         }
         /// <summary>
-        /// Gửi thông báo sai sót (Mẫu 04/SS-HĐĐT) lên Cơ quan Thuế
+        /// 1. TẠO TỜ KHAI 04/SS (LƯU NHÁP & UPLOAD XML)
         /// </summary>
-        /// <param name="invoiceId">ID hóa đơn bị sai</param>
-        /// <param name="request">Thông tin sai sót</param>
-        [HttpPost("{invoiceId}/notify-error")]
-        public async Task<IActionResult> NotifyInvoiceError(int invoiceId, [FromBody] NotifyErrorRequest request)
+        /// <param name="command">Danh sách hóa đơn và lý do sai sót</param>
+        /// <returns>NotificationID (Để dùng cho bước Preview và Send)</returns>
+        [HttpPost("Create-Form04SS-Draft")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateNotification([FromBody] CreateErrorNotificationCommand command)
         {
-            var command = new NotifyInvoiceErrorCommand
-            {
-                InvoiceId = invoiceId,
-                ErrorType = request.ErrorType,
-                Reason = request.Reason,
-            };
-
-            // 2. Gửi Command qua Mediator
             var result = await _mediator.Send(command);
 
-            // 3. Xử lý kết quả
-            if (result.IsSuccess)
+            if (result.IsFailed)
             {
-                return Ok(new
-                {
-                    message = "Gửi thông báo sai sót thành công. CQT đã tiếp nhận.",
-                    status = GetStatusName(request.ErrorType)
-                });
+                return BadRequest(result.Errors);
             }
 
-            // Trả về lỗi nếu thất bại (CQT từ chối, chưa cấp mã, v.v.)
-            return BadRequest(new
+            return Ok(result.Value); // Trả về ID của tờ khai (NotificationID)
+        }
+        [HttpPost("{id}/send-form-to-CQT")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SendNotification(int id)
+        {
+            var command = new SendErrorNotificationCommand { NotificationID = id };
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
             {
-                message = "Gửi thông báo thất bại.",
-                errors = result.Errors.Select(e => e.Message)
-            });
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { message = "Gửi thành công", referenceId = result.Value });
+        }
+        // GET api/invoice-error-notifications/5/preview
+        [HttpGet("{id}/preview")]
+        public async Task<IActionResult> Preview(int id)
+        {
+            var query = new GetErrorNotificationPreviewQuery { NotificationId = id };
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            // Trả về HTML với Content-Type chuẩn để Browser render được ngay
+            return Content(result.Value, "text/html");
+        }
+        /// <summary>
+        /// 4. TẢI FILE PDF (DOWNLOAD)
+        /// </summary>
+        [HttpGet("{id}/pdf")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DownloadPdf(int id)
+        {
+            var query = new GetErrorNotificationPdfQuery { NotificationId = id };
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            // Trả về file PDF để trình duyệt tải xuống
+            string fileName = $"TB04SS_{id}_{DateTime.Now:yyyyMMdd}.pdf";
+            return File(result.Value, "application/pdf", fileName);
         }
         private string GetStatusName(int errorType)
         {

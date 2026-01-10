@@ -12,7 +12,7 @@ namespace EIMS.Domain.Entities
         [Key]
         public int TaxLogID { get; set; }
         [ForeignKey("InvoiceID")]
-        public int InvoiceID { get; set; }
+        public int? InvoiceID { get; set; }
         [Required]
         public string RequestPayload { get; set; } = string.Empty;
         public string? ResponsePayload { get; set; }
