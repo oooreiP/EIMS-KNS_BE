@@ -20,5 +20,6 @@ namespace EIMS.Application.Commons.Interfaces
         Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl);
         Task<string> GenerateNextNotificationNumberAsync();
         Task<string> GenerateAndUploadXmlAsync(Invoice fullInvoice);
+        Task<(XmlDocument XmlDoc, string MessageId)> Generate04SSXmlDocumentAsync(InvoiceErrorNotification notification);
     }
 }

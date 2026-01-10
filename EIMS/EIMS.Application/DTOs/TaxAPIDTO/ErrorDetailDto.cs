@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.DTOs.TaxAPIDTO
 {
-    public class NotifyErrorRequest
+    public class ErrorDetailDto
     {
+        public int InvoiceId { get; set; }
         /// <summary>
         /// Tính chất sai sót: 
         /// 1: Hủy, 2: Điều chỉnh, 3: Thay thế, 4: Giải trình

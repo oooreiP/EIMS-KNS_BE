@@ -478,27 +478,21 @@
 		<xs:attribute name="Id" type="xs:string"/>
 	</xs:complexType>
 
-	<xs:complexType name="SignatureType">
-		<xs:sequence>
-			<xs:any minOccurs="0" processContents="lax"/>
-		</xs:sequence>
-	</xs:complexType>
-
 	<xs:complexType name="NBanCKSType">
 		<xs:sequence>
-			<xs:element name="Signature" type="SignatureType"/>
+			<xs:any namespace="http://www.w3.org/2000/09/xmldsig#" processContents="lax" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="NMuaCKSType">
 		<xs:sequence>
-			<xs:element name="Signature" type="SignatureType" minOccurs="0"/>
+			<xs:any namespace="http://www.w3.org/2000/09/xmldsig#" processContents="lax" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="CQTCKSType">
 		<xs:sequence>
-			<xs:element name="Signature" type="SignatureType"/>
+			<xs:any namespace="http://www.w3.org/2000/09/xmldsig#" processContents="lax"/>
 		</xs:sequence>
 	</xs:complexType>
 
