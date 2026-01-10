@@ -30,6 +30,85 @@ namespace EIMS.Infrastructure.Service
             _uow = uow;
         }
 
+        public async Task<Result> SendMailAsync(FEMailRequest mailRequest)
+        {
+            try
+            {
+                var email = new MimeMessage();
+                email.Sender = MailboxAddress.Parse(_settings.Email);
+                email.From.Add(new MailboxAddress(_settings.DisplayName, _settings.Email));
+                email.To.Add(MailboxAddress.Parse(mailRequest.ToEmail));
+                email.Subject = mailRequest.Subject;
+
+                if (mailRequest.CcEmails != null)
+                    foreach (var cc in mailRequest.CcEmails.Where(c => !string.IsNullOrWhiteSpace(c)))
+                        email.Cc.Add(MailboxAddress.Parse(cc));
+
+                if (mailRequest.BccEmails != null)
+                    foreach (var bcc in mailRequest.BccEmails.Where(c => !string.IsNullOrWhiteSpace(c)))
+                        email.Bcc.Add(MailboxAddress.Parse(bcc));
+
+                var builder = new BodyBuilder { HtmlBody = mailRequest.EmailBody };
+
+                // === PHẦN TỐI ƯU QUAN TRỌNG NHẤT ===
+                // Thay vì foreach đợi từng file, ta tải tất cả cùng lúc
+                if (mailRequest.AttachmentUrls != null && mailRequest.AttachmentUrls.Any())
+                {
+                    // Lọc ra danh sách cần download
+                    var downloadTasks = mailRequest.AttachmentUrls
+                        .Where(f => !string.IsNullOrEmpty(f.FileUrl))
+                        .Select(async file =>
+                        {
+                            try
+                            {
+                                // Tải bất đồng bộ song song
+                                var bytes = await _httpClient.GetByteArrayAsync(file.FileUrl);
+                                return new { IsSuccess = true, FileName = file.FileName, Content = bytes };
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning($"Lỗi tải file {file.FileUrl}: {ex.Message}");
+                                return new { IsSuccess = false, FileName = "", Content = Array.Empty<byte>() };
+                            }
+                        });
+                    // Chờ tất cả tải xong (Thời gian = Thời gian của file nặng nhất, thay vì tổng thời gian)
+                    var downloadedFiles = await Task.WhenAll(downloadTasks);
+                    foreach (var file in downloadedFiles.Where(x => x.IsSuccess))
+                    {
+                        builder.Attachments.Add(file.FileName, file.Content);
+                    }
+
+                    // Add các file có sẵn byte content (nếu có)
+                    foreach (var file in mailRequest.AttachmentUrls.Where(f => string.IsNullOrEmpty(f.FileUrl) && f.FileContent?.Length > 0))
+                    {
+                        builder.Attachments.Add(file.FileName, file.FileContent);
+                    }
+                }
+
+                email.Body = builder.ToMessageBody();
+
+                using var smtp = new SmtpClient();
+                // Tăng timeout kết nối lên một chút để tránh rớt mạng chập chờn
+                smtp.Timeout = 10000; // 10 giây
+
+                await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
+
+                // Gửi Async thực sự
+                await smtp.SendAsync(email);
+
+                await smtp.DisconnectAsync(true);
+
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi gửi email SMTP");
+                return Result.Fail(new Error("Lỗi gửi email SMTP").CausedBy(ex));
+            }
+        }
+
+        // TỐI ƯU 2: Xử lý cho MailRequest (Cloudinary) - Logic tương tự
         public async Task<Result> SendMailAsync(MailRequest mailRequest)
         {
             try
@@ -39,100 +118,38 @@ namespace EIMS.Infrastructure.Service
                 email.To.Add(MailboxAddress.Parse(mailRequest.Email));
                 email.Subject = mailRequest.Subject;
 
-                var builder = new BodyBuilder
-                {
-                    HtmlBody = mailRequest.EmailBody
-                };
+                var builder = new BodyBuilder { HtmlBody = mailRequest.EmailBody };
+
                 if (mailRequest.CloudinaryUrls != null && mailRequest.CloudinaryUrls.Any())
                 {
-                    foreach (var url in mailRequest.CloudinaryUrls)
+                    // Tải song song
+                    var tasks = mailRequest.CloudinaryUrls.Select(async url =>
                     {
                         try
                         {
                             var fileName = Path.GetFileName(new Uri(url).LocalPath);
-                            var fileBytes = await _httpClient.GetByteArrayAsync(url);
-                            builder.Attachments.Add(fileName, fileBytes);
-                            _logger.LogInformation("Fetched and attached file from Cloudinary: {FileName}", fileName);
+                            var bytes = await _httpClient.GetByteArrayAsync(url);
+                            return new { Success = true, Name = fileName, Bytes = bytes };
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Failed to fetch file from Cloudinary: {Url}", url);
+                            _logger.LogWarning(ex, "Failed fetch: {Url}", url);
+                            return new { Success = false, Name = "", Bytes = Array.Empty<byte>() };
                         }
-                    }
-                }
-                email.Body = builder.ToMessageBody();
+                    });
 
-                 using var smtp = new SmtpClient();
-                 await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
-                 await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
-                 await smtp.SendAsync(email);
-                await smtp.DisconnectAsync(true);
+                    var results = await Task.WhenAll(tasks);
 
-                _logger.LogInformation(" Invoice email sent successfully to {Recipient}", mailRequest.Email);
-                return Result.Ok();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, " Failed to send email to {Recipient}", mailRequest.Email);
-                return Result.Fail(new Error("Failed to send invoice email").CausedBy(ex));
-            }
-        }
-
-        public async Task<Result> SendMailAsync(FEMailRequest mailRequest)
-        {
-            try
-            {
-                var email = new MimeMessage();
-                email.Sender = MailboxAddress.Parse(_settings.Email);
-                email.From.Add(new MailboxAddress(_settings.DisplayName, _settings.Email)); // Thêm tên hiển thị
-                email.To.Add(MailboxAddress.Parse(mailRequest.ToEmail));
-                email.Subject = mailRequest.Subject;
-
-                // Xử lý CC
-                if (mailRequest.CcEmails != null)
-                {
-                    foreach (var cc in mailRequest.CcEmails)
-                        if (!string.IsNullOrWhiteSpace(cc)) email.Cc.Add(MailboxAddress.Parse(cc));
-                }
-
-                // Xử lý BCC
-                if (mailRequest.BccEmails != null)
-                {
-                    foreach (var bcc in mailRequest.BccEmails)
-                        if (!string.IsNullOrWhiteSpace(bcc)) email.Bcc.Add(MailboxAddress.Parse(bcc));
-                }
-
-                var builder = new BodyBuilder { HtmlBody = mailRequest.EmailBody };
-
-                // Xử lý File đính kèm (Download từ URL và Attach vào Email)
-                if (mailRequest.AttachmentUrls != null && mailRequest.AttachmentUrls.Any())
-                {
-                    foreach (var file in mailRequest.AttachmentUrls)
+                    foreach (var item in results.Where(r => r.Success))
                     {
-                        // CASE 1: Nếu là URL (File trên Cloud) -> Tải về rồi đính kèm
-                        if (!string.IsNullOrEmpty(file.FileUrl))
-                        {
-                            try
-                            {
-                                var fileBytes = await _httpClient.GetByteArrayAsync(file.FileUrl);
-                                builder.Attachments.Add(file.FileName, fileBytes);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogWarning($"Lỗi tải file {file.FileUrl}: {ex.Message}");
-                            }
-                        }
-                        // CASE 2: Nếu là Byte Array (File sinh ra từ RAM - ví dụ Biên bản) -> Đính kèm luôn
-                        else if (file.FileContent != null && file.FileContent.Length > 0)
-                        {
-                            builder.Attachments.Add(file.FileName, file.FileContent);
-                        }
+                        builder.Attachments.Add(item.Name, item.Bytes);
                     }
                 }
 
                 email.Body = builder.ToMessageBody();
 
                 using var smtp = new SmtpClient();
+                smtp.Timeout = 10000;
                 await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
                 await smtp.AuthenticateAsync(_settings.Email, _settings.Password);
                 await smtp.SendAsync(email);
@@ -142,8 +159,8 @@ namespace EIMS.Infrastructure.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi gửi email");
-                return Result.Fail(new Error("Lỗi gửi email SMTP").CausedBy(ex));
+                _logger.LogError(ex, "Failed to send email");
+                return Result.Fail(new Error("Failed to send invoice email").CausedBy(ex));
             }
         }
         public async Task<Result> SendInvoiceEmailAsync(SendInvoiceEmailCommand request)
