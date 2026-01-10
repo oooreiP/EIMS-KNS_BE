@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109203415_AddLookupCodeLog")]
+    partial class AddLookupCodeLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -478,93 +481,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("TemplateID");
 
                     b.ToTable("Invoices");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceErrorDetail", b =>
-                {
-                    b.Property<int>("DetailID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetailID"));
-
-                    b.Property<int>("ErrorType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("InvoiceDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("InvoiceID")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("InvoiceNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("InvoiceSerial")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("NotificationID")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TaxCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("DetailID");
-
-                    b.HasIndex("InvoiceID");
-
-                    b.HasIndex("NotificationID");
-
-                    b.ToTable("InvoiceErrorDetails");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceErrorNotification", b =>
-                {
-                    b.Property<int>("InvoiceErrorNotificationID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("InvoiceErrorNotificationID");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InvoiceErrorNotificationID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("MTDiep")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Place")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("ReportDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("SignedData")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TaxAuthorityCode")
-                        .HasColumnType("text");
-
-                    b.Property<string>("XMLPath")
-                        .HasColumnType("text");
-
-                    b.HasKey("InvoiceErrorNotificationID");
-
-                    b.ToTable("InvoiceErrorNotifications");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceHistory", b =>
@@ -1583,7 +1499,7 @@ namespace EIMS.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaxLogID"));
 
-                    b.Property<int?>("InvoiceID")
+                    b.Property<int>("InvoiceID")
                         .HasColumnType("integer");
 
                     b.Property<string>("MCCQT")
@@ -2610,23 +2526,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("Template");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceErrorDetail", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceID");
-
-                    b.HasOne("EIMS.Domain.Entities.InvoiceErrorNotification", "Notification")
-                        .WithMany("Details")
-                        .HasForeignKey("NotificationID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("Notification");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceHistory", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
@@ -2847,7 +2746,9 @@ namespace EIMS.Infrastructure.Migrations
                 {
                     b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
                         .WithMany("TaxApiLogs")
-                        .HasForeignKey("InvoiceID");
+                        .HasForeignKey("InvoiceID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("EIMS.Domain.Entities.TaxApiStatus", "TaxApiStatus")
                         .WithMany("TaxApiLogs")
@@ -2909,11 +2810,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("StatementDetails");
 
                     b.Navigation("TaxApiLogs");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceErrorNotification", b =>
-                {
-                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>

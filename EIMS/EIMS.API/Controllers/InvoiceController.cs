@@ -13,12 +13,13 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text;
-
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InvoiceController : ControllerBase
+    public class InvoiceController : BaseApiController
     {
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
@@ -59,8 +60,12 @@ namespace EIMS.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var invoice = await _mediator.Send(new GetInvoiceByIdQuery(id));
-            return invoice != null ? Ok(invoice) : NotFound();
+            var result = await _mediator.Send(new GetInvoiceByIdQuery(id));
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+            return Ok(result.Value);
         }
         [HttpGet("{id}/original")]
         public async Task<IActionResult> GetOriginalInvoice(int id)
@@ -97,7 +102,19 @@ namespace EIMS.API.Controllers
 
             var command = _mapper.Map<UpdateInvoiceCommand>(request);
             command.InvoiceId = id;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) // Standard .NET
+                   ?? User.FindFirst("sub")                     // Standard JWT
+                   ?? User.FindFirst("UserID")                  // Custom
+                   ?? User.FindFirst("id");
 
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                command.AuthenticatedUserId = userId;
+            }
+            else
+            {
+                return Unauthorized(new { title = "Authentication Failed", detail = "User ID not found in token." });
+            }
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)
@@ -194,7 +211,7 @@ namespace EIMS.API.Controllers
                         Detail = result.Errors.FirstOrDefault()?.Message ?? "Invalid request."
                     });
                 }
-                return Ok(result.Value);
+                return Ok($"Cập nhật trạng thái của hoá đơn số {result.Value} thành công");
             }
         }
         /// <summary>
@@ -368,5 +385,26 @@ namespace EIMS.API.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+        [HttpGet("public/lookup/{lookupCode}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> LookupInvoice(string lookupCode)
+        {
+            string ipAddress = GetClientIpAddress();
+
+            var query = new GetInvoiceByLookupCodeQuery
+            {
+                LookupCode = lookupCode,
+                IPAddress = ipAddress,
+                UserAgent = Request.Headers["User-Agent"].ToString()
+            };
+
+            var result = await _mediator.Send(query);
+
+            if (result.IsSuccess)
+                return Ok(new { success = true, data = result.Value });
+
+            return BadRequest(new { success = false, message = result.Errors[0].Message});
+        }
+        
     }
 }

@@ -47,6 +47,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<SystemActivityLog> SystemActivityLogs { get; set; }
         public DbSet<InvoiceErrorNotification> InvoiceErrorNotifications { get; set; }
         public DbSet<InvoiceErrorDetail> InvoiceErrorDetails { get; set; }
+        public DbSet<InvoiceLookupLog> InvoiceLookupLogs { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.AddInterceptors(_auditableEntityInterceptor);
