@@ -107,6 +107,37 @@ namespace EIMS.Infrastructure.Service
         {
             return await GeneratePdfBytesAsync(htmlContent);
         }
+        public async Task<string> GenerateNotificationHtmlAsync(int notificationId, string rootPath)
+        {
+            var noti = await _uow.ErrorNotificationRepository.GetByIdAsync(notificationId);
+            if (noti == null) throw new Exception("Không tìm thấy tờ khai thông báo sai sót.");
+
+            if (string.IsNullOrEmpty(noti.XMLPath))
+            {
+                throw new Exception("Tờ khai chưa có dữ liệu XML.");
+            }
+            string xmlContent = await _xmlService.DownloadStringAsync(noti.XMLPath);
+
+            // 3. Chuẩn bị tham số cho XSLT
+            // Mẫu 04 đơn giản hơn Invoice, không cần config JSON phức tạp,
+            // nhưng cần truyền Tên Công Ty vào vì XML gốc chỉ có MST.
+            var xsltArgs = await PrepareNotificationXsltArguments(noti);
+
+            // 4. Đường dẫn file Template (File Form04SS.xslt mà tôi gửi ở bài trước)
+            string xsltPath = Path.Combine(rootPath, "Templates", "Form04SS.xsl");
+
+            // 5. Transform
+            return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
+        }
+
+        public async Task<byte[]> ConvertNotificationToPdfAsync(int notificationId, string rootPath)
+        {
+            // 1. Tạo HTML
+            string htmlContent = await GenerateNotificationHtmlAsync(notificationId, rootPath);
+
+            // 2. Gọi lại hàm GeneratePdfBytesAsync (Puppeteer) có sẵn của bạn
+            return await GeneratePdfBytesAsync(htmlContent);
+        }
         private XsltArgumentList PrepareXsltArguments(TemplateConfig config, Invoice invoice)
         {
             var args = new XsltArgumentList();
@@ -164,6 +195,21 @@ namespace EIMS.Infrastructure.Service
             args.AddParam("ShowPaymentMethod", "", cust.ShowPaymentMethod ? "true" : "false");
             bool isDraft = invoice.InvoiceStatusID == 1;
             args.AddParam("IsDraft", "", isDraft ? "true" : "false");
+
+            return args;
+        }
+        private async Task<XsltArgumentList> PrepareNotificationXsltArguments(InvoiceErrorNotification noti)
+        {
+            var args = new XsltArgumentList();
+            var company = await _uow.CompanyRepository.GetByIdAsync(1);
+            string companyName = company?.CompanyName ?? "TÊN CÔNG TY CHƯA CẬP NHẬT";
+            args.AddParam("CompanyName", "", companyName);
+            bool isDraft = noti.Status == 1;
+            args.AddParam("IsDraft", "", isDraft ? "true" : "false");
+            // 2. Có thể truyền thêm trạng thái Draft nếu muốn hiển thị watermark "NHÁP"
+            // (Tùy chỉnh file XSLT để hứng tham số này)
+            // bool isDraft = noti.Status == 0;
+            // args.AddParam("IsDraft", "", isDraft ? "true" : "false");
 
             return args;
         }

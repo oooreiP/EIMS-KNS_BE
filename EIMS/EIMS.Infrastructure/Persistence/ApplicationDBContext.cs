@@ -45,6 +45,8 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<TemplateFrame> TemplateFrames { get; set; }
         public DbSet<InvoiceStatementDetail> InvoiceStatementDetails { get; set; }
         public DbSet<SystemActivityLog> SystemActivityLogs { get; set; }
+        public DbSet<InvoiceErrorNotification> InvoiceErrorNotifications { get; set; }
+        public DbSet<InvoiceErrorDetail> InvoiceErrorDetails { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.AddInterceptors(_auditableEntityInterceptor);
@@ -598,6 +600,17 @@ namespace EIMS.Infrastructure.Persistence
         .HasOne(t => t.Serial)
         .WithMany(s => s.InvoiceTemplates)
         .HasForeignKey(t => t.SerialID);
+            modelBuilder.Entity<InvoiceErrorNotification>(entity =>
+            {
+                // Khai báo rõ ràng Khóa chính là NotificationID
+                entity.HasKey(e => e.InvoiceErrorNotificationID);
+
+                // Cấu hình quan hệ 1-N với Detail
+                entity.HasMany(e => e.Details)
+                      .WithOne(d => d.Notification)
+                      .HasForeignKey(d => d.NotificationID) // Chỉ định rõ FK
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
 
 
