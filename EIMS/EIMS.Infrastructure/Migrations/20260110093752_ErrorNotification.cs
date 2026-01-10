@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddErrorNotificationAgain : Migration
+    public partial class ErrorNotification : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,7 @@ namespace EIMS.Infrastructure.Migrations
                 name: "InvoiceErrorNotifications",
                 columns: table => new
                 {
-                    NotificationID = table.Column<int>(type: "integer", nullable: false)
+                    InvoiceErrorNotificationID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     TaxAuthorityCode = table.Column<string>(type: "text", nullable: true),
                     Place = table.Column<string>(type: "text", nullable: false),
@@ -30,7 +30,7 @@ namespace EIMS.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InvoiceErrorNotifications", x => x.NotificationID);
+                    table.PrimaryKey("PK_InvoiceErrorNotifications", x => x.InvoiceErrorNotificationID);
                 });
 
             migrationBuilder.CreateTable(
@@ -55,7 +55,7 @@ namespace EIMS.Infrastructure.Migrations
                         name: "FK_InvoiceErrorDetails_InvoiceErrorNotifications_NotificationID",
                         column: x => x.NotificationID,
                         principalTable: "InvoiceErrorNotifications",
-                        principalColumn: "NotificationID",
+                        principalColumn: "InvoiceErrorNotificationID",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_InvoiceErrorDetails_Invoices_InvoiceID",
@@ -69,98 +69,98 @@ namespace EIMS.Infrastructure.Migrations
                 keyColumn: "CategoryID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7506));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2784));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7514));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2794));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7517));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2796));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 824, DateTimeKind.Utc).AddTicks(4060));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 761, DateTimeKind.Utc).AddTicks(2723));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 824, DateTimeKind.Utc).AddTicks(4065));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 761, DateTimeKind.Utc).AddTicks(2729));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 824, DateTimeKind.Utc).AddTicks(4067));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 761, DateTimeKind.Utc).AddTicks(2731));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7559));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2839));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7562));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2842));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 35, 46, 247, DateTimeKind.Utc).AddTicks(7565));
+                value: new DateTime(2026, 1, 10, 9, 37, 51, 171, DateTimeKind.Utc).AddTicks(2845));
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 35, 46, 361, DateTimeKind.Utc).AddTicks(7805), "$2a$11$fSK2OdDWqfDr53URNSpDiO9g7cu5qfZUkgoAuk570RjOJ3EheV2Bm" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 37, 51, 283, DateTimeKind.Utc).AddTicks(8617), "$2a$11$1yXq4QkAQ.t4XnatZ7Z9n.C8vncYJXBa89fXue8c../TKnQj2dmDa" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 35, 46, 475, DateTimeKind.Utc).AddTicks(4362), "$2a$11$FVsTgQ3vDr/tnJOiuz2i/e7s4ho7lipiD0zHOMZ70JD.9kEPKl74C" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 37, 51, 407, DateTimeKind.Utc).AddTicks(4891), "$2a$11$6fCdfpro0zU1XHtl.wKeZeFtVnLZ9QS5ULsmvI6odTkk9CWDLV6Wu" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 35, 46, 593, DateTimeKind.Utc).AddTicks(2746), "$2a$11$E0jtvtkWy4JkV1nFV5HSCeHQXA9Y2rYNUV325zHHSatTBly17Rwz6" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 37, 51, 525, DateTimeKind.Utc).AddTicks(1928), "$2a$11$LLYBIWhvraxT50Dsmb1VAO1DvyFb/i.12VI2PMXXImJ8Cqc07JhfK" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 35, 46, 711, DateTimeKind.Utc).AddTicks(2173), "$2a$11$YWVhq1yeT7Mwwjc1MOtM1eEpqEWFF7OostbVlbWz.9zOlbeGx/CLS" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 37, 51, 643, DateTimeKind.Utc).AddTicks(7818), "$2a$11$IIVmDyRDGU4woC9ttaezbOshF3pcZGuLn4tybvhAuzX.2SpP1Mn/u" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 35, 46, 822, DateTimeKind.Utc).AddTicks(1347), "$2a$11$ZYhBQ5TSb1dv.wfJLdRExOE6n/oQlfPM9YtaehGSCCJXByAOTUH7K" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 37, 51, 759, DateTimeKind.Utc).AddTicks(931), "$2a$11$aH6G4AQRB4kiZV0x9RjeG.fCUS3Kxlp3Xsfn6REE.kolKcOXfZy7y" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvoiceErrorDetails_InvoiceID",
@@ -187,98 +187,98 @@ namespace EIMS.Infrastructure.Migrations
                 keyColumn: "CategoryID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8749));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2657));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8755));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2738));
 
             migrationBuilder.UpdateData(
                 table: "Categories",
                 keyColumn: "CategoryID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8758));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2741));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 16, 34, 535, DateTimeKind.Utc).AddTicks(9520));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 911, DateTimeKind.Utc).AddTicks(7817));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 16, 34, 535, DateTimeKind.Utc).AddTicks(9524));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 911, DateTimeKind.Utc).AddTicks(7820));
 
             migrationBuilder.UpdateData(
                 table: "EmailTemplate",
                 keyColumn: "EmailTemplateID",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2026, 1, 9, 20, 16, 34, 535, DateTimeKind.Utc).AddTicks(9526));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 911, DateTimeKind.Utc).AddTicks(7822));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 1,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8785));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2777));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 2,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8788));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2780));
 
             migrationBuilder.UpdateData(
                 table: "Products",
                 keyColumn: "ProductID",
                 keyValue: 3,
                 column: "CreatedDate",
-                value: new DateTime(2026, 1, 9, 20, 16, 33, 975, DateTimeKind.Utc).AddTicks(8790));
+                value: new DateTime(2026, 1, 10, 9, 17, 38, 351, DateTimeKind.Utc).AddTicks(2782));
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 16, 34, 93, DateTimeKind.Utc).AddTicks(183), "$2a$11$jjVjCbg/78TbIOXxdnfDpO1CpZijPuNR05Hjlt41yJMCUBN9xjiQS" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 17, 38, 464, DateTimeKind.Utc).AddTicks(135), "$2a$11$OW3YJ3d4NCnWtyeisUriT.NDL1z4QzzbpzpK0mh24X6r/omh471VC" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 16, 34, 204, DateTimeKind.Utc).AddTicks(1808), "$2a$11$/N4icTjbl7aHC70/Luqu2urLDvqb.tzrtT7z6CM7gvOnAGTtyPImq" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 17, 38, 575, DateTimeKind.Utc).AddTicks(4469), "$2a$11$iUnZ9JWpqUctHPrlYY30vuJwWXwxU4u0b8vDBmPqcmS2XwR.tYOl2" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 16, 34, 313, DateTimeKind.Utc).AddTicks(3092), "$2a$11$H5ynqrmdt78u2n6q.nMh8uXnYeJfYkdpAZrTNGx2XKMY4HGxYS9di" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 17, 38, 687, DateTimeKind.Utc).AddTicks(7047), "$2a$11$vPXDj6z0BaYkwXJJ7T9npuUFXXQ0XVh57/KASt4zyHWS0aI6UcFOK" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 16, 34, 424, DateTimeKind.Utc).AddTicks(5422), "$2a$11$Z98n67qv6UPny9cs8s.UcO/1Jae8xudXlZN90XmLFWrwKnHeWIVgm" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 17, 38, 799, DateTimeKind.Utc).AddTicks(1042), "$2a$11$9vWQ5WkLATn5DXTYb74H.u1PI1UFnmc4FaybkOy4L93hGOi/CNUsu" });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "UserID",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "PasswordHash" },
-                values: new object[] { new DateTime(2026, 1, 9, 20, 16, 34, 534, DateTimeKind.Utc).AddTicks(1852), "$2a$11$qDD7rnQ28GZtALvO7fEDUu0nkIUSrzeWwFNgytgrhjNxKkLJ5P5KC" });
+                values: new object[] { new DateTime(2026, 1, 10, 9, 17, 38, 910, DateTimeKind.Utc).AddTicks(1910), "$2a$11$n3cc6PlUyoqb6evDjDSRo.D.CvYHgL7S2hY1FPYw0LI4o51TWyIQ2" });
         }
     }
 }
