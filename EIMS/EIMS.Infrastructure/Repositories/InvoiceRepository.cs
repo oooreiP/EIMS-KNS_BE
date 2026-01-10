@@ -126,6 +126,7 @@ namespace EIMS.Infrastructure.Repositories
         {
             var now = DateTime.UtcNow;
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var startOfLastMonth = startOfMonth.AddMonths(-1);
             var sixMonthsAgo = now.AddMonths(-6);
 
             // 1. Base Query (NoTracking for speed)
@@ -152,7 +153,9 @@ namespace EIMS.Infrastructure.Repositories
                     Month_Subtotal = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.SubtotalAmount),
                     Month_VAT = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.VATAmount),
                     Month_Paid = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.PaidAmount),
-
+                    //Last Month
+                    LastMonth_Total = g.Where(i => i.IssuedDate >= startOfLastMonth && i.IssuedDate < startOfMonth)
+                               .Sum(i => i.TotalAmount),
                     // --- Counts ---
                     Count_Total = g.Count(),
                     Count_Paid = g.Count(i => i.PaymentStatusID == 3),
@@ -197,7 +200,23 @@ namespace EIMS.Infrastructure.Repositories
                     NewUsersThisMonth = g.Count(u => u.CreatedAt >= startOfMonth)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
-
+            var recentInvoices = await invoices
+                    .Include(i => i.Customer)
+                    .Include(i => i.InvoiceStatus)
+                    .Include(i => i.PaymentStatus)
+                    .OrderByDescending(i => i.CreatedAt)
+                    .Take(7) // Top 7 most recent
+                    .Select(i => new RecentInvoiceDto
+                    {
+                        InvoiceId = i.InvoiceID,
+                        InvoiceNumber = i.InvoiceNumber,
+                        CustomerName = i.Customer.CustomerName,
+                        CreatedAt = i.CreatedAt,
+                        Amount = i.TotalAmount,
+                        StatusName = i.InvoiceStatus.StatusName,
+                        PaymentStatus = i.PaymentStatus.StatusName
+                    })
+                .ToListAsync(cancellationToken);
             // 6. Assemble Result
             var result = new AdminDashboardDto
             {
@@ -206,7 +225,8 @@ namespace EIMS.Infrastructure.Repositories
                 InvoiceCounts = new InvoiceCountDto(),
                 UserStats = userStats ?? new UserStatsDto(),
                 RevenueTrend = trend,
-                TopCustomers = topCustomers
+                TopCustomers = topCustomers,
+                RecentInvoices = recentInvoices
             };
 
             if (stats != null)
@@ -230,6 +250,15 @@ namespace EIMS.Infrastructure.Repositories
                 result.InvoiceCounts.Paid = stats.Count_Paid;
                 result.InvoiceCounts.Unpaid = stats.Count_Unpaid;
                 result.InvoiceCounts.Overdue = stats.Count_Overdue;
+                // --- Calculate Growth Percentage ---
+                if (stats.LastMonth_Total > 0)
+                {
+                    result.RevenueGrowthPercentage = (double)((stats.Month_Total - stats.LastMonth_Total) / stats.LastMonth_Total) * 100;
+                }
+                else if (stats.Month_Total > 0)
+                {
+                    result.RevenueGrowthPercentage = 100;
+                }
             }
 
             // Format Month Names for the Chart

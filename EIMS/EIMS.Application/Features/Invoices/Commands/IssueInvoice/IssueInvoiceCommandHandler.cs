@@ -19,13 +19,15 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
         private readonly IInvoiceXMLService _xmlService;
         private readonly IEmailService _emailService;
         private readonly IMediator _mediator;
+        private readonly ILookupCodeGenerator _codeGenerator;
 
-        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator)
+        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator, ILookupCodeGenerator codeGenerator)
         {
             _uow = uow;
             _xmlService = xmlService;
             _emailService = emailService;
             _mediator = mediator;
+            _codeGenerator = codeGenerator;
         }
 
         public async Task<Result> Handle(IssueInvoiceCommand request, CancellationToken cancellationToken)
@@ -40,8 +42,8 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                .Include(x => x.Company)
                .OrderByDescending(x => x.InvoiceID)
                .FirstOrDefaultAsync(x => x.InvoiceID == invoice.OriginalInvoiceID);
-                if(original.InvoiceType == 3) original.InvoiceStatusID = 5;
-                else if(original.InvoiceType == 2) original.InvoiceStatusID = 4;
+                if (original.InvoiceType == 3) original.InvoiceStatusID = 5;
+                else if (original.InvoiceType == 2) original.InvoiceStatusID = 4;
             }
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
@@ -51,13 +53,27 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
 
             if (!hasMccqt)
                 return Result.Fail("Hóa đơn chưa được cấp Mã CQT.");
-            if (invoice.InvoiceStatusID != 2) 
+            if (invoice.InvoiceStatusID != 2)
             {
                 invoice.InvoiceStatusID = 2;
                 invoice.IssuedDate = DateTime.UtcNow;
                 invoice.IssuerID = request.IssuerId;
                 if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
-                await _uow.InvoicesRepository.UpdateAsync(invoice);            
+                if (string.IsNullOrEmpty(invoice.LookupCode))
+                {
+                    // Sinh mã tra cứu. Lặp lại nếu trùng (dù tỉ lệ trùng rất thấp)
+                    bool isUnique = false;
+                    string code = "";
+                    while (!isUnique)
+                    {
+                        code = _codeGenerator.Generate(10); // Ví dụ: K7M9X2P3H4
+                        bool exists = await _uow.InvoicesRepository.GetAllQueryable()
+                                            .AnyAsync(x => x.LookupCode == code, cancellationToken);
+                        if (!exists) isUnique = true;
+                    }
+                    invoice.LookupCode = code;
+                }
+                await _uow.InvoicesRepository.UpdateAsync(invoice);
             }
             var history = new InvoiceHistory
             {
@@ -77,8 +93,8 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                     UserId = request.IssuerId,
                     Amount = request.PaymentAmount.Value,
                     PaymentDate = DateTime.UtcNow,
-                    PaymentMethod = request.PaymentMethod ?? "Cash", 
-                    TransactionCode = $"AUTO-{invoice.InvoiceNumber}", 
+                    PaymentMethod = request.PaymentMethod ?? "Cash",
+                    TransactionCode = $"AUTO-{invoice.InvoiceNumber}",
                     Note = request.Note ?? "Thanh toán ngay khi phát hành"
                 };
 

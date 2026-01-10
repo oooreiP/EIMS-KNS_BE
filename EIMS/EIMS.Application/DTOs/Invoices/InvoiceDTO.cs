@@ -15,6 +15,7 @@ namespace EIMS.Application.DTOs.Invoices
         public int? IssuerID { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }
+        public long? OriginalInvoiceNumber { get; set; }
         public string? PaymentMethod { get; set; }
         public DateTime? SignDate { get; set; }
         public DateTime? IssuedDate { get; set; }
@@ -41,8 +42,8 @@ namespace EIMS.Application.DTOs.Invoices
         public string? TaxCode { get; set; }
         public DateTime? OriginalInvoiceSignDate { get; set; }
         public string? OriginalInvoiceSymbol { get; set; }
-        public string TaxStatusCode { get; set; } 
-        public string TaxStatusDescription { get; set; } 
-        public string TaxStatusColor { get; set; } 
+        public string TaxStatusCode { get; set; }
+        public string TaxStatusDescription { get; set; }
+        public string TaxStatusColor { get; set; }
     }
 }

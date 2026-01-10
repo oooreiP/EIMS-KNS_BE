@@ -73,6 +73,17 @@ namespace EIMS.Application.Common.Mapping
                         .Select(l => l.TaxApiStatusID) 
                         .FirstOrDefault() 
                     )))
+                    .ForMember(dest => dest.OriginalInvoiceID, opt => opt.MapFrom(src => 
+    // Case 1: No Original Invoice linked -> Return NULL
+    src.OriginalInvoiceID == null ? null :
+    
+    // Case 2: Has Original Invoice, but it hasn't been numbered yet -> Return 0
+    (src.OriginalInvoice != null && src.OriginalInvoice.InvoiceNumber == null ? 0 : 
+    
+    // Case 3: Has Original Invoice and it is numbered -> Return the ID
+    src.OriginalInvoiceID)))
+                    .ForMember(dest => dest.OriginalInvoiceNumber, opt => opt.MapFrom(src => 
+        src.OriginalInvoice != null ? src.OriginalInvoice.InvoiceNumber : null))
                         .ReverseMap();
                          CreateMap<CreateSerialCommand, Serial>();
             CreateMap<CreateSerialRequest, CreateSerialCommand>();

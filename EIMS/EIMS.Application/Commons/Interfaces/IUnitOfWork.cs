@@ -22,7 +22,6 @@ namespace EIMS.Application.Commons.Interfaces
         ITemplateFrameRepository TemplateFrameRepository { get; }
         ICompanyRepository CompanyRepository { get; }
         IInvoicePaymentRepository InvoicePaymentRepository { get; } 
-
         IBaseRepository<InvoiceHistory> InvoiceHistoryRepository { get; }
         IBaseRepository<SystemActivityLog> SystemActivityLogRepository { get; }
         IBaseRepository<TaxMessageCode> TaxMessageCodeRepository { get; }
@@ -34,6 +33,7 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<NotificationType> NotificationTypeRepository { get; }
         IBaseRepository<InvoiceErrorNotification> ErrorNotificationRepository { get; }
         IBaseRepository<InvoiceErrorDetail> InvoiceErrorDetailRepository { get; }
+        IBaseRepository<InvoiceLookupLog> InvoiceLookupLogRepository {get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();

@@ -8,6 +8,7 @@ using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Xml.Serialization;
 
 namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
@@ -17,16 +18,19 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
         private readonly IMapper _mapper;
+        private readonly ILogger<UpdateInvoiceCommandHandler> _logger;
 
-        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper)
+        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper, ILogger<UpdateInvoiceCommandHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _fileStorageService = fileStorageService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<Result<int>> Handle(UpdateInvoiceCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("--- START UpdateInvoice: ID {InvoiceId} | Items: {ItemCount} ---", request.InvoiceId, request.Items?.Count ?? 0);
             if (request.Items == null || !request.Items.Any())
                 return Result.Fail(new Error("Invoice must have at least one item"));
 
@@ -44,8 +48,12 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 if (invoice == null)
                     return Result.Fail(new Error($"Invoice {request.InvoiceId} not found"));
 
-                if (invoice.InvoiceStatusID != 1)
-                    return Result.Fail(new Error($"Only Draft invoices can be updated."));
+                if (invoice.InvoiceStatusID != 1 && invoice.InvoiceStatusID != 16)
+                    return Result.Fail(new Error($"Only Draft and rejected invoices can be updated."));
+                string rawPayment = request.PaymentMethod;
+                invoice.PaymentMethod = (string.IsNullOrEmpty(rawPayment) || rawPayment.Trim().ToLower() == "string")
+                    ? "Tiền mặt"
+                    : rawPayment;
                 if (invoice.CompanyId == null)
                 {
                     invoice.CompanyId = 1;
@@ -56,37 +64,58 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     return Result.Fail("Cannot update an invoice that already has recorded payments. Delete the payments first.");
                 }
                 invoice.Notes = request.Notes;
-                invoice.PaymentMethod = request.PaymentMethod;
                 // 2. Update Customer Data (Safety Check logic)
                 if (request.CustomerID.HasValue && request.CustomerID.Value > 0 && invoice.CustomerID != request.CustomerID.Value)
                 {
                     // 1. Link to the new User Account
-                    invoice.CustomerID = request.CustomerID.Value;
 
                     // 2. Fetch that customer to get their default details
                     var newCustomer = await _unitOfWork.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
                     if (newCustomer != null)
                     {
+                        invoice.CustomerID = request.CustomerID.Value;
                         // 3. Reset the snapshot to the new customer's defaults
                         invoice.InvoiceCustomerName = newCustomer.CustomerName;
                         invoice.InvoiceCustomerAddress = newCustomer.Address;
                         invoice.InvoiceCustomerTaxCode = newCustomer.TaxCode;
                     }
+                    return Result.Fail(new Error($"Customer with id {request.CustomerID} not found"));
                 }
 
                 // Case B: User Manually Edited Name/Address/TaxCode (Overrides everything)
                 // We update the SNAPSHOT fields on the invoice, but we keep the CustomerID the same.
                 // This ensures the Invoice stays in the User's "My Invoices" list, even if the address is custom.
-                
-                if (!string.IsNullOrEmpty(request.CustomerName)) 
-                    invoice.InvoiceCustomerName = request.CustomerName;
-                
-                if (!string.IsNullOrEmpty(request.Address)) 
-                    invoice.InvoiceCustomerAddress = request.Address;
-                
-                if (!string.IsNullOrEmpty(request.TaxCode)) 
-                    invoice.InvoiceCustomerTaxCode = request.TaxCode;
 
+                if (!string.IsNullOrEmpty(request.CustomerName))
+                    invoice.InvoiceCustomerName = request.CustomerName;
+
+                if (!string.IsNullOrEmpty(request.Address))
+                    invoice.InvoiceCustomerAddress = request.Address;
+
+                if (!string.IsNullOrEmpty(request.TaxCode))
+                    invoice.InvoiceCustomerTaxCode = request.TaxCode;
+                int? issuerIdToUse = null;
+
+                if (request.SignedBy.HasValue && request.SignedBy.Value > 0)
+                {
+                    issuerIdToUse = request.SignedBy.Value;
+                }
+                else
+                {
+                    if (request.AuthenticatedUserId > 0)
+                    {
+                        issuerIdToUse = request.AuthenticatedUserId;
+                        _logger.LogInformation("Input was 0/Null. Auto-signing Invoice {Id} with Current User {UserId}", invoice.InvoiceID, issuerIdToUse);
+                    }
+                }
+                if (issuerIdToUse.HasValue && issuerIdToUse.Value > 0)
+                {
+                    invoice.IssuerID = issuerIdToUse.Value;
+                }
+                else
+                {
+                    invoice.IssuerID = null;
+                }
                 // Fallback: If snapshot fields are still null (e.g. old invoices), fill them from the current relation
                 if (string.IsNullOrEmpty(invoice.InvoiceCustomerName)) invoice.InvoiceCustomerName = invoice.Customer?.CustomerName;
                 if (string.IsNullOrEmpty(invoice.InvoiceCustomerAddress)) invoice.InvoiceCustomerAddress = invoice.Customer?.Address;
@@ -113,6 +142,21 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 foreach (var itemReq in request.Items)
                 {
+                    if (itemReq.Quantity <= 0)
+                    {
+                        _logger.LogWarning("Invalid Quantity {Qty} for Product {ProdId}", itemReq.Quantity, itemReq.ProductId);
+                        return Result.Fail(new Error($"Quantity for product {itemReq.ProductId} must be greater than 0"));
+                    }
+                    if (itemReq.Amount <= 0)
+                    {
+                        _logger.LogWarning("Invalid Amount {Qty} for Product {ProdId}", itemReq.Amount, itemReq.ProductId);
+                        return Result.Fail(new Error($"Amount for product {itemReq.ProductId} must be greater than 0"));
+                    }
+                    if (itemReq.VATAmount < 0)
+                    {
+                        _logger.LogWarning("Invalid VATAmount {Qty} for Product {ProdId}", itemReq.VATAmount, itemReq.ProductId);
+                        return Result.Fail(new Error($"VATAmount for product {itemReq.ProductId} must be greater than 0"));
+                    }
                     if (!productDict.ContainsKey(itemReq.ProductId)) continue;
 
                     var productInfo = productDict[itemReq.ProductId];
@@ -166,7 +210,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 invoice.RemainingAmount = totalAmount;
 
                 if (request.MinRows.HasValue) invoice.MinRows = request.MinRows.Value;
-                if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
+                // if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
 
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
@@ -202,18 +246,20 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                     InvoiceID = invoice.InvoiceID,
                     ActionType = "Updated",
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.SignedBy,
+                    PerformedBy = invoice.IssuerID,
                 };
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
 
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("SUCCESS: Invoice {InvoiceId} updated. Total Amount: {Total}", invoice.InvoiceID, totalAmount);
 
                 return Result.Ok(invoice.InvoiceID);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "ERROR: Failed to update Invoice {InvoiceId}", request.InvoiceId);
                 return Result.Fail(new Error($"Failed to update invoice: {ex.Message}").CausedBy(ex));
             }
             finally

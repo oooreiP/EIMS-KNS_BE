@@ -78,6 +78,7 @@ namespace EIMS.Domain.Entities
         public string InvoiceCustomerName { get; set; }
         public string InvoiceCustomerAddress { get; set; }
         public string InvoiceCustomerTaxCode { get; set; }
+        public string? LookupCode { get; set; }
 
         // --- Navigation Properties ---
         [JsonIgnore]
