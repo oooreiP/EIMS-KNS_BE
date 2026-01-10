@@ -32,6 +32,8 @@ namespace EIMS.Application.Commons.Interfaces
         IBaseRepository<Notification> NotificationRepository { get; }
         IBaseRepository<NotificationStatus> NotificationStatusRepository { get; }
         IBaseRepository<NotificationType> NotificationTypeRepository { get; }
+        IBaseRepository<InvoiceErrorNotification> ErrorNotificationRepository { get; }
+        IBaseRepository<InvoiceErrorDetail> InvoiceErrorDetailRepository { get; }
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();

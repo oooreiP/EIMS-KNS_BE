@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
+using EIMS.Application.DTOs.XMLModels.TB04;
 using EIMS.Domain.Entities;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
@@ -212,6 +213,88 @@ namespace EIMS.Infrastructure.Service
                 }
                 return uploadResult.Value.Url;
             }
+        }
+        public async Task<(XmlDocument XmlDoc, string MessageId)> Generate04SSXmlDocumentAsync(InvoiceErrorNotification notification)
+        {
+            // Cấu hình cứng (Hard-code) hoặc lấy từ Config
+            string companyTaxCode = "0311357436";
+            string mnGui = "K" + companyTaxCode; // Thường T-VAN sẽ thêm prefix K
+            var messageCode = new TaxMessageCode { MessageCode = "300", FlowType = 1 };
+            var ttChung = InvoiceXmlMapper.GenerateTTChung(messageCode, 1, mnGui);
+            var messageId = ttChung.MaThongDiep;
+            var listHDon = new List<HDonTB04>();
+            int stt = 1;
+
+            foreach (var detail in notification.Details)
+            {
+                // Logic tách Ký hiệu: VD "1C24TAA" -> KHMS="1", KHH="C24TAA"
+                string khmsHDon = "1";
+                string khHDon = detail.InvoiceSerial;
+                if (!string.IsNullOrEmpty(detail.InvoiceSerial) && detail.InvoiceSerial.Length > 1)
+                {
+                    khmsHDon = detail.InvoiceSerial.Substring(0, 1);
+                    khHDon = detail.InvoiceSerial.Substring(1);
+                }
+
+                // Logic map loại sai sót: Hủy(1) -> 1, Còn lại (Điều chỉnh/Thay thế/Giải trình) -> 2
+                int tctBao = (detail.ErrorType == 1) ? 1 : 2;
+
+                listHDon.Add(new HDonTB04
+                {
+                    STT = stt++,
+                    MCCQT = detail.Invoice.TaxAuthorityCode,
+                    KHMSHDon = khmsHDon,
+                    KHHDon = khHDon,
+                    SHDon = detail.InvoiceNumber, 
+                    Ngay = detail.InvoiceDate.ToString("yyyy-MM-dd"),
+                    LADHDDT = 1, // 1: Có mã theo NĐ123
+                    TCTBao = tctBao,
+                    LDo = detail.Reason
+                });
+            }
+            var tBao = new TBao04
+            {
+                PBan = "2.1.0",
+                MSo = "04/SS-HĐĐT",
+                Ten = "Thông báo hóa đơn điện tử có sai sót",
+                Loai = 1,
+                MCQT = notification.TaxAuthorityCode, // "10925" lấy từ DB
+                TCQT = "Cục Thuế TP. Hồ Chí Minh",    
+                So = await GenerateNextNotificationNumberAsync(), 
+                NTBCCQT = notification.ReportDate.ToString("yyyy-MM-dd"),
+                DLTBao = new DLTBao
+                {
+                    MST = companyTaxCode,
+                    MDVQHNSach = "",
+                    DDanh = notification.Place, 
+                    NTBao = notification.ReportDate.ToString("yyyy-MM-dd"),
+
+                    DSHDon = new DSHDonWrapper
+                    {
+                        HDon = listHDon
+                    }
+                }
+            };
+            var tDiep = new TDiepTB04
+            {
+                TTChung = ttChung,
+                DLieu = new DLieuTB04 { TBao = tBao }
+            };
+            var doc = new XmlDocument();
+            using (var stream = new MemoryStream())
+            {
+                var serializer = new XmlSerializer(typeof(TDiepTB04));
+                using var writer = new StreamWriter(stream, new UTF8Encoding(false));
+
+                var ns = new XmlSerializerNamespaces();
+                ns.Add("", "");
+
+                serializer.Serialize(writer, tDiep, ns);
+                stream.Position = 0;
+                doc.Load(stream);
+            }
+
+            return (doc, messageId);
         }
     }
 }

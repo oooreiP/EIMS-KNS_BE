@@ -92,38 +92,38 @@ namespace EIMS.Infrastructure.Service
             int currentYear = DateTime.Now.Year;
             string prefix = $"TB/{currentYear}/";
             var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
-            //var error = XmlHelpers.Validate(xmlPayload);
-            //if (error.Any())
-            //{
-            //    var mlTDiepLoi = "204";
-            //    var mtDiepPhanHoi = XmlHelpers.GenerateMTDiep("K", "0311357436");
-            //    var errorResponseXml = $@"
-            //    <TDiep>
-            //        <TTChung>
-            //            <PBan>2.1.0</PBan>
-            //           <MNGui>TCT</MNGui>
-            //            <MNNhan>K0311357436</MNNhan>
-            //            <MLTDiep>{mlTDiepLoi}</MLTDiep>
-            //            <MTDiep>{mtDiepPhanHoi}</MTDiep>
-            //            <MTDTChieu>{referenceId}</MTDTChieu>
-            //        </TTChung>
-            //        <DLieu>
-            //            <TBao>
-            //                <MTDiep>{referenceId}</MTDiep>
-            //                <NNhan>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}</NNhan>
-            //                <TTTNhan>1</TTTNhan> {error} </TBao>
-            //        </DLieu>
-            //    </TDiep>";
+            var error = XmlHelpers.Validate(xmlPayload);
+            if (error.Any())
+            {
+                var mlTDiepLoi = "204";
+                var mtDiepPhanHoi = XmlHelpers.GenerateMTDiep("K", "0311357436");
+                var errorResponseXml = $@"
+                <TDiep>
+                    <TTChung>
+                        <PBan>2.1.0</PBan>
+                       <MNGui>TCT</MNGui>
+                        <MNNhan>K0311357436</MNNhan>
+                        <MLTDiep>{mlTDiepLoi}</MLTDiep>
+                        <MTDiep>{mtDiepPhanHoi}</MTDiep>
+                        <MTDTChieu>{referenceId}</MTDTChieu>
+                    </TTChung>
+                    <DLieu>
+                        <TBao>
+                            <MTDiep>{referenceId}</MTDiep>
+                            <NNhan>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}</NNhan>
+                            <TTTNhan>1</TTTNhan> {error} </TBao>
+                    </DLieu>
+                </TDiep>";
 
-            //    return Task.FromResult(new TaxApiResponse
-            //    {
-            //        IsSuccess = false,
-            //        MTDiep = mtDiepPhanHoi,
-            //        MTDThamChieu = referenceId,
-            //        MLTDiep = mlTDiepLoi,
-            //        RawResponse = errorResponseXml
-            //    });
-            //}
+                return Task.FromResult(new TaxApiResponse
+                {
+                    IsSuccess = false,
+                    MTDiep = mtDiepPhanHoi,
+                    MTDThamChieu = referenceId,
+                    MLTDiep = mlTDiepLoi,
+                    RawResponse = errorResponseXml
+                });
+            }
             var mlTDiepThanhCong = "202";
             var mtDiepPhanHoiThanhCong = XmlHelpers.GenerateMTDiep("TCT");
             var uniquePart = Guid.NewGuid().ToString("N"); // 32 ký tự

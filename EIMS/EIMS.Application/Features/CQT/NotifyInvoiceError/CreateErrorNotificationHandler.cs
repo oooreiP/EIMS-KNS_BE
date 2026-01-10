@@ -1,0 +1,145 @@
+﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Domain.Entities;
+using FluentResults;
+using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EIMS.Application.Features.CQT.NotifyInvoiceError
+{
+    public class CreateErrorNotificationHandler : IRequestHandler<CreateErrorNotificationCommand, Result<int>>
+    {
+        private readonly IUnitOfWork _uow;
+        private readonly IInvoiceXMLService _xmlService;
+        private readonly IFileStorageService _fileService;
+
+        public CreateErrorNotificationHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IFileStorageService fileService)
+        {
+            _uow = uow;
+            _xmlService = xmlService;
+            _fileService = fileService;
+        }
+
+        public async Task<Result<int>> Handle(CreateErrorNotificationCommand request, CancellationToken cancellationToken)
+        {
+            
+            var notification = new InvoiceErrorNotification
+            {
+                Status = 1, // Draft
+                CreatedAt = DateTime.UtcNow,
+                TaxAuthorityCode = request.TaxAuthorityCode,
+                Place = request.Place,
+                Details = new List<InvoiceErrorDetail>()
+            };
+
+            foreach (var item in request.ErrorItems)
+            {
+                var invoice = await _uow.InvoicesRepository.GetByIdAsync(item.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
+
+                if (invoice == null)
+                    return Result.Fail("Không tìm thấy hóa đơn.");
+                var validationResult = ValidateInvoiceStatus(invoice, item.ErrorType);
+                if (validationResult.IsFailed)
+                {
+                    return validationResult;
+                }
+                if (string.IsNullOrEmpty(invoice.TaxAuthorityCode))
+                    return Result.Fail("Hóa đơn chưa được cấp mã CQT. Không thể gửi thông báo sai sót (Mẫu 04/SS).");
+                var template = invoice.Template;
+                var serial = template.Serial;
+                var prefix = serial.Prefix;
+                string khmsHDon = prefix.PrefixID.ToString();
+                string khHDon = khmsHDon +
+                    $"{serial.SerialStatus.Symbol}" +
+                    $"{serial.Year}" +
+                    $"{serial.InvoiceType.Symbol}" +
+                    $"{serial.Tail}";
+
+                notification.Details.Add(new InvoiceErrorDetail
+                {
+                    InvoiceID = invoice.InvoiceID,
+                    Invoice = invoice,
+                    InvoiceSerial = khHDon,
+                    InvoiceNumber = invoice.InvoiceNumber.ToString(),
+                    InvoiceDate = invoice.IssuedDate ?? DateTime.UtcNow,
+                    ErrorType = item.ErrorType,
+                    Reason = item.Reason,
+                    TaxCode = invoice.InvoiceCustomerTaxCode ?? invoice.Customer.TaxCode
+                });
+            }
+
+            // 2. Generate XML Content (Chuẩn thông điệp 300)
+            // Hàm này bạn cần implement trong IInvoiceXMLService để tạo XML theo mẫu 04/SS
+            var result = await _xmlService.Generate04SSXmlDocumentAsync(notification);
+            var xmlDoc = result.XmlDoc;
+            string fileName = $"04SS_{Guid.NewGuid()}.xml";
+            string cloudUrl = await _xmlService.UploadXmlAsync(xmlDoc, fileName);
+
+            // 4. Save to DB
+            notification.XMLPath = cloudUrl;
+            notification.MTDiep = result.MessageId;
+            await _uow.ErrorNotificationRepository.CreateAsync(notification);
+            await _uow.SaveChanges();
+
+            return Result.Ok(notification.InvoiceErrorNotificationID);
+        }
+        private Result ValidateInvoiceStatus(Invoice invoice, int errorType)
+        {
+            // CHECK 1: Kiểm tra Mã CQT (Điều kiện tiên quyết)
+            if (string.IsNullOrEmpty(invoice.TaxAuthorityCode))
+            {
+                return Result.Fail($"Hóa đơn hiện tại chưa được cấp Mã CQT (Trạng thái: {invoice.InvoiceStatusID}). Bạn không thể gửi thông báo sai sót. Hãy kiểm tra lại quy trình phát hành.");
+            }
+
+            // CHECK 2: Kiểm tra Logic theo từng loại sai sót
+            switch (errorType)
+            {
+                case 1: // Hủy (Cancel)
+                    if (invoice.InvoiceStatusID == 3) // 3 = Cancelled
+                    {
+                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY trước đó. Không thể thực hiện hủy lần nữa.");
+                    }
+                    // Có thể hủy hóa đơn đang điều chỉnh/thay thế dở dang, nhưng thường là hủy hóa đơn Issued (6)
+                    break;
+
+                case 2: // Điều chỉnh (Adjustment)
+                    if (invoice.InvoiceStatusID == 3)
+                    {
+                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Hóa đơn hủy không còn giá trị sử dụng nên KHÔNG THỂ ĐIỀU CHỈNH.");
+                    }
+                    if (invoice.InvoiceStatusID == 11)
+                    {
+                        return Result.Fail("Hóa đơn này đang trong quá trình Thay thế. Không nên thực hiện Điều chỉnh.");
+                    }
+                    // Lưu ý: Có thể điều chỉnh tiếp một hóa đơn đã điều chỉnh (11)
+                    break;
+
+                case 3: // Thay thế (Replacement)
+                    if (invoice.InvoiceStatusID == 3)
+                    {
+                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Vui lòng lập hóa đơn mới hoàn toàn thay vì dùng nghiệp vụ Thay thế.");
+                    }
+                    if (invoice.InvoiceStatusID == 10)
+                    {
+                        return Result.Fail("Hóa đơn này đang được Điều chỉnh. Không nên thực hiện Thay thế.");
+                    }
+                    if (invoice.InvoiceStatusID == 4 || invoice.InvoiceStatusID == 5)
+                    {
+                        return Result.Fail("Hóa đơn này đã được Điều chỉnh/ Thay thế từ trước. Không nên thực hiện Thay thế.");
+                    }
+                    break;
+
+                case 4: // Giải trình (Explanation)
+                        // Giải trình thường được chấp nhận ở mọi trạng thái có Mã CQT
+                    break;
+
+                default:
+                    return Result.Fail($"Loại sai sót không hợp lệ (ErrorType: {errorType}). Chỉ chấp nhận 1, 2, 3, 4.");
+            }
+            return Result.Ok();
+        }
+    }
+}
