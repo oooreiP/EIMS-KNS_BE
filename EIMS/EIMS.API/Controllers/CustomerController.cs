@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Features.Customers.Commands;
 using EIMS.Application.Features.Customers.Queries;
+using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,28 @@ namespace EIMS.API.Controllers
             }
 
             return Ok(new { CustomerID = result.Value });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerCommand command)
+        {
+            if (id != command.CustomerID)
+            {
+                return BadRequest("Mismatched Customer ID in URL and Body.");
+            }
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return NoContent();
+            }
+            if (result.HasError<Error>(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Customer.Update.NotFound"))
+            {
+                return NotFound(result.Errors);
+            }
+
+            return BadRequest(result.Errors);
         }
         /// <summary>
         /// Gets a paginated list of customers with optional search.
