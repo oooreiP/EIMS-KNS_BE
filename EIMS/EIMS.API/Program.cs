@@ -83,6 +83,15 @@ builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()  
+              .AllowAnyHeader(); 
+    });
+});
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -151,7 +160,7 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production");
     options.RoutePrefix = "swagger";
 });
-app.UseCors(corsPolicyName);
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
