@@ -15,6 +15,8 @@ using System.Net;
 using System.Text;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
+using EIMS.API.Extensions;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
@@ -24,11 +26,13 @@ namespace EIMS.API.Controllers
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _env;
-        public InvoiceController(IMediator mediator, IWebHostEnvironment env, IMapper mapper)
+        private readonly IMemoryCache _memoryCache;
+        public InvoiceController(IMediator mediator, IWebHostEnvironment env, IMapper mapper, IMemoryCache memoryCache)
         {
             _mediator = mediator;
             _env = env;
             _mapper = mapper;
+            _memoryCache = memoryCache;
         }
 
         [HttpPost]
@@ -385,26 +389,51 @@ namespace EIMS.API.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
-        [HttpGet("public/lookup/{lookupCode}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> LookupInvoice(string lookupCode)
+        // [HttpGet("public/lookup/{lookupCode}")]
+        // [AllowAnonymous]
+        // public async Task<IActionResult> LookupInvoice(string lookupCode)
+        // {
+        //     string ipAddress = GetClientIpAddress();
+
+        //     var query = new GetInvoiceByLookupCodeQuery
+        //     {
+        //         LookupCode = lookupCode,
+        //         IPAddress = ipAddress,
+        //         UserAgent = Request.Headers["User-Agent"].ToString()
+        //     };
+
+        //     var result = await _mediator.Send(query);
+
+        //     if (result.IsSuccess)
+        //         return Ok(new { success = true, data = result.Value });
+
+        //     return BadRequest(new { success = false, message = result.Errors[0].Message});
+        // }
+        [HttpGet("lookup/{lookupCode}")]
+        public async Task<IActionResult> LookupInvoice(
+    string lookupCode,
+    [FromHeader(Name = "X-Captcha-ID")] string captchaId,
+    [FromHeader(Name = "X-Captcha-Input")] string captchaInput)
         {
-            string ipAddress = GetClientIpAddress();
-
-            var query = new GetInvoiceByLookupCodeQuery
+            // 1. Kiểm tra ID có trong Cache không
+            if (!_memoryCache.TryGetValue(captchaId, out string correctCode))
             {
-                LookupCode = lookupCode,
-                IPAddress = ipAddress,
-                UserAgent = Request.Headers["User-Agent"].ToString()
-            };
+                return BadRequest("Captcha đã hết hạn hoặc không tồn tại. Vui lòng tải lại.");
+            }
 
+            // 2. So sánh mã nhập (Không phân biệt hoa thường)
+            if (!string.Equals(correctCode, captchaInput, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Mã Captcha không đúng.");
+            }
+
+            // 3. Xóa Captcha sau khi dùng xong (để không dùng lại được)
+            _memoryCache.Remove(captchaId);
+
+            // 4. Logic tra cứu cũ...
+            var query = new GetInvoiceByLookupCodeQuery { LookupCode = lookupCode };
             var result = await _mediator.Send(query);
-
-            if (result.IsSuccess)
-                return Ok(new { success = true, data = result.Value });
-
-            return BadRequest(new { success = false, message = result.Errors[0].Message});
+            return result.ToActionResult();
         }
-        
     }
 }
