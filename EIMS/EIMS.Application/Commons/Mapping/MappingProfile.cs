@@ -55,7 +55,7 @@ namespace EIMS.Application.Common.Mapping
                 : null))
     .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src =>
         src.InvoiceCustomerAddress ?? (src.Customer != null ? src.Customer.Address : "")))
-
+    .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => (src.Customer != null ? src.Customer.ContactEmail : "")))
                             .ForMember(dest => dest.TaxCode, opt => opt.MapFrom(src =>
                                 src.InvoiceCustomerTaxCode ?? (src.Customer != null ? src.Customer.TaxCode : "")))
                                 .ForMember(dest => dest.TaxStatusCode, opt => opt.MapFrom(src => 
