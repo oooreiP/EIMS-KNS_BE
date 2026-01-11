@@ -17,11 +17,12 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
         private readonly IEmailService _emailService;
+        private readonly IPdfService _pdfService;
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly INotificationService _notiService;
         private readonly IMapper _mapper;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -29,6 +30,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             _emailService = emailService;
             _invoiceXMLService = invoiceXMLService;
             _notiService = notiService;
+            _pdfService = pdfService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -169,15 +171,25 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
-                var linkedUsers = await _unitOfWork.UserRepository.GetUsersByCustomerIdAsync(invoice.CustomerID);
-                if (linkedUsers != null && linkedUsers.Any())
+                try
                 {
-                    foreach (var user in linkedUsers)
+                    string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
+                    using (var pdfStream = new MemoryStream(pdfBytes))
                     {
-                        await _notiService.SendToUserAsync(user.UserID, 
-                            $"1 hóa đơn của bạn đã được khởi tạo. Vui lòng kiểm tra.",
-                            typeId: 2);
+                        string fileName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                        var uploadResult = await _fileStorageService.UploadFileAsync(pdfStream, fileName, "invoices");
+
+                        if (uploadResult.IsSuccess)
+                        {
+                            fullInvoice.FilePath = uploadResult.Value.Url;
+                            await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
+                            await _unitOfWork.SaveChanges();
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
                 }
                 await _notiService.SendToRoleAsync("HOD",
                 $"Có hóa đơn đã được khởi tạo. Vui lòng xác nhận.",
