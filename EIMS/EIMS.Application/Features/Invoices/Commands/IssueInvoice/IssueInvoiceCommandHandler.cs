@@ -20,14 +20,16 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
         private readonly IEmailService _emailService;
         private readonly IMediator _mediator;
         private readonly ILookupCodeGenerator _codeGenerator;
+        private readonly IEmailSenderService _emailSender;
 
-        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator, ILookupCodeGenerator codeGenerator)
+        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator, ILookupCodeGenerator codeGenerator, IEmailSenderService emailSender)
         {
             _uow = uow;
             _xmlService = xmlService;
             _emailService = emailService;
             _mediator = mediator;
             _codeGenerator = codeGenerator;
+            _emailSender = emailSender;
         }
 
         public async Task<Result> Handle(IssueInvoiceCommand request, CancellationToken cancellationToken)
@@ -84,7 +86,8 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             };
             await _uow.InvoiceHistoryRepository.CreateAsync(history);
             await _uow.SaveChanges();
-            await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
+            await _emailSender.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
+            // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             if (request.AutoCreatePayment && request.PaymentAmount > 0)
             {
                 var paymentCommand = new CreatePaymentCommand
