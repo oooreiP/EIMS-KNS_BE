@@ -522,8 +522,108 @@ namespace EIMS.Infrastructure.Persistence
                 <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>
                 <ul>{{AttachmentList}}</ul>
             </div>"
-        }
-    );
+        },
+        new EmailTemplate
+        {
+            EmailTemplateID = 4,
+            TemplateCode = "INVOICE_SEND_2",
+            LanguageCode = "vi",
+            Subject = "🔔 [Hóa đơn] #{{InvoiceNumber}} - Thông báo phát hành",
+            Category = "invoice",
+            IsSystemTemplate = true,
+            Name = "Mẫu gửi hóa đơn (Giao diện bảng chi tiết)",
+            IsActive = true,
+            BodyContent = @"<div style='font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#333; line-height:1.6; border: 1px solid #ddd; padding: 20px; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>
+
+            <p style='font-size: 16px;'>{{Message}}</p>
+
+            <div style='background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                <table style='width:100%; border-collapse:collapse;'>
+                    <tr>
+                        <td style='padding:5px 0; font-weight:bold;'>Mã hóa đơn:</td>
+                        <td style='padding:5px 0;'>{{InvoiceNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding:5px 0; font-weight:bold;'>Ngày tạo:</td>
+                        <td style='padding:5px 0;'>{{CreatedAt}}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding:5px 0; font-weight:bold;'>Ngày lập:</td>
+                        <td style='padding:5px 0;'>{{IssuedDate}}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding:5px 0; font-weight:bold;'>Tổng tiền:</td>
+                        <td style='padding:5px 0; color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td>
+                    </tr>
+                </table>
+            </div>
+
+            <p>
+                🧾 <strong>File đính kèm:</strong><br/>
+                Bạn có thể tải xuống qua các liên kết bên dưới:
+            </p>
+
+            <ul>{{AttachmentList}}</ul>
+
+            <p style='margin-top:20px; font-size: 13px; color: #777;'>
+                Trân trọng,<br/><strong>Đội ngũ E-Invoice System</strong>
+            </p>
+        </div>"
+        },
+    new EmailTemplate
+    {
+        EmailTemplateID = 7,
+        TemplateCode = "MINUTES_REPLACE",
+        LanguageCode = "vi",
+        Subject = "📝 [XÁC NHẬN] Biên bản thu hồi hóa đơn #{{InvoiceNumber}}",
+        Category = "minutes",
+        IsSystemTemplate = true,
+        Name = "Mẫu biên bản thu hồi/thay thế",
+        IsActive = true,
+        BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>
+            <p>Do có sự sai sót về thông tin trên hóa đơn số <strong>#{{InvoiceNumber}}</strong> (Ngày lập: {{IssuedDate}}), chúng tôi đã lập biên bản thu hồi/thay thế hóa đơn này.</p>
+            
+            <div style='background:#fff3cd; color:#856404; padding:10px; margin:15px 0;'>
+                <strong>Lý do sai sót:</strong> {{Reason}}
+            </div>
+
+            <p>Kính đề nghị Quý khách xem xét, <strong>ký xác nhận</strong> vào biên bản đính kèm và phản hồi lại email này để chúng tôi tiến hành xuất hóa đơn thay thế mới.</p>
+            
+            <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+            <ul>{{AttachmentList}}</ul>
+            
+            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
+        </div>"
+    },
+
+    // Mẫu 8: Biên bản Điều chỉnh
+    new EmailTemplate
+    {
+        EmailTemplateID = 8,
+        TemplateCode = "MINUTES_ADJUST",
+        LanguageCode = "vi",
+        Subject = "📝 [XÁC NHẬN] Biên bản điều chỉnh hóa đơn #{{InvoiceNumber}}",
+        Category = "minutes",
+        IsSystemTemplate = true,
+        Name = "Mẫu biên bản điều chỉnh",
+        IsActive = true,
+        BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>
+            <p>Chúng tôi gửi đến Quý khách biên bản thỏa thuận điều chỉnh cho hóa đơn số <strong>#{{InvoiceNumber}}</strong>.</p>
+            
+            <div style='background:#e2e3e5; color:#383d41; padding:10px; margin:15px 0;'>
+                <strong>Nội dung điều chỉnh:</strong> {{Reason}}
+            </div>
+
+            <p>Quý khách vui lòng kiểm tra, <strong>ký số (hoặc ký tươi)</strong> vào biên bản đính kèm và gửi lại cho chúng tôi.</p>
+            
+            <ul>{{AttachmentList}}</ul>
+            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
+        </div>"
+    }
+  );
             modelBuilder.Entity<TaxMessageCode>().HasData(
     // ---- Đăng ký ----
     new TaxMessageCode { Id = 1, MessageCode = "100", MessageName = "Thông điệp gửi tờ khai đăng ký/thay đổi thông tin sử dụng hóa đơn điện tử", Category = "Đăng ký", FlowType = 1 },
