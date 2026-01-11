@@ -59,9 +59,6 @@ namespace EIMS.Application.Features.Emails.Commands
                         var invoice = await uow.InvoicesRepository.GetByIdAsync(request.InvoiceId);
                         if (invoice != null)
                         {
-                            invoice.InvoiceStatusID = 3; // Ví dụ trạng thái Sent
-                            await uow.InvoicesRepository.UpdateAsync(invoice);
-
                             // Lưu lịch sử
                             var history = new InvoiceHistory
                             {
