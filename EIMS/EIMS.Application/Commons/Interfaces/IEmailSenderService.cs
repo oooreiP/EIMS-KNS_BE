@@ -15,5 +15,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<Result> SendMailAsync(MailRequest mailRequest);
         Task<Result> SendInvoiceEmailAsync(string recipientEmail, int invoiceId, string message);
         Task<Result> SendStatusUpdateNotificationAsync(int invoiceId, int newStatusId);
+        Task<Result> SendMailAsync(FEMailRequest mailRequest);
+        
     }
 }
