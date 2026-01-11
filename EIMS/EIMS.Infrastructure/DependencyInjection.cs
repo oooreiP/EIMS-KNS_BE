@@ -32,9 +32,10 @@ namespace EIMS.Infrastructure
             services.AddScoped<IDocumentParserService, DocumentParserService>();
             services.AddScoped<IFileStorageService, FileStorageService>();
             services.AddScoped<IExternalCompanyLookupService, VietQrLookupService>();
-            // services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddHttpClient();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddHttpClient<IEmailService, EmailService>();
+            
             // services.AddHttpClient<IEmailSenderService, MailerSendService>();
             services.AddScoped<IQrCodeService, QRCodeService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
