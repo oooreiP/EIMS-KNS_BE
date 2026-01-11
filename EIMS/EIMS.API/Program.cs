@@ -79,6 +79,8 @@ builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileS
 builder.Services.AddMemoryCache();
 // builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
