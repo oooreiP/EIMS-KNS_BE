@@ -199,5 +199,24 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        // GET: api/users/profile
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var result = await _sender.Send(new GetMyProfileQuery());
+
+            if (result.IsSuccess) return Ok(result.Value);
+            return NotFound(result.Errors);
+        }
+
+        // PUT: api/users/profile
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileCommand command)
+        {
+            var result = await _sender.Send(command);
+
+            if (result.IsSuccess) return NoContent();
+            return BadRequest(result.Errors);
+        }
     }
 }
