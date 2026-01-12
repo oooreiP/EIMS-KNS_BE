@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36414.22 d17.14
+VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EIMS.API", "EIMS.API\EIMS.API.csproj", "{4614D636-5B36-496E-9B03-0542C19068E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EIMS.API", "EIMS.API\EIMS.API.csproj", "{4614D636-5B36-496E-9B03-0542C19068E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EIMS.Application", "EIMS.Application\EIMS.Application.csproj", "{563E7B16-9D53-4333-B7D3-CDEF3654EB84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EIMS.Application", "EIMS.Application\EIMS.Application.csproj", "{563E7B16-9D53-4333-B7D3-CDEF3654EB84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EIMS.Infrastructure", "EIMS.Infrastructure\EIMS.Infrastructure.csproj", "{92DE1AE6-62D5-4A3C-A7B9-C7C1167CFD88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EIMS.Infrastructure", "EIMS.Infrastructure\EIMS.Infrastructure.csproj", "{92DE1AE6-62D5-4A3C-A7B9-C7C1167CFD88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EIMS.Domain", "EIMS.Domain\EIMS.Domain.csproj", "{B15E7D83-F5A0-44F1-8FA6-F6E2B8EA3CFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EIMS.Domain", "EIMS.Domain\EIMS.Domain.csproj", "{B15E7D83-F5A0-44F1-8FA6-F6E2B8EA3CFB}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{A4F371A6-D738-4E10-B4F1-8FEE7D79E466}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{B15E7D83-F5A0-44F1-8FA6-F6E2B8EA3CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B15E7D83-F5A0-44F1-8FA6-F6E2B8EA3CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B15E7D83-F5A0-44F1-8FA6-F6E2B8EA3CFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4F371A6-D738-4E10-B4F1-8FEE7D79E466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4F371A6-D738-4E10-B4F1-8FEE7D79E466}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4F371A6-D738-4E10-B4F1-8FEE7D79E466}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4F371A6-D738-4E10-B4F1-8FEE7D79E466}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
