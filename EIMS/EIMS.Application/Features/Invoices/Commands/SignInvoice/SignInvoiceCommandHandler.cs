@@ -18,11 +18,14 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IInvoiceXMLService _invoiceXmlService;
-
-        public SignInvoiceCommandHandler(IUnitOfWork unitOfWork, IInvoiceXMLService invoiceXmlService)
+        private readonly IPdfService _pdfService;
+        private readonly IFileStorageService _fileStorageService;
+        public SignInvoiceCommandHandler(IUnitOfWork unitOfWork, IInvoiceXMLService invoiceXmlService, IPdfService pdfService, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _invoiceXmlService = invoiceXmlService;
+            _pdfService = pdfService;
+            _fileStorageService = fileStorageService;
         }
         public async Task<Result<long>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
         {
@@ -71,6 +74,27 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             invoice.DigitalSignature = signedXmlContent.SignatureValue;
             invoice.SignDate = DateTime.UtcNow;
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
+            await _unitOfWork.SaveChanges();
+            try
+            {
+                string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(invoice.InvoiceID, rootPath);
+                using (var pdfStream = new MemoryStream(pdfBytes))
+                {
+                    string fileName = $"Invoice_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                    var uploadResult = await _fileStorageService.UploadFileAsync(pdfStream, fileName, "invoices");
+
+                    if (uploadResult.IsSuccess)
+                    {
+                        invoice.FilePath = uploadResult.Value.Url;
+                        await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
+                        await _unitOfWork.SaveChanges();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
             var history = new InvoiceHistory
             {
                 InvoiceID = request.InvoiceId,
