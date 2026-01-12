@@ -12,7 +12,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
     public class CreateErrorNotificationCommand : IRequest<Result<int>>
     {
         public string? TaxAuthorityCode { get; set; } = "10500"; // Mã CQT (VD: 10500)
-        public string Place { get; set; } // Địa danh (VD: TP.HCM)
+        public string? Place { get; set; } = "TP. Hồ Chí Minh"; // Địa danh (VD: TP.HCM)
         public List<ErrorDetailDto> ErrorItems { get; set; }
     }
 }
