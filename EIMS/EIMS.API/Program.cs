@@ -151,7 +151,7 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 app.UseCors(corsPolicyName);
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
