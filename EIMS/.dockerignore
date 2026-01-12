@@ -1,78 +1,30 @@
-# Dockerignore file to exclude unnecessary files/folders from the build context
-
-# Git files
-.git
-.gitignore
-
-# VS/VS Code specific files
-.vs
-.vscode
-
-# Build artifacts
+**/.classpath
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
 **/bin
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
 **/obj
-
-# User-specific files (from your .gitignore)
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.userprefs
-*.env
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Test results / logs
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.trx
-[Ll]og/
-[Ll]ogs/
-*.log
-*.tlog
-
-# NuGet packages folder (restored inside the container)
-**/Packages
-**/packages
-
-# Local settings not meant for the container
-**/appsettings.Development.json
-**/Properties/launchSettings.json
-
-# Docker files themselves
-Dockerfile
-.dockerignore
-```
-
-**Explanation:**
-
-1.  **`Dockerfile` (Multi-stage):**
-    * **`build-env` Stage:** Uses the full .NET SDK (`mcr.microsoft.com/dotnet/sdk:8.0`) to build the application.
-        * Copies only `.sln` and `.csproj` files first and runs `dotnet restore`. Docker caches this layer; if these files don't change, dependencies aren't re-downloaded on subsequent builds.
-        * Copies the *entire* source code (`COPY . .`).
-        * Runs `dotnet publish` to compile the `EIMS.API` project and output the necessary files to `/app/out`. `--no-restore` is used because we already restored dependencies.
-    * **`runtime` Stage:** Uses the much smaller ASP.NET Core Runtime image (`mcr.microsoft.com/dotnet/aspnet:8.0`).
-        * Copies *only* the published output from the `build-env` stage (`/app/out`) into the final image. Source code and SDK tools are left behind.
-        * `EXPOSE 8080`: Informs Docker that the application inside the container will listen on port 8080. ASP.NET Core defaults to this port when running in a container.
-        * *(Optional Security)* Creates a non-root user (`appuser`) and switches to it. Running as root is generally discouraged.
-        * `ENTRYPOINT ["dotnet", "EIMS.API.dll"]`: Specifies the command to execute when the container starts, running your published API.
-
-2.  **`.dockerignore`:**
-    * This file works like `.gitignore`. It lists files and folders that should **not** be sent to the Docker daemon during the build process (`COPY . .` step).
-    * Excluding `bin`, `obj`, `.git`, `.vs`, etc., significantly speeds up the build context upload and prevents unnecessary files from bloating the image layers.
-
-**Next Steps:**
-
-1.  **Place Files:** Put both `Dockerfile` and `.dockerignore` in the root directory of your solution (the same level as `EIMS.sln`).
-2.  **Build the Image:** Open your terminal in that root directory and run:
-    ```bash
-    docker build -t eims-api .
-    ```
-    (Replace `eims-api` with your desired image name).
-3.  **Run the Container:** Once built, run it, mapping a host port (e.g., 5000) to the container's exposed port (8080):
-    ```bash
-    docker run -d -p 5000:8080 --name eims-container eims-api
-    
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md
+!**/.gitignore
+!.git/HEAD
+!.git/config
+!.git/packed-refs
+!.git/refs/heads/**
