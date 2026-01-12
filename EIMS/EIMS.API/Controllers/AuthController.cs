@@ -99,6 +99,10 @@ namespace EIMS.API.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
+            if (request.NewPassword == request.CurrentPassword)
+            {
+                return BadRequest("New password must be different from current password.");
+            }
             var command = new ChangePasswordCommand
             {
                 CurrentPassword = request.CurrentPassword,
