@@ -19,7 +19,8 @@ namespace EIMS.Application.Features.Authentication.Commands
         }
         public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
         {
-            var user = await _context.Users.FindAsync(new object[] { request.AuthenticatedUserId }, cancellationToken);
+            var user = await _context.Users
+                .FindAsync(new object[] { request.AuthenticatedUserId }, cancellationToken);
             if (user == null)
             return Result.Fail(new Error("User not found").WithMetadata("ErrorCode", "Auth.ChangePassword.UserNotFound"));
             if( !_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
