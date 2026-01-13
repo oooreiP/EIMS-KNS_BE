@@ -17,5 +17,13 @@ namespace EIMS.Application.Features.Emails.Commands
         public string? ContentBefore { get; set; } // Nội dung trước điều chỉnh
         public string? ContentAfter { get; set; }  // Nội dung sau điều chỉnh
         public DateTime AgreementDate { get; set; } = DateTime.Now; // Ngày lập biên bản
+
+        public int? EmailTemplateId { get; set; }
+        public string? RecipientEmail { get; set; }
+        public List<string>? CcEmails { get; set; }
+        public List<string>? BccEmails { get; set; }
+        public string? CustomMessage { get; set; }
+        public bool IncludeXml { get; set; } = true;
+        public bool IncludePdf { get; set; } = true;
     }
 }
