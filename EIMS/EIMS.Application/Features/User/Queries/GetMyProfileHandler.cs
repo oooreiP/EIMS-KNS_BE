@@ -27,9 +27,12 @@ namespace EIMS.Application.Features.User.Queries
         public async Task<Result<UserResponse>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
         {
             var userId = int.Parse(_currentUser.UserId);
-            var user = await _unitOfWork.UserRepository.GetAllQueryable()
-                                        .Include(u => u.Role)
-                                        .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
+            // var user = await _unitOfWork.UserRepository.GetAllQueryable()
+            //                             .Include(u => u.Role)
+            //                             .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
+             var user = await _unitOfWork.UserRepository.GetAllQueryable()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == request.AuthenticatedUserId, cancellationToken);
 
             if (user == null)
             {
