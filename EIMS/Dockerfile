@@ -8,6 +8,7 @@ WORKDIR /app
 # Copy the solution file and restore dependencies first for layer caching
 # Copy only the .sln file and project files first
 COPY *.sln .
+COPY *.dcproj ./    
 COPY EIMS.API/*.csproj ./EIMS.API/
 COPY EIMS.Application/*.csproj ./EIMS.Application/
 COPY EIMS.Infrastructure/*.csproj ./EIMS.Infrastructure/
