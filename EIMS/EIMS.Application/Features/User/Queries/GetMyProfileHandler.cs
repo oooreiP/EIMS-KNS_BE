@@ -14,7 +14,7 @@ namespace EIMS.Application.Features.User.Queries
 {
     public class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Result<UserResponse>>
     {
-        private readonly IUnitOfWork _unitOfWork; // Hoặc DbContext tùy setup của bạn
+        private readonly IUnitOfWork _unitOfWork; // Hoặc DbContext tùy setup của bạ
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUser;
         public GetMyProfileHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUser)
