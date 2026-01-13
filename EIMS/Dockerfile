@@ -14,7 +14,7 @@ COPY EIMS.Infrastructure/*.csproj ./EIMS.Infrastructure/
 COPY EIMS.Domain/*.csproj ./EIMS.Domain/
 # Add any other project files if necessary
 
-# Restore dependencies for the entire solution
+# Restore dependencies for the entire solutionn
 RUN dotnet restore EIMS.sln
 
 # Copy the rest of the source code
