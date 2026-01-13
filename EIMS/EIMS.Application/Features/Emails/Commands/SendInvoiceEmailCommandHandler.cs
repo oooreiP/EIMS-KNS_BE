@@ -45,14 +45,14 @@ namespace EIMS.Application.Features.Emails.Commands
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<SendInvoiceEmailCommandHandler>>();
-
+                var emailSenderService = scope.ServiceProvider.GetRequiredService<IEmailSenderService>();
                 try
                 {
                     logger.LogInformation($"Bắt đầu gửi email ngầm cho Invoice {request.InvoiceId}...");
 
                     // 1. Gọi Email Service (Logic cũ)
-                    var result = await emailService.SendInvoiceEmailAsync(request);
-
+                    // var result = await emailService.SendInvoiceEmailAsync(request);
+                    var result = await emailSenderService.SendInvoiceEmailAsync(request);
                     if (result.IsSuccess)
                     {
                         // 2. Cập nhật DB (Logic cũ) - Dùng 'uow' mới tạo, không dùng _uow cũ
