@@ -221,7 +221,7 @@ namespace EIMS.API.Controllers
 
             if (result.IsSuccess)
             {
-                return Ok(new { InvoiceId = result.Value });
+                return Ok(result.Value);
             }
 
             return BadRequest(result.Errors);
