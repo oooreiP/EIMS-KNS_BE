@@ -17,6 +17,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using EIMS.API.Extensions;
+using EIMS.Application.Features.Invoices.Commands.ViewInvoices;
+using FluentResults;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
@@ -53,7 +55,18 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        [HttpPost("preview")]
+        public async Task<IActionResult> PreviewInvoice([FromBody] PreviewInvoiceCommand command)
+        {
+            command.RootPath = _env.ContentRootPath;
+            var result = await _mediator.Send(command);
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors.FirstOrDefault()?.Message);
+            }
 
+            return Content(result.Value, "text/html", Encoding.UTF8);
+        }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] GetAllInvoicesQuery query)
         {
@@ -347,7 +360,6 @@ namespace EIMS.API.Controllers
         [HttpGet("preview-by-invoice/{id}")]
         public async Task<IActionResult> PreviewByInvoiceId(int id)
         {
-            // Truyền đường dẫn gốc vào Query
             var query = new GetInvoiceHtmlViewQuery(id, _env.ContentRootPath);
             var result = await _mediator.Send(query);
 
