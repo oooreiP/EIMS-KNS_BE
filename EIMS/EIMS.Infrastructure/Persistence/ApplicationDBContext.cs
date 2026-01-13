@@ -467,18 +467,25 @@ namespace EIMS.Infrastructure.Persistence
             IsSystemTemplate = true,
             Name = "Mẫu gửi hóa đơn mặc định",
             IsActive = true,
-            BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
-                <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>
-                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>
-                <p>Chúng tôi xin thông báo hóa đơn điện tử đã được phát hành:</p>
-                <table style='width:100%; margin:15px 0;'>
-                    <tr><td><strong>Số hóa đơn:</strong></td><td>#{{InvoiceNumber}}</td></tr>
-                    <tr><td><strong>Tổng tiền:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
-                </table>
-                <p>📂 <strong>File đính kèm:</strong></p>
-                <ul>{{AttachmentList}}</ul>
-                <p style='color:#777; font-size:12px;'>Trân trọng,<br>EIMS Team</p>
-            </div>"
+            BodyContent = @"<div style=''font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;''>
+    <h2 style=''color:#007BFF;''>Xin chào {{CustomerName}},</h2>
+    <p style=''background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;''>{{Message}}</p>
+    <p>Chúng tôi xin thông báo hóa đơn điện tử đã được phát hành:</p>
+    <table style=''width:100%; margin:15px 0;''>
+        <tr><td><strong>Số hóa đơn:</strong></td><td>#{{InvoiceNumber}}</td></tr>
+        <tr><td><strong>Ký hiệu:</strong></td><td>{{Serial}}</td></tr>
+        <tr><td><strong>Ngày phát hành:</strong></td><td>{{IssuedDate}}</td></tr>
+        <tr><td><strong>Tổng tiền:</strong></td><td style=''color:#D63384; font-weight:bold;''>{{TotalAmount}}</td></tr>
+    </table>
+    
+    <div style=''background-color: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px dashed #007bff;''>
+         <strong>Mã tra cứu: </strong> <span style=''font-family: monospace; font-size: 1.2em; color: #007bff;''>{{LookupCode}}</span>
+    </div>
+
+    <p>📂 <strong>File đính kèm:</strong></p>
+    <ul>{{AttachmentList}}</ul>
+    <p style=''color:#777; font-size:12px;''>Trân trọng,<br>EIMS Team</p>
+</div>"
         },
         new EmailTemplate
         {
@@ -533,43 +540,25 @@ namespace EIMS.Infrastructure.Persistence
             IsSystemTemplate = true,
             Name = "Mẫu gửi hóa đơn (Giao diện bảng chi tiết)",
             IsActive = true,
-            BodyContent = @"<div style='font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#333; line-height:1.6; border: 1px solid #ddd; padding: 20px; max-width: 600px; margin: 0 auto;'>
-            <h2 style='color:#007BFF;'>Xin chào {{CustomerName}},</h2>
+            BodyContent = @"<div style=''font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;''>
+    <h2 style=''color:#007BFF;''>Xin chào {{CustomerName}},</h2>
+    <p style=''background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;''>{{Message}}</p>
+    <p>Chúng tôi xin thông báo hóa đơn điện tử đã được phát hành:</p>
+    <table style=''width:100%; margin:15px 0;''>
+        <tr><td><strong>Số hóa đơn:</strong></td><td>#{{InvoiceNumber}}</td></tr>
+        <tr><td><strong>Ký hiệu:</strong></td><td>{{Serial}}</td></tr>
+        <tr><td><strong>Ngày phát hành:</strong></td><td>{{IssuedDate}}</td></tr>
+        <tr><td><strong>Tổng tiền:</strong></td><td style=''color:#D63384; font-weight:bold;''>{{TotalAmount}}</td></tr>
+    </table>
+    
+    <div style=''background-color: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px dashed #007bff;''>
+         <strong>Mã tra cứu: </strong> <span style=''font-family: monospace; font-size: 1.2em; color: #007bff;''>{{LookupCode}}</span>
+    </div>
 
-            <p style='font-size: 16px;'>{{Message}}</p>
-
-            <div style='background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
-                <table style='width:100%; border-collapse:collapse;'>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Mã hóa đơn:</td>
-                        <td style='padding:5px 0;'>{{InvoiceNumber}}</td>
-                    </tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Ngày tạo:</td>
-                        <td style='padding:5px 0;'>{{CreatedAt}}</td>
-                    </tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Ngày lập:</td>
-                        <td style='padding:5px 0;'>{{IssuedDate}}</td>
-                    </tr>
-                    <tr>
-                        <td style='padding:5px 0; font-weight:bold;'>Tổng tiền:</td>
-                        <td style='padding:5px 0; color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td>
-                    </tr>
-                </table>
-            </div>
-
-            <p>
-                🧾 <strong>File đính kèm:</strong><br/>
-                Bạn có thể tải xuống qua các liên kết bên dưới:
-            </p>
-
-            <ul>{{AttachmentList}}</ul>
-
-            <p style='margin-top:20px; font-size: 13px; color: #777;'>
-                Trân trọng,<br/><strong>Đội ngũ E-Invoice System</strong>
-            </p>
-        </div>"
+    <p>📂 <strong>File đính kèm:</strong></p>
+    <ul>{{AttachmentList}}</ul>
+    <p style=''color:#777; font-size:12px;''>Trân trọng,<br>EIMS Team</p>
+</div>"
         },
     new EmailTemplate
     {
