@@ -1,4 +1,5 @@
-﻿using EIMS.Application.DTOs.User;
+﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.User;
 using FluentResults;
 using MediatR;
 using System;
@@ -9,7 +10,9 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.User.Queries
 {
-    public class GetMyProfileQuery : IRequest<Result<UserResponse>>
+    public class GetMyProfileQuery : IRequest<Result<UserResponse>>, IAuthenticatedCommand
     {
+        public int AuthenticatedUserId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }

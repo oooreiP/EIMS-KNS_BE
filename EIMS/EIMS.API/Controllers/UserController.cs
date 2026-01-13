@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using EIMS.Application.DTOs.Admin;
 using EIMS.Application.Features.Admin.Commands;
 using EIMS.Application.Features.User.Commands;
@@ -201,12 +202,31 @@ namespace EIMS.API.Controllers
         }
         // GET: api/users/profile
         [HttpGet("profile")]
-        public async Task<IActionResult> GetProfile()
+        public async Task<IActionResult> GetProfile([FromQuery] GetMyProfileQuery request)
         {
-            var result = await _sender.Send(new GetMyProfileQuery());
+            // var result = await _sender.Send(request);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) // Standard .NET
+                   ?? User.FindFirst("sub")                     // Standard JWT
+                   ?? User.FindFirst("UserID")                  // Custom
+                   ?? User.FindFirst("id");
+             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                request.AuthenticatedUserId = userId;
+            }
+            else
+            {
+                return Unauthorized(new { title = "Authentication Failed", detail = "User ID not found in token." });
+            }
+            var result = await _sender.Send(request);
 
-            if (result.IsSuccess) return Ok(result.Value);
-            return NotFound(result.Errors);
+            if (result.IsSuccess)
+            {
+                return Ok(new { InvoiceId = result.Value });
+            }
+
+            return BadRequest(result.Errors);
+            // if (result.IsSuccess) return Ok(result.Value);
+            // return NotFound(result.Errors);
         }
 
         // PUT: api/users/profile
