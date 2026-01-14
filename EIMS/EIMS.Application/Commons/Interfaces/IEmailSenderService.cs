@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.DTOs.Mails;
+using EIMS.Application.Features.Emails.Commands;
 using EIMS.Domain.Entities;
 using FluentResults;
 using System;
@@ -13,7 +14,7 @@ namespace EIMS.Application.Commons.Interfaces
     {
         Task<Result> SendEmailCoreAsync(Invoice invoice, string subjectPrefix, string message);
         Task<Result> SendMailAsync(MailRequest mailRequest);
-        Task<Result> SendInvoiceEmailAsync(string recipientEmail, int invoiceId, string message);
+        Task<Result> SendInvoiceEmailAsync(SendInvoiceEmailCommand request);
         Task<Result> SendStatusUpdateNotificationAsync(int invoiceId, int newStatusId);
         Task<Result> SendMailAsync(FEMailRequest mailRequest);
         
