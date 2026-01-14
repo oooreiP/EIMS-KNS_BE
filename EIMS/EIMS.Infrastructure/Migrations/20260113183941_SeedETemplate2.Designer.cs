@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260113183941_SeedETemplate2")]
+    partial class SeedETemplate2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -544,10 +547,6 @@ namespace EIMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("InvoiceTaxCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("NotificationID")
                         .HasColumnType("integer");
 
@@ -556,10 +555,6 @@ namespace EIMS.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TaxCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TaxpayerName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -590,14 +585,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Property<string>("MTDiep")
                         .HasColumnType("text");
 
-                    b.Property<string>("NotificationNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("NotificationType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Place")
                         .IsRequired()
                         .HasColumnType("text");
@@ -612,10 +599,6 @@ namespace EIMS.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TaxAuthorityCode")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TaxAuthorityName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("XMLPath")
