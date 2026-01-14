@@ -1,7 +1,9 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.DTOs.TaxAPIDTO;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.CQT.NotifyInvoiceError
 {
-    public class CreateErrorNotificationHandler : IRequestHandler<CreateErrorNotificationCommand, Result<int>>
+    public class CreateErrorNotificationHandler : IRequestHandler<CreateErrorNotificationCommand, Result<CreateErrorNotificationResponse>>
     {
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _xmlService;
@@ -23,13 +25,20 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
             _fileService = fileService;
         }
 
-        public async Task<Result<int>> Handle(CreateErrorNotificationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<CreateErrorNotificationResponse>> Handle(CreateErrorNotificationCommand request, CancellationToken cancellationToken)
         {
-            
+            var exists = await _uow.ErrorNotificationRepository.GetByNotificationNumberAsync(request.NotificationNumber);
+            if (exists != null)
+            {
+                return Result.Fail($"Số thông báo '{request.NotificationNumber}' đã tồn tại.");
+            }
             var notification = new InvoiceErrorNotification
             {
                 Status = 1, // Draft
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = request.CreatedDate ?? DateTime.UtcNow,
+                NotificationNumber = request.NotificationNumber,
+                NotificationType = request.NotificationType,
+                TaxAuthorityName = request.TaxAuthority, 
                 TaxAuthorityCode = request.TaxAuthorityCode,
                 Place = request.Place,
                 Details = new List<InvoiceErrorDetail>()
@@ -62,12 +71,14 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 {
                     InvoiceID = invoice.InvoiceID,
                     Invoice = invoice,
+                    InvoiceTaxCode = invoice.TaxAuthorityCode,
                     InvoiceSerial = khHDon,
                     InvoiceNumber = invoice.InvoiceNumber.ToString(),
                     InvoiceDate = invoice.IssuedDate ?? DateTime.UtcNow,
                     ErrorType = item.ErrorType,
                     Reason = item.Reason,
-                    TaxCode = invoice.InvoiceCustomerTaxCode ?? invoice.Customer.TaxCode
+                    TaxCode = item.TaxCode ?? invoice.InvoiceCustomerTaxCode ?? invoice.Customer.TaxCode,
+                    TaxpayerName = item.TaxpayerName ?? invoice.InvoiceCustomerName
                 });
             }
 
@@ -84,7 +95,12 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
             await _uow.ErrorNotificationRepository.CreateAsync(notification);
             await _uow.SaveChanges();
 
-            return Result.Ok(notification.InvoiceErrorNotificationID);
+            return Result.Ok(new CreateErrorNotificationResponse
+            {
+                NotificationId = notification.InvoiceErrorNotificationID,
+                NotificationNumber = notification.NotificationNumber,
+                Status = "draft" 
+            });
         }
         private Result ValidateInvoiceStatus(Invoice invoice, int errorType)
         {

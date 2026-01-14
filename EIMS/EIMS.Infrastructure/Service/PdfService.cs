@@ -9,6 +9,13 @@ using PuppeteerSharp.Media;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
+using EIMS.Application.Commons.UnitOfWork;
+using EIMS.Application.Commons;
+using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
+using System.Xml.Serialization;
+using EIMS.Application.Features.Invoices.Commands;
+using EIMS.Application.Commons.Mapping;
+using EIMS.Application.DTOs.XMLModels;
 
 namespace EIMS.Infrastructure.Service
 {
@@ -95,6 +102,116 @@ namespace EIMS.Infrastructure.Service
                 invoice.Template.LayoutDefinition ?? "{}"
             ) ?? new TemplateConfig();
             var xsltArgs = PrepareXsltArguments(config, invoice);
+            string xsltPath = Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
+            return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
+        }
+        public async Task<string> PreviewInvoiceHtmlAsync(BaseInvoiceCommand request, string rootPath)
+        {
+            if (request.Items == null || !request.Items.Any())
+                throw new Exception("Hóa đơn phải có ít nhất một mặt hàng.");
+
+            if (request.TemplateID == null || request.TemplateID == 0)
+                throw new Exception("Vui lòng chọn mẫu hóa đơn.");
+            var template = await _uow.InvoiceTemplateRepository.GetAllQueryable()
+                .Include(t => t.Serial).ThenInclude(s => s.Prefix)
+                .Include(t => t.Serial).ThenInclude(s => s.SerialStatus)
+                .Include(t => t.Serial).ThenInclude(s => s.InvoiceType)
+                .FirstOrDefaultAsync(t => t.TemplateID == request.TemplateID.Value);
+            if (template == null) throw new Exception("Mẫu hóa đơn không tồn tại.");
+            var company = await _uow.CompanyRepository.GetByIdAsync(request.CompanyID);
+            if (company == null) throw new Exception("Không tìm thấy thông tin đơn vị bán.");
+            var status = await _uow.InvoiceStatusRepository.GetByIdAsync(request.InvoiceStatusID);
+            Customer customer;
+            if (request.CustomerID != null && request.CustomerID > 0)
+            {
+                customer = await _uow.CustomerRepository.GetByIdAsync(request.CustomerID.Value);
+                if (customer == null) throw new Exception("Khách hàng không tồn tại.");
+            }
+            else
+            {
+                customer = new Customer
+                {
+                    CustomerName = request.CustomerName ?? "Khách hàng chưa đặt tên",
+                    TaxCode = request.TaxCode ?? "",
+                    Address = request.Address ?? "",
+                    ContactEmail = request.ContactEmail,
+                    ContactPerson = request.ContactPerson,
+                    ContactPhone = request.ContactPhone
+                };
+            }
+            var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _uow.ProductRepository.GetAllQueryable()
+                .Where(p => productIds.Contains(p.ProductID))
+                .ToListAsync();
+            var productDict = products.ToDictionary(p => p.ProductID);
+
+            var processedItems = new List<InvoiceItem>();
+
+            foreach (var itemReq in request.Items)
+            {
+                if (!productDict.TryGetValue(itemReq.ProductId, out var productInfo)) continue;
+
+                decimal finalAmount = (itemReq.Amount ?? 0) > 0
+                    ? itemReq.Amount!.Value
+                    : productInfo.BasePrice * (decimal)itemReq.Quantity;
+
+                decimal finalVatAmount;
+                if ((itemReq.VATAmount ?? 0) > 0)
+                {
+                    finalVatAmount = itemReq.VATAmount!.Value;
+                }
+                else
+                {
+                    decimal vatRate = productInfo.VATRate ?? 0;
+                    finalVatAmount = Math.Round(finalAmount * (vatRate / 100m), 2);
+                }
+
+                processedItems.Add(new InvoiceItem
+                {
+                    ProductID = itemReq.ProductId,
+                    Product = productInfo, 
+                    Quantity = itemReq.Quantity,
+                    Amount = finalAmount,
+                    VATAmount = finalVatAmount,
+                    UnitPrice = productInfo.BasePrice
+                });
+            }
+            decimal subtotal = processedItems.Sum(i => i.Amount);
+            decimal vatAmount = processedItems.Sum(i => i.VATAmount);
+            decimal totalAmount = (request.TotalAmount > 0) ? request.TotalAmount.Value : (subtotal + vatAmount);
+
+            decimal invoiceVatRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
+            var invoice = new Invoice
+            {
+                InvoiceID = 0, 
+                CreatedAt = DateTime.UtcNow,
+                CompanyId = company.CompanyID,
+                CustomerID = customer.CustomerID,
+                TemplateID = template.TemplateID,
+                InvoiceStatus = status,
+                Template = template,
+                Customer = customer,
+                Company = company,
+                InvoiceItems = processedItems,
+                SubtotalAmount = subtotal,
+                VATAmount = vatAmount,
+                VATRate = invoiceVatRate,
+                TotalAmount = totalAmount,
+                TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
+                Notes = request.Notes,
+                PaymentMethod = request.PaymentMethod ?? "TM/CK",
+                InvoiceCustomerName = customer.CustomerName,
+                InvoiceCustomerAddress = customer.Address,
+                InvoiceCustomerTaxCode = customer.TaxCode,
+                InvoiceStatusID = request.InvoiceStatusID,
+                IssuerID = request.SignedBy
+            };
+            string xmlContent = SerializeInvoiceToXml(invoice);
+            var config = JsonSerializer.Deserialize<TemplateConfig>(
+                template.LayoutDefinition ?? "{}"
+            ) ?? new TemplateConfig();
+            var xsltArgs = PrepareXsltArguments(config, invoice);
+
             string xsltPath = Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
             return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
         }
@@ -228,6 +345,27 @@ namespace EIMS.Infrastructure.Service
                 // Transform có truyền Argument List
                 transform.Transform(xmlReader, args, stringWriter);
                 return stringWriter.ToString();
+            }
+        }
+        private string SerializeInvoiceToXml(Invoice invoice)
+        {
+            var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(invoice);
+            var ns = new XmlSerializerNamespaces();
+            ns.Add("", "http://tempuri.org/HDonSchema.xsd");
+            var serializer = new XmlSerializer(typeof(HDon));
+            using (var stringWriter = new StringWriter())
+            {
+                var settings = new XmlWriterSettings
+                {
+                    Indent = true,
+                    OmitXmlDeclaration = true
+                };
+
+                using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+                {
+                    serializer.Serialize(xmlWriter, xmlModel, ns);
+                    return stringWriter.ToString();
+                }
             }
         }
     }
