@@ -39,7 +39,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IBaseRepository<Notification> NotificationRepository { get; set; }
         public IBaseRepository<NotificationStatus> NotificationStatusRepository { get; set; }
         public IBaseRepository<InvoiceLookupLog> InvoiceLookupLogRepository {get; set; }
-        public IBaseRepository<InvoiceErrorNotification> ErrorNotificationRepository { get; set; }
+        public IErrorNotificationRepository ErrorNotificationRepository { get; set; }
         public IBaseRepository<InvoiceErrorDetail> InvoiceErrorDetailRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
@@ -73,7 +73,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             NotificationStatusRepository = new BaseRepository<NotificationStatus>(_db);
             InvoiceLookupLogRepository = new BaseRepository<InvoiceLookupLog>(_db);
 
-            ErrorNotificationRepository = new BaseRepository<InvoiceErrorNotification>(_db);
+            ErrorNotificationRepository = new ErrorNotificationRepository(_db);
             InvoiceErrorDetailRepository = new BaseRepository<InvoiceErrorDetail>(_db);
         }
         public async Task SaveChanges()
