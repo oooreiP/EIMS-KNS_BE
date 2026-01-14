@@ -116,6 +116,7 @@ namespace EIMS.Infrastructure.Service
                 .Include(t => t.Serial).ThenInclude(s => s.Prefix)
                 .Include(t => t.Serial).ThenInclude(s => s.SerialStatus)
                 .Include(t => t.Serial).ThenInclude(s => s.InvoiceType)
+                .Include(t => t.TemplateFrame)
                 .FirstOrDefaultAsync(t => t.TemplateID == request.TemplateID.Value);
             if (template == null) throw new Exception("Mẫu hóa đơn không tồn tại.");
             var company = await _uow.CompanyRepository.GetByIdAsync(request.CompanyID);
