@@ -13,16 +13,13 @@ namespace EIMS.Domain.Entities
         [Key]
         public int DetailID { get; set; }
         public int NotificationID { get; set; }
-
-        // --- Link tới hóa đơn gốc (Để click xem chi tiết) ---
         public int? InvoiceID { get; set; }
-
-        // --- Snapshot thông tin hóa đơn (Bắt buộc lưu cứng) ---
-        // Lý do: Nếu sau này Invoice gốc bị xóa hoặc sửa, tờ giải trình này vẫn phải giữ nguyên số liệu lúc báo cáo
         public string InvoiceSerial { get; set; } // Ký hiệu (K24TAA)
         public string InvoiceNumber { get; set; } // Số hóa đơn (0000123)
         public DateTime InvoiceDate { get; set; }  // Ngày lập hóa đơn
+        public string TaxpayerName { get; set; } = string.Empty;
         public string TaxCode { get; set; }       // MST người mua (quan trọng)
+        public string InvoiceTaxCode { get; set; }       
 
         // --- Nội dung giải trình ---
         // 1: Hủy, 2: Điều chỉnh, 3: Thay thế, 4: Giải trình sai sót khác
