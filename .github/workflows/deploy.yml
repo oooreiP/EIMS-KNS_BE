@@ -54,7 +54,7 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
             # This is the script that will run ON YOUR SERVER
-            
+            docker system prune -a -f
             # 1. Navigate to your app directory
             cd /opt/eims
             
