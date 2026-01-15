@@ -12,17 +12,18 @@ namespace EIMS.Application.Features.Emails.Commands
     public class SendInvoiceMinutesCommand : IRequest<Result>
     {
         public int InvoiceId { get; set; }
-        public MinutesType Type { get; set; } // Loại biên bản
-        public string Reason { get; set; }    // Lý do sai sót (để điền vào biên bản và email)
-        public string? ContentBefore { get; set; } // Nội dung trước điều chỉnh
-        public string? ContentAfter { get; set; }  // Nội dung sau điều chỉnh
-        public DateTime AgreementDate { get; set; } = DateTime.Now; // Ngày lập biên bản
+        public MinutesType Type { get; set; } 
+        public string Reason { get; set; }    
+        public string? ContentBefore { get; set; } 
+        public string? ContentAfter { get; set; }  
+        public DateTime AgreementDate { get; set; } = DateTime.Now; 
 
         public int? EmailTemplateId { get; set; }
         public string? RecipientEmail { get; set; }
         public List<string>? CcEmails { get; set; }
         public List<string>? BccEmails { get; set; }
         public string? CustomMessage { get; set; }
+        public string? CertificateSerial { get; set; }
         public bool IncludeXml { get; set; } = true;
         public bool IncludePdf { get; set; } = true;
     }

@@ -36,15 +36,12 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
 
                 try
                 {
-                    // 1. Download XML from Cloud
                     var rawXml = await _invoiceXmlService.DownloadStringAsync(noti.XMLPath);
                     var certResult = _invoiceXmlService.GetCertificate();
                     if (certResult.IsFailed) return Result.Fail(certResult.Errors);
                     var cert = certResult.Value;
-                    // 2. Digital Sign (Ký số)
                     var signedXml = XmlHelpers.SignTB04Xml(rawXml, cert);
                     string signedXmlPayload = signedXml.SignedXml;
-                    // 3. Send to T-VAN / CQT (Gửi thông điệp 300)
                     var taxResponse = await _taxClient.SendTaxMessageAsync(signedXmlPayload, noti.MTDiep);
                     string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
                                           taxResponse.MLTDiep == "204" ? "TBxx" :
@@ -105,8 +102,6 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                             await _uow.InvoicesRepository.UpdateAsync(invoice);
                         }
                     }
-
-                    // C. Lưu thay đổi cuối cùng
                     await _uow.SaveChanges();
 
                     return Result.Ok(taxResponse.MTDiep);

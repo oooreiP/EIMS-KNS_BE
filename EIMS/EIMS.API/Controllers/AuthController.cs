@@ -36,12 +36,11 @@ namespace EIMS.API.Controllers
             if (loginResult.IsFailed)
             {
                 var firstError = loginResult.Errors.FirstOrDefault();
-                // Return error response
-                return Unauthorized(new ProblemDetails // Use ProblemDetails for standard error responses
+                return Unauthorized(new ProblemDetails 
                 {
                     Status = StatusCodes.Status401Unauthorized,
                     Title = "Authentication Failed",
-                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
+                    Detail = firstError?.Message ?? "Invalid credentials provided." 
                 });
             }
             var loginResponse = loginResult.Value;

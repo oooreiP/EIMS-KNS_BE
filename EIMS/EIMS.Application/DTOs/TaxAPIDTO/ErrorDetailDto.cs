@@ -23,9 +23,5 @@ namespace EIMS.Application.DTOs.TaxAPIDTO
         [Required(ErrorMessage = "Lý do sai sót là bắt buộc.")]
         [MinLength(10, ErrorMessage = "Lý do sai sót phải có tối thiểu 10 ký tự.")]
         public string Reason { get; set; } = string.Empty;
-
-        public string? TaxpayerName { get; set; }
-
-        public string? TaxCode { get; set; }
     }
 }

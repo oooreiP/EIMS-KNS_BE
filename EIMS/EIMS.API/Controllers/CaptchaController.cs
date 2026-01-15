@@ -26,10 +26,7 @@ namespace EIMS.API.Controllers
         {
             var result = _captchaService.GenerateCaptchaImage(120, 50);
             Console.WriteLine($"[TESTING] Captcha Code: {result.CaptchaCode}");
-            // Tạo ID duy nhất cho phiên captcha này
             string captchaId = Guid.NewGuid().ToString();
-
-            // Lưu mã đúng vào Cache trong 5 phút
             _memoryCache.Set(captchaId, result.CaptchaCode, TimeSpan.FromMinutes(5));
 
             return Ok(new

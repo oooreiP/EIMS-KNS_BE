@@ -119,9 +119,9 @@ namespace EIMS.API.Controllers
 
             var command = _mapper.Map<UpdateInvoiceCommand>(request);
             command.InvoiceId = id;
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) // Standard .NET
-                   ?? User.FindFirst("sub")                     // Standard JWT
-                   ?? User.FindFirst("UserID")                  // Custom
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) 
+                   ?? User.FindFirst("sub")                     
+                   ?? User.FindFirst("UserID")                  
                    ?? User.FindFirst("id");
 
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
@@ -172,8 +172,6 @@ namespace EIMS.API.Controllers
             }
             else
             {
-                // Trả về HTTP 400 Bad Request kèm thông báo lỗi cụ thể
-                // Ví dụ: Không tìm thấy file XML, lỗi kết nối Cert, hoặc Cert hết hạn
                 return BadRequest(new
                 {
                     message = "Ký số thất bại.",
@@ -186,10 +184,8 @@ namespace EIMS.API.Controllers
         {
             var command = new IssueInvoiceCommand
             {
-                InvoiceId = id, // Lấy từ URL
+                InvoiceId = id, 
                 IssuerId = requestBody.IssuerId,
-
-                // Map các thông tin thanh toán mới
                 AutoCreatePayment = requestBody.AutoCreatePayment,
                 PaymentAmount = requestBody.PaymentAmount,
                 PaymentMethod = requestBody.PaymentMethod,
@@ -206,7 +202,7 @@ namespace EIMS.API.Controllers
                     invoiceId = id
                 });
             }
-            // 4. Trả về lỗi
+            
             return BadRequest(new
             {
                 message = "Không thể phát hành hóa đơn.",
@@ -329,13 +325,11 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
                 return BadRequest(new { Error = result.Errors[0].Message });
-
-            // Trả về Hash và ID hóa đơn
             return Ok(new
             {
                 InvoiceId = command.InvoiceId,
                 HashToSign = result.Value,
-                Algorithm = "SHA256" // Báo cho FE biết thuật toán hash
+                Algorithm = "SHA256" 
             });
         }
 
