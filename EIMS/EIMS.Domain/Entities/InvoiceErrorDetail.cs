@@ -16,9 +16,7 @@ namespace EIMS.Domain.Entities
         public int? InvoiceID { get; set; }
         public string InvoiceSerial { get; set; } // Ký hiệu (K24TAA)
         public string InvoiceNumber { get; set; } // Số hóa đơn (0000123)
-        public DateTime InvoiceDate { get; set; }  // Ngày lập hóa đơn
-        public string TaxpayerName { get; set; } = string.Empty;
-        public string TaxCode { get; set; }       // MST người mua (quan trọng)
+        public DateTime InvoiceDate { get; set; }  // Ngày lập hóa đơn      
         public string InvoiceTaxCode { get; set; }       
 
         // --- Nội dung giải trình ---

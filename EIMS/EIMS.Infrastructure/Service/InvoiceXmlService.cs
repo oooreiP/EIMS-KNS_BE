@@ -258,8 +258,8 @@ namespace EIMS.Infrastructure.Service
                 MSo = "04/SS-HĐĐT",
                 Ten = "Thông báo hóa đơn điện tử có sai sót",
                 Loai = 1,
-                MCQT = notification.TaxAuthorityCode, // "10925" lấy từ DB
-                TCQT = "Cục Thuế TP. Hồ Chí Minh",    
+                MCQT = notification.TaxAuthorityCode, 
+                TCQT = notification.TaxAuthorityName ?? "Cục Thuế TP. Hồ Chí Minh",    
                 So = await GenerateNextNotificationNumberAsync(), 
                 NTBCCQT = notification.ReportDate.ToString("yyyy-MM-dd"),
                 DLTBao = new DLTBao

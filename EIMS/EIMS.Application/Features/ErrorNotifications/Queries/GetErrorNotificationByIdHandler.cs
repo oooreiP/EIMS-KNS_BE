@@ -29,13 +29,14 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
             {
                 Id = entity.InvoiceErrorNotificationID,
                 NotificationNumber = entity.NotificationNumber,
-                NotificationType = entity.NotificationType,
+                NotificationTypeCode = entity.NotificationTypeCode,
                 TaxAuthorityName = entity.TaxAuthorityName,
                 CreatedDate = entity.ReportDate,
                 StatusCode = entity.Status,
                 Status = GetStatusName(entity.Status),
                 MTDiep = entity.MTDiep,
                 XMLPath = entity.XMLPath,
+                TaxResponsePath = entity.TaxResponsePath,   
                 Place = entity.Place,
                 Details = entity.Details.Select(d => new ErrorNotificationDetailDto
                 {

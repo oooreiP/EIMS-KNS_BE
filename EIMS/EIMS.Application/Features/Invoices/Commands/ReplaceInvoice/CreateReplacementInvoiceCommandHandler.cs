@@ -21,26 +21,24 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
     public class CreateReplacementInvoiceHandler : IRequestHandler<CreateReplacementInvoiceCommand, Result<CreateInvoiceResponse>>
     {
         private readonly IUnitOfWork _uow;
-        private readonly IFileStorageService _fileStorageService;
-        private readonly IEmailService _emailService;
         private readonly IInvoiceXMLService _invoiceXMLService;
+        private readonly IFileStorageService _fileStorageService;
+        private readonly IPdfService _pdfService;
         private readonly INotificationService _notiService;
         private readonly IMapper _mapper;
 
         public CreateReplacementInvoiceHandler(
             IUnitOfWork uow,
             IMapper mapper,
-            IFileStorageService fileStorageService,
-            IEmailService emailService,
             IInvoiceXMLService invoiceXMLService,
-            INotificationService notiService)
+            INotificationService notiService,
+            IPdfService pdfService)
         {
             _uow = uow;
             _mapper = mapper;
-            _fileStorageService = fileStorageService;
-            _emailService = emailService;
             _invoiceXMLService = invoiceXMLService;
             _notiService = notiService;
+            _pdfService = pdfService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateReplacementInvoiceCommand request, CancellationToken cancellationToken)
@@ -229,6 +227,26 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 fullInvoice.XMLPath = newXmlUrl;
                 await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
                 await _uow.SaveChanges();
+                try
+                {
+                    string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
+                    using (var pdfStream = new MemoryStream(pdfBytes))
+                    {
+                        string filePdfName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                        var uploadPdfResult = await _fileStorageService.UploadFileAsync(pdfStream, filePdfName, "invoices");
+
+                        if (uploadPdfResult.IsSuccess)
+                        {
+                            fullInvoice.FilePath = uploadPdfResult.Value.Url;
+                            await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+                            await _uow.SaveChanges();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
                 var linkedUsers = await _uow.UserRepository.GetUsersByCustomerIdAsync(fullInvoice.CustomerID);
 
                 if (linkedUsers != null && linkedUsers.Any())
