@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using EIMS.Application.Commons.Interfaces;
 using System.Xml.Xsl;
 using System.Xml;
+using Spire.Doc;
 
 namespace EIMS.Infrastructure.Service
 {
@@ -78,6 +79,29 @@ namespace EIMS.Infrastructure.Service
             {
                 return $"<div style='color:red'><h3>Lỗi hiển thị hóa đơn:</h3><pre>{ex.Message}</pre></div>";
             }
+        }
+        public async Task<byte[]> ConvertDocxToPdfAsync(byte[] docxBytes)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    using (var inputStream = new MemoryStream(docxBytes))
+                    {
+                        Document document = new Document();
+                        document.LoadFromStream(inputStream, FileFormat.Docx);
+                        using (var outputStream = new MemoryStream())
+                        {
+                            document.SaveToStream(outputStream, FileFormat.PDF);
+                            return outputStream.ToArray();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Lỗi khi convert DOCX sang PDF: {ex.Message}");
+                }
+            });
         }
     }
 }

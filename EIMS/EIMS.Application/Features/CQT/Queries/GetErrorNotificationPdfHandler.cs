@@ -22,10 +22,7 @@ namespace EIMS.Application.Features.CQT.Queries
         {
             try
             {
-                // Lấy đường dẫn gốc để tìm Template
                 string rootPath = AppDomain.CurrentDomain.BaseDirectory;
-
-                // Gọi Service chuyển đổi HTML -> PDF (Puppeteer)
                 byte[] pdfBytes = await _pdfService.ConvertNotificationToPdfAsync(request.NotificationId, rootPath);
 
                 return Result.Ok(pdfBytes);

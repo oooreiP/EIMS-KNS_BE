@@ -59,8 +59,6 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
                 return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
-
-            // Return the URL to the frontend
             return Ok(new { Url = result.Value });
         }
         [HttpPost("pdf-from-html")]

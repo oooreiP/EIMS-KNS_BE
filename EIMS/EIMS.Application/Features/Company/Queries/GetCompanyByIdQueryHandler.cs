@@ -16,7 +16,6 @@ namespace EIMS.Application.Features.Company.Queries
 
         public async Task<Result<CompanyResponse>> Handle(GetCompanyByIdQuery request, CancellationToken cancellationToken)
         {
-            // Fetch using the repository pattern
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(request.Id);
 
             if (company == null)

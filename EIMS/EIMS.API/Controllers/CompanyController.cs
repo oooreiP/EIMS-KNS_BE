@@ -46,7 +46,6 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
             {
-                // Handle not found specifically if needed, otherwise return generic error
                 if (result.Errors.Any(e => e.Metadata.ContainsKey("ErrorCode") && (string)e.Metadata["ErrorCode"] == "Company.Update.NotFound"))
                     return NotFound(result.Errors);
 
