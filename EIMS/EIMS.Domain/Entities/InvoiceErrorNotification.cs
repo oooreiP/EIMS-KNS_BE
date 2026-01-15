@@ -14,14 +14,17 @@ namespace EIMS.Domain.Entities
         [Column("InvoiceErrorNotificationID")]
         public int InvoiceErrorNotificationID { get; set; }
         public string NotificationNumber { get; set; } = string.Empty;
-        public string NotificationType { get; set; } = string.Empty;
+        public int NotificationTypeCode { get; set; } 
         public string TaxAuthorityName { get; set; } = string.Empty;
         public string? TaxAuthorityCode { get; set; } = "10925";
+        public string TaxpayerName { get; set; } = string.Empty;
+        public string TaxCode { get; set; }       // MST người mua (quan trọng)
         public string Place { get; set; } = "TP. Hồ Chí Minh"; // Địa danh làm báo cáo
         public DateTime ReportDate { get; set; } = DateTime.UtcNow; // Ngày lập báo cáo
         // 1: Nháp (Draft), 2: Đã ký (Signed), 3: Đã gửi T-VAN (Sent), 4: CQT Tiếp nhận (Accepted), 5: CQT Từ chối (Rejected)
         public int Status { get; set; }
         public string? XMLPath { get; set; } 
+        public string? TaxResponsePath { get; set; } 
         public string? SignedData { get; set; } 
         public string? MTDiep { get; set; } // Mã thông điệp (quan trọng để tra cứu trạng thái)
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

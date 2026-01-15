@@ -205,6 +205,7 @@ namespace EIMS.Application.Commons.Mapping
             // 1. Lấy các thông tin cốt lõi từ Request
             var reqTTChung = requestMsg.TTChung;
             var reqDLTBao = requestMsg.DLieu.TBao.DLTBao;
+            var reqTBao = requestMsg.DLieu.TBao;
             string mtDiepPhanHoi = "TCT" + Guid.NewGuid().ToString("N").ToUpper();
             string mtDiepGoc = reqTTChung.MaThongDiep;
             string soThongBaoCqt = $"TB/SS/{DateTime.Now.Year}/{new Random().Next(10000, 99999)}";
@@ -232,11 +233,11 @@ namespace EIMS.Application.Commons.Mapping
                             PBan = "2.1.0",
                             MSo = "01/TB-SSĐT",
                             Ten = "Thông báo về việc tiếp nhận và kết quả xử lý về việc hóa đơn điện tử đã lập có sai sót",
-                            DDanh = reqDLTBao.DDanh, // Lấy địa danh của DN
-                            TNNT = "CÔNG TY ...",
+                            DDanh = reqDLTBao.DDanh, 
+                            TNNT = "Công Ty Cổ Phần Giải Pháp Kỷ Nguyên Số",
                             MST = reqDLTBao.MST,     
                             TCQTCTren = "Tổng cục Thuế",
-                            TCQT = "Cục Thuế quản lý",
+                            TCQT = reqTBao.TCQT,
                             MGDDTu = Guid.NewGuid().ToString().ToUpper(), 
                             TGNhan = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                             NTBNNT = reqDLTBao.NTBao, 

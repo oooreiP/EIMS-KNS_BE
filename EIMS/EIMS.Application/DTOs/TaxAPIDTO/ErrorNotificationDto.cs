@@ -10,16 +10,20 @@ namespace EIMS.Application.DTOs.TaxAPIDTO
     {
         public int Id { get; set; }
         public string NotificationNumber { get; set; }
-        public string NotificationType { get; set; }
+        public int NotificationTypeCode { get; set; }
         public string TaxAuthorityName { get; set; }
         public DateTime CreatedDate { get; set; }
         public string Status { get; set; }     
         public int StatusCode { get; set; }     
         public string? MTDiep { get; set; }
         public string? XMLPath { get; set; }
+        public string? TaxResponsePath { get; set; }
         public string Place { get; set; }
-
-        // Danh sách chi tiết
         public List<ErrorNotificationDetailDto> Details { get; set; }
+        public string? InvoiceSerial { get; set; }      // Ký hiệu
+        public string? InvoiceNumber { get; set; }      // Số hóa đơn
+        public DateTime? InvoiceDate { get; set; }      // Ngày hóa đơn
+        public string? CustomerName { get; set; }       // Tên khách hàng
+        public decimal? TotalAmount { get; set; }       // Tổng tiền
     }
 }

@@ -43,12 +43,9 @@ namespace EIMS.Application.Features.Emails.Commands
             {
                 // Resolve các service trong scope mới
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var minutesGenerator = scope.ServiceProvider.GetRequiredService<IMinutesGenerator>(); // Giả sử bạn có service này
+                var minutesGenerator = scope.ServiceProvider.GetRequiredService<IMinutesGenerator>();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<SendInvoiceMinutesCommandHandler>>();
-
-                // Nếu cần service sinh PDF/XML hóa đơn
-                // var invoiceGenerator = scope.ServiceProvider.GetRequiredService<IInvoiceGenerator>(); 
 
                 try
                 {

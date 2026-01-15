@@ -35,7 +35,6 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         SubmitInvoiceToCQTCommand request,
         CancellationToken cancellationToken)
         {
-            // 1. Lấy dữ liệu và kiểm tra
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
@@ -45,7 +44,6 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             {
                 return Result.Fail("Hóa đơn phải kí trước khi gửi");
             }
-            // 2. Map và Serialize
             var tDiep = InvoiceXmlMapper.MapThongDiepToXmlModel(invoice, messageCode,1, null);
             if (!string.IsNullOrEmpty(invoice.XMLPath))
             {
@@ -54,22 +52,15 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                     string hdonXmlContent = "";
                     if (invoice.XMLPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Nếu là link Cloudinary/S3
                         hdonXmlContent = await _httpClient.GetStringAsync(invoice.XMLPath);
                     }
                     else if (File.Exists(invoice.XMLPath))
                     {
-                        // Nếu là file lưu trên ổ cứng Server
                         hdonXmlContent = await File.ReadAllTextAsync(invoice.XMLPath);
                     }
                     if (!string.IsNullOrEmpty(hdonXmlContent))
                     {
-                        // B. Deserialize chuỗi XML đó ngược lại thành Object HDon
-                        // Lưu ý: Cần thêm hàm Deserialize vào XmlHelper (xem bên dưới)
                         var existingHDon = XmlHelpers.DeserializeFlexible<HDon>(hdonXmlContent);
-
-                        // C. Gán đè Hóa đơn cũ vào Thông điệp mới
-                        // Việc này giữ nguyên chữ ký số (nếu class HDon map đúng Signature)
                         tDiep.TDiepDLieu.HDon = existingHDon;
                     }
                 }
