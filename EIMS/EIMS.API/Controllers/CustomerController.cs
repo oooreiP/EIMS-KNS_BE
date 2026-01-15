@@ -50,7 +50,6 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
             {
-                // Return a clear error message
                 return BadRequest(new
                 {
                     message = "Failed to create customer",
