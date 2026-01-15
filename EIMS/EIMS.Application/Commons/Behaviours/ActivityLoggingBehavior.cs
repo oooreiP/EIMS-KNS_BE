@@ -18,22 +18,18 @@ namespace EIMS.Application.Commons.Behaviours
         {
             // Lấy tên Command (VD: CompleteSigningCommand -> "CompleteSigning")
             var actionName = typeof(TRequest).Name.Replace("Command", "");
-
+            bool isQuery = actionName.EndsWith("Query");
             try
             {
-                // Chạy Handler chính
                 var response = await next();
-                // Kiểm tra kết quả (FluentResults)
                 bool isSuccess = true;
                 string description = "Thực hiện thành công";
-                // Reflection để check Result.IsFailed nếu dùng FluentResults
                 var resultProp = response.GetType().GetProperty("IsFailed");
                 if (resultProp != null && (bool)resultProp.GetValue(response))
                 {
                     isSuccess = false;
                     description = "Thực hiện thất bại (Lỗi nghiệp vụ)";
                 }
-                // Chỉ log các Command (thay đổi hệ thống), hạn chế log Query (xem dữ liệu) cho đỡ rác
                 if (actionName.EndsWith("Query") == false)
                 {
                     await _activityLogger.LogAsync(actionName, description, isSuccess);
@@ -43,8 +39,12 @@ namespace EIMS.Application.Commons.Behaviours
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogAsync(actionName, $"Lỗi hệ thống: {ex.Message}", false);
-                throw; 
+                if (!isQuery)
+                {
+                    await _activityLogger.LogAsync(actionName, $"Lỗi hệ thống: {ex.Message}", false);
+                }
+
+                throw;
             }
         }
     }

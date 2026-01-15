@@ -46,7 +46,6 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
             }
             query = query.OrderByDescending(x => x.CreatedAt);
             var totalCount = await query.CountAsync(cancellationToken);
-
             var items = await query
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -54,15 +53,37 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                 {
                     Id = entity.InvoiceErrorNotificationID,
                     NotificationNumber = entity.NotificationNumber,
-                    NotificationType = entity.NotificationType,
+                    NotificationTypeCode = entity.NotificationTypeCode,
                     TaxAuthorityName = entity.TaxAuthorityName,
+                    Place = entity.Place,
                     CreatedDate = entity.ReportDate,
                     StatusCode = entity.Status,
+                    TaxResponsePath = entity.TaxResponsePath,
+                    XMLPath = entity.XMLPath,
                     MTDiep = entity.MTDiep,
                     Status = entity.Status == 1 ? "Nháp" :
                              entity.Status == 2 ? "Đã ký" :
                              entity.Status == 3 ? "Đã gửi" :
-                             entity.Status == 4 ? "Thành công" : "Thất bại"
+                             entity.Status == 4 ? "Thành công" : "Thất bại",
+                    InvoiceSerial = entity.Details.Count() == 1
+                        ? entity.Details.FirstOrDefault().InvoiceSerial
+                        : null,
+
+                    InvoiceNumber = entity.Details.Count() == 1
+                        ? entity.Details.FirstOrDefault().InvoiceNumber.ToString() 
+                        : null,
+
+                    InvoiceDate = entity.Details.Count() == 1
+                        ? entity.Details.FirstOrDefault().InvoiceDate
+                        : null,
+
+                    CustomerName = entity.Details.Count() == 1
+                        ? entity.Details.FirstOrDefault().Invoice.InvoiceCustomerName 
+                        : null,
+
+                    TotalAmount = entity.Details.Count() == 1
+                        ? entity.Details.FirstOrDefault().Invoice.TotalAmount
+                        : null
                 })
                 .ToListAsync(cancellationToken);
 

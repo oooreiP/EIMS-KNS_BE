@@ -23,12 +23,16 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
     {
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IInvoiceXMLService _invoiceXMLService;
+        private readonly IPdfService _pdfService;
         private readonly INotificationService _notiService;
-        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, INotificationService notiService)
+        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, INotificationService notiService, IPdfService pdfService, IInvoiceXMLService invoiceXMLService)
         {
             _uow = uow;
-            _fileStorageService = fileStorageService;          
+            _fileStorageService = fileStorageService; 
             _notiService = notiService;
+            _pdfService = pdfService;
+            _invoiceXMLService = invoiceXMLService;
         }
         public async Task<Result<AdjustmentInvoiceDetailDto>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
         {
@@ -106,16 +110,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                         return Result.Fail($"Sản phẩm {product?.Name}: Đơn giá sau điều chỉnh bị âm.");
                     }
 
-                    // --- [TÍNH TOÁN TIỀN CHÊNH LỆCH] ---
-                    // Ở đây ta lưu "Con số chênh lệch" vào DB
-                    // Nếu User nhập giá mới, ta phải tự trừ ra giá cũ. 
-                    // Nhưng theo DTO ở trên, ta giả định FE gửi lên "Chênh lệch" (AdjustmentQuantity/Price).
-
                     decimal vatRate = itemDto.OverrideVATRate ?? product?.VATRate ?? originalItem?.Product?.VATRate ?? 0;
-
-                    // Thành tiền chênh lệch = SL_Adj * Price_Adj (Sai logic)
-                    // Logic đúng: Amount_Adj = (Qty_Final * Price_Final) - (Qty_Orig * Price_Orig)
-
                     decimal originalAmount = (decimal)origQty * origPrice;
                     decimal finalAmount = (decimal)finalQty * finalPrice;
                     decimal adjustmentAmount = finalAmount - originalAmount;
@@ -219,35 +214,29 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             await _uow.InvoiceHistoryRepository.CreateAsync(logForNew);
             var fullInvoice = await _uow.InvoicesRepository
                    .GetByIdAsync(adjInvoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType");
-            var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(fullInvoice);
-            var serializer = new XmlSerializer(typeof(HDon));
-            var fileName = $"Invoice_{fullInvoice.InvoiceNumber}.xml";
-            var xmlPath = Path.Combine(Path.GetTempPath(), fileName);
-            await using (var fs = new FileStream(xmlPath, FileMode.Create, FileAccess.Write))
-            {
-                serializer.Serialize(fs, xmlModel);
-            }
-            await using var xmlStream = File.OpenRead(xmlPath);
-            var uploadResult = await _fileStorageService.UploadFileAsync(xmlStream, Path.GetFileName(xmlPath), "invoices");
-            if (uploadResult.IsFailed)
-                return Result.Fail(uploadResult.Errors);
-            fullInvoice.XMLPath = uploadResult.Value.Url;
+            string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
+            fullInvoice.XMLPath = newXmlUrl;
             await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+            await _uow.SaveChanges();
             try
             {
-                await _uow.SaveChanges();
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
-            {
-                var msg = ex.Message;
-                var inner = ex.InnerException;
-                while (inner != null)
+                string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
+                using (var pdfStream = new MemoryStream(pdfBytes))
                 {
-                    msg += " | INNER: " + inner.Message;
-                    inner = inner.InnerException;
+                    string filePdfName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                    var uploadPdfResult = await _fileStorageService.UploadFileAsync(pdfStream, filePdfName, "invoices");
+
+                    if (uploadPdfResult.IsSuccess)
+                    {
+                        fullInvoice.FilePath = uploadPdfResult.Value.Url;
+                        await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+                        await _uow.SaveChanges();
+                    }
                 }
-                // Dòng này sẽ in toang hoác lỗi ra màn hình cho bạn thấy
-                throw new Exception($"🔥 LỖI THỰC SỰ LÀ: {msg}");
+            }
+            catch (Exception ex)
+            {
             }
             var notificationsToCreate = new List<Notification>();
             if (originalInvoice.Customer != null)

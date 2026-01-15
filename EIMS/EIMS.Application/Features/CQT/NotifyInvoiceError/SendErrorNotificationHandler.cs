@@ -62,43 +62,46 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
 
                 await _uow.TaxApiLogRepository.CreateAsync(responseLog);
                 await _uow.SaveChanges();
+                string xmlContent = taxResponse.RawResponse;
+                byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(xmlContent);
+                using (var stream = new MemoryStream(byteArray))
+                {
+                    string fileName = $"TaxResponse_{taxResponse.MTDiep}_{DateTime.Now:yyyyMMddHHmmss}.xml";
+                    var uploadResult = await _fileService.UploadFileAsync(stream, fileName, "tax-responses"); 
+
+                    if (uploadResult.IsSuccess)
+                    {
+                        noti.TaxResponsePath = uploadResult.Value.Url;                       
+                    }
+                }
                 if (taxResponse.IsSuccess)
                 {
-                    // A. Cập nhật trạng thái Tờ khai 04/SS
-                    noti.Status = 3; // 2 = Sent (Đã gửi/Chờ phản hồi) - Lưu ý: 3 thường là Accepted
+                    noti.Status = 3; 
                     noti.SignedData = signedXml.SignatureValue;
-
-                    // B. Cập nhật trạng thái các Hóa đơn liên quan (Vòng lặp)
                     if (noti.Details != null)
                     {
                         foreach (var detail in noti.Details)
                         {
                             var invoice = detail.Invoice;
-                            if (invoice == null) continue; // Bỏ qua nếu không tìm thấy hóa đơn gốc
-
-                            // Logic cập nhật trạng thái hóa đơn dựa trên loại sai sót
+                            if (invoice == null) continue; 
                             switch (detail.ErrorType)
                             {
-                                case 1: // Hủy (Cancel)
-                                    // Khi gửi thông báo Hủy thành công -> Hóa đơn chuyển thành Hủy
-                                    invoice.InvoiceStatusID = 3; // Cancelled
+                                case 1: 
+                                    invoice.InvoiceStatusID = 3; 
                                     break;
 
-                                case 2: // Điều chỉnh (Adjustment)
-                                    // Đánh dấu là đang có biến động điều chỉnh
-                                    invoice.InvoiceStatusID = 10; // Adjustment_In_Progress
+                                case 2:
+                                    invoice.InvoiceStatusID = 10; 
                                     break;
 
-                                case 3: // Thay thế (Replacement)
-                                    // Đánh dấu hóa đơn gốc là bị thay thế (hoặc đang xử lý thay thế)
+                                case 3: 
                                     invoice.InvoiceStatusID = 11; // Replacement_In_Progress
                                     break;
 
-                                case 4: // Giải trình (Explanation)
-                                    // Giải trình thường không đổi trạng thái hóa đơn, hoặc có thể set flag cảnh báo
+                                case 4: 
                                     break;
                             }
-                            // Add vào context để update
+                            await _uow.ErrorNotificationRepository.UpdateAsync(noti);
                             await _uow.InvoicesRepository.UpdateAsync(invoice);
                         }
                     }
@@ -110,8 +113,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 }
                 else
                 {
-                    // Gửi thất bại (Lỗi kỹ thuật từ T-VAN hoặc Validation sync)
-                    noti.Status = 5; // Error/Rejected locally
+                    noti.Status = 5; 
                     await _uow.SaveChanges();
 
                     return Result.Fail($"Gửi thất bại: {taxResponse.RawResponse} - {taxResponse.SoTBao}");
