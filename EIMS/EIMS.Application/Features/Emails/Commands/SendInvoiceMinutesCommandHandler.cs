@@ -23,11 +23,8 @@ namespace EIMS.Application.Features.Emails.Commands
         {
             _scopeFactory = scopeFactory;
         }
-
-        // 1. Handle chính: Trả về kết quả ngay lập tức
         public Task<Result> Handle(SendInvoiceMinutesCommand request, CancellationToken cancellationToken)
         {
-            // Chạy ngầm để không block UI
             Task.Run(async () =>
             {
                 await ProcessMinutesInBackground(request);
@@ -35,24 +32,22 @@ namespace EIMS.Application.Features.Emails.Commands
 
             return Task.FromResult(Result.Ok());
         }
-
-        // 2. Logic xử lý ngầm
         private async Task ProcessMinutesInBackground(SendInvoiceMinutesCommand request)
         {
             using (var scope = _scopeFactory.CreateScope())
             {
-                // Resolve các service trong scope mới
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 var minutesGenerator = scope.ServiceProvider.GetRequiredService<IMinutesGenerator>();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var fileStorageService = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
+                var documentParser = scope.ServiceProvider.GetRequiredService<IDocumentParserService>();
+                var pdfService = scope.ServiceProvider.GetRequiredService<IPdfService>();
+                var xmlService = scope.ServiceProvider.GetRequiredService<IInvoiceXMLService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<SendInvoiceMinutesCommandHandler>>();
 
                 try
                 {
                     logger.LogInformation($"Bắt đầu xử lý gửi biên bản cho Invoice Adjustment ID: {request.InvoiceId}");
-
-                    // --- BƯỚC A: LẤY DỮ LIỆU HÓA ĐƠN ---
-                    // request.InvoiceId là của hóa đơn ĐIỀU CHỈNH/THAY THẾ
                     var adjustment = await uow.InvoicesRepository.GetAllQueryable()
                         .Include(x => x.InvoiceItems).ThenInclude(it => it.Product)
                         .Include(x => x.Customer)
@@ -64,8 +59,6 @@ namespace EIMS.Application.Features.Emails.Commands
                         logger.LogError($"Không tìm thấy hóa đơn điều chỉnh với ID {request.InvoiceId}");
                         return;
                     }
-
-                    // Lấy hóa đơn GỐC dựa trên OriginalInvoiceID của hóa đơn điều chỉnh
                     if (adjustment.OriginalInvoiceID == null)
                     {
                         logger.LogError($"Hóa đơn {request.InvoiceId} không có OriginalInvoiceID. Không thể tạo biên bản.");
@@ -79,9 +72,6 @@ namespace EIMS.Application.Features.Emails.Commands
                         logger.LogError($"Không tìm thấy hóa đơn gốc ID {adjustment.OriginalInvoiceID}");
                         return;
                     }
-
-                    // --- BƯỚC B: SO SÁNH NỘI DUNG (Content Before/After) ---
-                    // Logic giữ nguyên, nhưng lưu ý biến: original (cũ) vs adjustment (mới)
                     string contentBefore = "";
                     string contentAfter = "";
 
@@ -92,8 +82,6 @@ namespace EIMS.Application.Features.Emails.Commands
                     }
                     else
                     {
-                        // Logic so sánh tự động (Tôi giữ gọn lại để tập trung vào logic mới)
-                        // So sánh Tên
                         string nameOld = original.Customer?.CustomerName?.Trim() ?? "";
                         string nameNew = adjustment.Customer?.CustomerName?.Trim() ?? "";
                         if (!string.Equals(nameOld, nameNew, StringComparison.OrdinalIgnoreCase))
@@ -101,16 +89,12 @@ namespace EIMS.Application.Features.Emails.Commands
                             contentBefore += $"- Tên đơn vị: {original.Customer?.CustomerName}\n";
                             contentAfter += $"- Tên đơn vị: {adjustment.Customer?.CustomerName}\n";
                         }
-                        // ... (Giữ nguyên các logic so sánh MST, Địa chỉ, Item của bạn ở đây) ...
-                        // Nếu không có thay đổi gì thì để dòng kẻ
                         if (string.IsNullOrEmpty(contentBefore))
                         {
                             contentBefore = "................................................";
                             contentAfter = "................................................";
                         }
                     }
-
-                    // --- BƯỚC C: SINH FILE BIÊN BẢN ---
                     byte[] minutesFileBytes;
                     string minutesFileName;
                     string defaultTemplateCode;
@@ -127,8 +111,20 @@ namespace EIMS.Application.Features.Emails.Commands
                         minutesFileName = $"BienBan_DieuChinh_{original.InvoiceNumber}_to_{adjustment.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_ADJUST";
                     }
+                    var certResult = xmlService.GetCertificate(request.CertificateSerial);
 
-                    // --- BƯỚC D: LẤY EMAIL TEMPLATE ---
+                    if (certResult.IsFailed)
+                    {
+                        logger.LogError($"Lỗi lấy chứng thư số: {certResult.Errors[0].Message}");
+                        return;
+                    }
+
+                    var signingCert = certResult.Value;
+                    byte[] pdfBytes = await documentParser.ConvertDocxToPdfAsync(minutesFileBytes);
+                    byte[] signedPdfBytes = pdfService.SignPdfUsingSpire(pdfBytes, signingCert);
+                    string signedFileName = $"{minutesFileName}_Signed.pdf";
+                    var uploadResult = await fileStorageService.UploadFileAsync(new MemoryStream(signedPdfBytes), signedFileName, "minutes");
+                    string signedFileUrl = uploadResult.Value.Url;
                     EmailTemplate emailTemplate = null;
 
                     if (request.EmailTemplateId.HasValue)
@@ -138,7 +134,6 @@ namespace EIMS.Application.Features.Emails.Commands
 
                     if (emailTemplate == null)
                     {
-                        // Nếu không chọn hoặc không tìm thấy -> Lấy mặc định
                         emailTemplate = await uow.EmailTemplateRepository.GetAllQueryable()
                             .FirstOrDefaultAsync(x => x.TemplateCode == defaultTemplateCode && x.LanguageCode == "vi");
                     }
@@ -149,12 +144,11 @@ namespace EIMS.Application.Features.Emails.Commands
                         return;
                     }
                     var attachmentList = new List<FileAttachment>();
-
-                    // 1. File Biên bản (Luôn có)
                     attachmentList.Add(new FileAttachment
                     {
-                        FileName = minutesFileName,
-                        FileContent = minutesFileBytes
+                        FileName = signedFileName,
+                        FileContent = signedPdfBytes, 
+                        FileUrl = signedFileUrl       
                     });
                     string GetFileNameFromUrl(string url)
                     {
@@ -170,8 +164,6 @@ namespace EIMS.Application.Features.Emails.Commands
                             FileName = GetFileNameFromUrl(adjustment.FilePath)
                         });
                     }
-
-                    // 4.2. XML Hóa đơn
                     if (request.IncludeXml && !string.IsNullOrEmpty(adjustment.XMLPath))
                     {
                         attachmentList.Add(new FileAttachment
@@ -182,9 +174,6 @@ namespace EIMS.Application.Features.Emails.Commands
                     }
 
                     attachmentHtmlList += "<br/><em style='color: #666; font-size: 12px;'>(File được đính kèm theo email)</em>";
-
-
-                    // --- BƯỚC F: REPLACE NỘI DUNG EMAIL ---
                     var replacements = new Dictionary<string, string>
                 {
                     { "{{CustomerName}}", adjustment.Customer.CustomerName }, 
@@ -199,9 +188,6 @@ namespace EIMS.Application.Features.Emails.Commands
 
                     string subject = ReplacePlaceholders(emailTemplate.Subject, replacements);
                     string body = ReplacePlaceholders(emailTemplate.BodyContent, replacements);
-
-                    // --- BƯỚC G: CẤU HÌNH NGƯỜI NHẬN ---
-                    // Ưu tiên email FE gửi lên, nếu trống thì lấy email khách hàng
                     string toEmail = !string.IsNullOrEmpty(request.RecipientEmail)
                                      ? request.RecipientEmail
                                      : adjustment.Customer.ContactEmail;
@@ -211,15 +197,11 @@ namespace EIMS.Application.Features.Emails.Commands
                         ToEmail = toEmail,
                         Subject = subject,
                         EmailBody = body,
-                        AttachmentUrls = attachmentList, // Service gửi mail cần hỗ trợ List<FileAttachment>
-                        CcEmails = request.CcEmails,   // Truyền List CC
-                        BccEmails = request.BccEmails  // Truyền List BCC
+                        AttachmentUrls = attachmentList, 
+                        CcEmails = request.CcEmails,  
+                        BccEmails = request.BccEmails  
                     };
-
-                    // --- BƯỚC H: GỬI EMAIL ---
                     var sendResult = await emailService.SendMailAsync(mailRequest);
-
-                    // --- BƯỚC I: GHI LOG LỊCH SỬ ---
                     if (sendResult.IsSuccess)
                     {
                         await uow.InvoiceHistoryRepository.CreateAsync(new InvoiceHistory

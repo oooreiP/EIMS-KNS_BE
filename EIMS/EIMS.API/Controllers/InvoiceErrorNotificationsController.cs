@@ -26,7 +26,6 @@ namespace EIMS.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] GetErrorNotificationListQuery query)
         {
-            // [FromQuery] giúp tự động map các tham số trên URL (?page=1&status=1) vào object Query
             var result = await _mediator.Send(query);
 
             if (result.IsSuccess)
