@@ -5,15 +5,18 @@ using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace EIMS.Infrastructure.Repositories
 {
     public class InvoiceRepository : BaseRepository<Invoice>, IInvoicesRepository
     {
         private readonly ApplicationDbContext _context;
-        public InvoiceRepository(ApplicationDbContext context) : base(context)
+        private readonly IConfiguration _config;
+        public InvoiceRepository(ApplicationDbContext context, IConfiguration config) : base(context)
         {
             _context = context;
+            _config = config;
         }
         public async Task<Invoice> CreateInvoiceAsync(Invoice invoice)
         {
@@ -290,10 +293,13 @@ namespace EIMS.Infrastructure.Repositories
         }
         public async Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken)
         {
+            decimal targetRevenue = _config.GetValue<decimal>("SalesSettings:GlobalTargetRevenue");
+            double commissionRate = _config.GetValue<double>("SalesSettings:GlobalCommissionRate");
             var now = DateTime.UtcNow;
             // Fix for PostgreSQL: Specify UTC Kind explicitly
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-
+            var startOfLastMonth = startOfMonth.AddMonths(-1);
+            var sixMonthsAgo = now.AddMonths(-6);
             // 1. Base Query: Filter ONLY invoices belonging to this Sales Person
             var query = _context.Invoices
                 .AsNoTracking()
@@ -315,48 +321,139 @@ namespace EIMS.Infrastructure.Repositories
                     MonthRev = g.Where(i => i.CreatedAt >= startOfMonth).Sum(i => i.TotalAmount),
                     MonthCount = g.Count(i => i.CreatedAt >= startOfMonth),
 
+                    // last month
+                    LastMonthRev = g.Where(i => i.CreatedAt >= startOfLastMonth && i.CreatedAt < startOfMonth).Sum(i => i.TotalAmount),
+
                     // Status Counts
                     PaidCount = g.Count(i => i.PaymentStatusID == 3),
                     UnpaidCount = g.Count(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2),
                     OverdueCount = g.Count(i => i.PaymentStatusID == 4 || (i.PaymentStatusID != 3 && i.PaymentDueDate < now))
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+            var newCustomersCount = await query
+                .GroupBy(i => i.CustomerID)
+                .Where(g => g.Min(x => x.CreatedAt) >= startOfMonth)
+                .CountAsync(cancellationToken);
 
-            // 3. Fetch Recent 5 Invoices for this Sales Person
+            var rawTrend = await query
+                .Where(i => i.CreatedAt >= sixMonthsAgo)
+                .GroupBy(i => new { i.CreatedAt.Year, i.CreatedAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Revenue = g.Sum(i => i.TotalAmount),
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync(cancellationToken);
+
+            var salesTrend = rawTrend.Select(t => new SalesTrendDto
+            {
+                Year = t.Year,
+                MonthNumber = t.Month,
+                Month = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(t.Month) + " " + t.Year,
+                Revenue = t.Revenue,
+                InvoiceCount = t.Count,
+                CommissionEarned = t.Revenue * (decimal)(commissionRate / 100.0)
+            }).ToList();
+
+            // 5. Debt Watchlist (Top 10 Overdue)
+            // Logic: Unpaid and DueDate < Now
+            var debtWatchlist = await query
+                .Include(i => i.Customer)
+                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate != null && i.PaymentDueDate < now)
+                .Select(i => new
+                {
+                    i.InvoiceID,
+                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    i.Customer.CustomerName,
+                    i.Customer.ContactPhone,
+                    i.Customer.ContactEmail,
+                    i.RemainingAmount,
+                    DueDate = i.PaymentDueDate.Value
+                })
+                .ToListAsync(cancellationToken); // Client-side processing for complex date math if LINQ fails
+
+            var debtWatchlistMapped = debtWatchlist
+                .Select(i =>
+                {
+                    int overdueDays = (now - i.DueDate).Days;
+                    return new DebtWatchlistDto
+                    {
+                        InvoiceId = i.InvoiceID,
+                        InvoiceNumber = i.InvoiceNumber,
+                        CustomerName = i.CustomerName,
+                        Phone = i.ContactPhone ?? "",
+                        Email = i.ContactEmail ?? "",
+                        AmountPending = i.RemainingAmount,
+                        OverdueDays = overdueDays,
+                        UrgencyLevel = overdueDays > 30 ? "Critical" : (overdueDays > 15 ? "High" : "Medium")
+                    };
+                })
+                .OrderByDescending(x => x.OverdueDays)
+                .Take(10)
+                .ToList();
+            // 6. Recent Sales (Top 10) - With IsPriority Logic
             var recent = await query
+                .Include(i => i.Customer)
+                .Include(i => i.PaymentStatus)
+                .Include(i => i.InvoiceStatus)
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(5)
+                .Take(10)
                 .Select(i => new SalesInvoiceSimpleDto
                 {
                     InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber,
-                    CustomerName = i.Customer.CustomerName, // Include Customer Name
+                    InvoiceNumber = i.InvoiceNumber ?? 0,
+                    CustomerName = i.Customer.CustomerName,
                     CreatedDate = i.CreatedAt,
+                    IssueDate = i.IssuedDate,
+                    DueDate = i.PaymentDueDate,
                     TotalAmount = i.TotalAmount,
-                    Status = i.PaymentStatus.StatusName ?? "Unknown" // Assuming PaymentStatus entity has StatusName
+                    Status = i.PaymentStatus.StatusName ?? "Unknown",
+                    // Assuming StatusID 3 is Cancelled/Rejected.
+                    IsPriority = (i.InvoiceStatusID == 3) ||
+                                 (i.PaymentStatusID != 3 && i.PaymentDueDate != null && i.PaymentDueDate < now)
                 })
                 .ToListAsync(cancellationToken);
 
             // 4. Map to DTO
             var result = new SalesDashboardDto
             {
+                // Stats
+                TotalInvoicesGenerated = stats?.TotalCount ?? 0,
+                TotalRevenue = stats?.TotalRev ?? 0,
+                TotalCollected = stats?.TotalPaid ?? 0,
+                TotalDebt = stats?.TotalPending ?? 0,
+                PaidCount = stats?.PaidCount ?? 0,
+                UnpaidCount = stats?.UnpaidCount ?? 0,
+                OverdueCount = stats?.OverdueCount ?? 0,
+
+                // Growth KPIs
+                ThisMonthRevenue = stats?.MonthRev ?? 0,
+                LastMonthRevenue = stats?.LastMonthRev ?? 0,
+                ThisMonthInvoiceCount = stats?.MonthCount ?? 0,
+                NewCustomersThisMonth = newCustomersCount,
+                TargetRevenue = targetRevenue,
+                CommissionRate = commissionRate,
+
+                // Lists
+                SalesTrend = salesTrend,
+                DebtWatchlist = debtWatchlistMapped,
                 RecentSales = recent
             };
 
-            if (stats != null)
+            // Calculate Growth %
+            double growth = 0;
+            if (result.LastMonthRevenue > 0)
             {
-                result.TotalInvoicesGenerated = stats.TotalCount;
-                result.TotalRevenue = stats.TotalRev;
-                result.TotalCollected = stats.TotalPaid;
-                result.TotalDebt = stats.TotalPending;
-
-                result.ThisMonthRevenue = stats.MonthRev;
-                result.ThisMonthInvoiceCount = stats.MonthCount;
-
-                result.PaidCount = stats.PaidCount;
-                result.UnpaidCount = stats.UnpaidCount;
-                result.OverdueCount = stats.OverdueCount;
+                growth = (double)((result.ThisMonthRevenue - result.LastMonthRevenue) / result.LastMonthRevenue) * 100;
             }
+            else if (result.ThisMonthRevenue > 0)
+            {
+                growth = 100;
+            }
+            result.RevenueGrowthPercentage = Math.Round(growth, 2);
 
             return result;
         }
