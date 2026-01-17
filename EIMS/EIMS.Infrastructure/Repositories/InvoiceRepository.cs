@@ -501,7 +501,7 @@ namespace EIMS.Infrastructure.Repositories
                 CriticalDebt = criticalDebts?.TotalDebt ?? 0,
                 CriticalDebtCount = criticalDebts?.CustomerCount ?? 0,
                 VatRate = 10,
-                TotalDebt = totalDebtAll
+                TotalDebt = totalDebtAll,
             };
             metrics.Outstanding = metrics.NetRevenue - metrics.CashCollected;
             if (metrics.NetRevenue > 0)
@@ -594,6 +594,10 @@ namespace EIMS.Infrastructure.Repositories
             debtAging.Overdue1To30.Count = customers1_30.Count;
             debtAging.Overdue31To60.Count = customers31_60.Count;
             debtAging.CriticalOverdue60Plus.Count = customers60Plus.Count;
+            metrics.TotalDebtCount = debtAging.WithinDue.Count +
+                             debtAging.Overdue1To30.Count +
+                             debtAging.Overdue31To60.Count +
+                             debtAging.CriticalOverdue60Plus.Count;
             decimal totalDebtValue = unpaidInvoices.Sum(x => x.RemainingAmount);
             if (totalDebtValue > 0)
             {
@@ -659,6 +663,15 @@ namespace EIMS.Infrastructure.Repositories
                     5 => "Giải trình",
                     _ => "Khác"
                 };
+                string GetTypeBackgroundColor(int id) => id switch
+                {
+                    1 => "#e3f2fd", // Xanh dương nhạt
+                    2 => "#fff4e6", // Cam nhạt
+                    3 => "#f3e5f5", // Tím nhạt
+                    4 => "#ffebee", // Đỏ nhạt
+                    5 => "#e1f5fe", // Xanh trời nhạt
+                    _ => "#f5f5f5"  // Xám nhạt
+                };
                 string GetTypeColor(int id) => id switch
                 {
                     1 => "#2196f3", // Blue
@@ -700,8 +713,9 @@ namespace EIMS.Infrastructure.Repositories
                         InvoiceType = x.TypeId,
                         TypeName = GetTypeName(x.TypeId),
                         OriginalInvoiceNumber = x.RefNumber?.ToString() ?? "",
+                        TypeBackgroundColor = GetTypeBackgroundColor(x.TypeId), 
                         Reason = x.ReferenceNote,
-                        TypeColor = GetTypeColor(x.TypeId), // 🆕 Màu sắc
+                        TypeColor = GetTypeColor(x.TypeId),
                         TypeIcon = GetTypeIcon(x.TypeId),
                         ReasonType = GetReasonType(x.TypeId)
                     },
