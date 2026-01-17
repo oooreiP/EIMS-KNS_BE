@@ -30,9 +30,9 @@ namespace EIMS.API.Controllers
             return Ok(result.Value);
         }
         [HttpGet("admin")]
-        public async Task<IActionResult> GetAdminStats()
+        public async Task<IActionResult> GetAdminStats([FromQuery] GetAdminDashboardQuery query)
         {
-            var query = new GetAdminDashboardQuery();
+            // var query = new GetAdminDashboardQuery();
             var result = await _mediator.Send(query);
             if (result.IsFailed)
                 return BadRequest(result.Errors);

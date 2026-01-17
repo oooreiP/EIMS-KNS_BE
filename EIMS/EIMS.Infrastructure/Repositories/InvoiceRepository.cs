@@ -122,9 +122,14 @@ namespace EIMS.Infrastructure.Repositories
         }
         // ... imports
 
-        public async Task<AdminDashboardDto> GetAdminDashboardStatsAsync(CancellationToken cancellationToken)
+        public async Task<AdminDashboardDto> GetAdminDashboardStatsAsync(string? period, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
+            var targetDate = now;
+            if (!string.IsNullOrEmpty(period) && period.ToLower() == "last_month")
+            {
+                targetDate = now.AddMonths(-1);
+            }
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var startOfLastMonth = startOfMonth.AddMonths(-1);
             var sixMonthsAgo = now.AddMonths(-6);
@@ -200,6 +205,14 @@ namespace EIMS.Infrastructure.Repositories
                     NewUsersThisMonth = g.Count(u => u.CreatedAt >= startOfMonth)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+            userStats.UsersByRole = await _context.Users
+            .GroupBy(u => u.Role.RoleName)
+            .Select(g => new UserRoleStatDto
+            {
+                Role = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync(cancellationToken);
             var recentInvoices = await invoices
                     .Include(i => i.Customer)
                     .Include(i => i.InvoiceStatus)
@@ -214,7 +227,11 @@ namespace EIMS.Infrastructure.Repositories
                         CreatedAt = i.CreatedAt,
                         Amount = i.TotalAmount,
                         StatusName = i.InvoiceStatus.StatusName,
-                        PaymentStatus = i.PaymentStatus.StatusName
+                        PaymentStatus = i.PaymentStatus.StatusName,
+                        DueDate = i.PaymentDueDate,
+                        IsOverdue = i.PaymentStatusID != 3
+                        && i.PaymentDueDate != null
+                        && i.PaymentDueDate < now
                     })
                 .ToListAsync(cancellationToken);
             // 6. Assemble Result
@@ -251,14 +268,16 @@ namespace EIMS.Infrastructure.Repositories
                 result.InvoiceCounts.Unpaid = stats.Count_Unpaid;
                 result.InvoiceCounts.Overdue = stats.Count_Overdue;
                 // --- Calculate Growth Percentage ---
+                double growth = 0;
                 if (stats.LastMonth_Total > 0)
                 {
-                    result.RevenueGrowthPercentage = (double)((stats.Month_Total - stats.LastMonth_Total) / stats.LastMonth_Total) * 100;
+                    growth = (double)((stats.Month_Total - stats.LastMonth_Total) / stats.LastMonth_Total) * 100;
                 }
                 else if (stats.Month_Total > 0)
                 {
-                    result.RevenueGrowthPercentage = 100;
+                    growth = 100;
                 }
+                result.RevenueGrowthPercentage = Math.Round(growth, 2);
             }
 
             // Format Month Names for the Chart
