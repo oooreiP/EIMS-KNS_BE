@@ -24,6 +24,12 @@ namespace EIMS.Infrastructure.Service
 
         public async Task LogAsync(string action, string description, bool isSuccess = true)
         {
+            if (!string.IsNullOrEmpty(action) &&
+               (string.Equals(action, "Login", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(action, "Logout", StringComparison.OrdinalIgnoreCase)))
+            {
+                return; 
+            }
             var log = new SystemActivityLog
             {
                 UserId = _currentUser.UserId ?? "System",
@@ -32,7 +38,6 @@ namespace EIMS.Infrastructure.Service
                 Status = isSuccess ? "Success" : "Failed",
                 Timestamp = DateTime.UtcNow,
                 IpAddress = GetClientIpAddress(),
-                // TraceId lấy từ HttpContext để link với DataLog nếu cần
                 TraceId = _httpContext.HttpContext?.TraceIdentifier
             };
 

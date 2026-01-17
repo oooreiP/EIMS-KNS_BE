@@ -1,18 +1,22 @@
 ﻿using EIMS.Application.DTOs.InvoiceItem;
+using EIMS.Application.DTOs.Invoices;
+using EIMS.Application.DTOs.Requests;
+using EIMS.Application.Features.Invoices.Commands;
+using FluentResults;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EIMS.Application.Features.Invoices.Commands
+namespace EIMS.Application.Features.InvoiceRequests.Commands
 {
-    public abstract class BaseInvoiceCommand
+    public class CreateInvoiceRequestCommand :  IRequest<Result<CreateRequestResponse>>
     {
-        public int? TemplateID { get; set; }
+        public int? AccountantId { get; set; }
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
-        public int InvoiceStatusID { get; set; }
         public int CompanyID { get; set; } = 1;
         public int? SalesID { get; set; }
         public string? CustomerName { get; set; }
@@ -23,7 +27,6 @@ namespace EIMS.Application.Features.Invoices.Commands
         public decimal? Amount { get; set; }
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
-        public int? PerformedBy { get; set; }
         public int? MinRows { get; set; }
         // public int SalesID { get; set; }
         public string? ContactEmail { get; set; }

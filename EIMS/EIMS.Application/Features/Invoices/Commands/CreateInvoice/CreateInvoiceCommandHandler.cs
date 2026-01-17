@@ -88,9 +88,6 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 var productDict = products.ToDictionary(p => p.ProductID);
                 if (products.Count != productIds.Count)
                     return Result.Fail(new Error("One or more products not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
-                // var user = await _unitOfWork.UserRepository.GetByIdAsync(request.SalesID);
-                // if (user == null)
-                //     return Result.Fail(new Error($"User {request.SalesID} not found").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
                 var processedItems = new List<InvoiceItem>();
                 foreach (var itemReq in request.Items)
                 {
@@ -145,6 +142,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentStatusID = 1,
                     PaymentDueDate = DateTime.UtcNow.AddDays(30),
                     IssuerID = null,
+                    CreatedBy = request.PerformedBy,
                     MinRows = request.MinRows ?? 5,
                     PaidAmount = 0,
                     RemainingAmount = totalAmount,
@@ -161,7 +159,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     ActionType = "Created",
                     ReferenceInvoiceID = null,
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.SignedBy,
+                    PerformedBy = request.PerformedBy,
                 };
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();
