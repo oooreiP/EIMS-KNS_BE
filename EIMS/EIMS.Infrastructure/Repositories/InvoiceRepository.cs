@@ -506,7 +506,7 @@ namespace EIMS.Infrastructure.Repositories
 
             if (metrics.NetRevenue > 0)
                 metrics.CollectionRate = Math.Round(((double)metrics.CashCollected / (double)metrics.NetRevenue) * 100, 2);
-                metrics.OutstandingRate = Math.Round(((double)metrics.Outstanding / (double)metrics.NetRevenue) * 100, 2);
+            metrics.OutstandingRate = Math.Round(((double)metrics.Outstanding / (double)metrics.NetRevenue) * 100, 2);
 
             // B. CASH FLOW (6 Tháng gần nhất)
             var cashFlowRaw = await _context.Invoices
@@ -689,6 +689,7 @@ namespace EIMS.Infrastructure.Repositories
                         CreatedDate = x.CreatedAt,
                         Priority = priority,
                         HoursWaiting = Math.Round(hours, 1),
+                        DaysWaiting = (int)(hours / 24),
                         InvoiceType = x.TypeId,
                         TypeName = GetTypeName(x.TypeId),
                         OriginalInvoiceNumber = x.RefNumber?.ToString() ?? "",
