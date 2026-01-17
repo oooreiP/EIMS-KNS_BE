@@ -595,6 +595,13 @@ namespace EIMS.Infrastructure.Repositories
             debtAging.Overdue31To60.Count = customers31_60.Count;
             debtAging.CriticalOverdue60Plus.Count = customers60Plus.Count;
             decimal totalDebtValue = unpaidInvoices.Sum(x => x.RemainingAmount);
+            if (totalDebtValue > 0)
+            {
+                debtAging.WithinDue.Percentage = Math.Round(((double)debtAging.WithinDue.Amount / (double)totalDebtValue) * 100, 2);
+                debtAging.Overdue1To30.Percentage = Math.Round(((double)debtAging.Overdue1To30.Amount / (double)totalDebtValue) * 100, 2);
+                debtAging.Overdue31To60.Percentage = Math.Round(((double)debtAging.Overdue31To60.Amount / (double)totalDebtValue) * 100, 2);
+                debtAging.CriticalOverdue60Plus.Percentage = Math.Round(((double)debtAging.CriticalOverdue60Plus.Amount / (double)totalDebtValue) * 100, 2);
+            }
             var pendingStatusIds = new[] { 6 };
 
             var pendingRaw = await _context.Invoices
