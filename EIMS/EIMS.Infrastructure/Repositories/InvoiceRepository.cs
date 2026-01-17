@@ -537,7 +537,7 @@ namespace EIMS.Infrastructure.Repositories
                     Invoiced = x.Invoiced,
                     Collected = x.Collected,
                     Outstanding = outstanding,
-                    CollectionRate = Math.Round(rate, 1)
+                    CollectionRate = Math.Round(rate, 2)
                 };
             }).ToList();
 
