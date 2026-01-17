@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Dashboard;
 using EIMS.Application.DTOs.Dashboard.Admin;
+using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
 using EIMS.Infrastructure.Persistence;
@@ -456,6 +457,205 @@ namespace EIMS.Infrastructure.Repositories
             result.RevenueGrowthPercentage = Math.Round(growth, 2);
 
             return result;
+        }
+        public async Task<HodDashboardDto> GetHodDashboardStatsAsync(CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var sixMonthsAgo = now.AddMonths(-6);
+
+            // A.Tháng hiện tại
+            var monthlyData = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.CreatedAt >= startOfMonth)
+                .GroupBy(x => 1)
+                .Select(g => new
+                {
+                    // Trừ hóa đơn đã hủy (Giả sử StatusID 5 là Cancelled)
+                    NetRevenue = g.Where(i => i.InvoiceStatusID != 5).Sum(i => i.TotalAmount),
+                    CashCollected = g.Sum(i => i.PaidAmount)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            // Tìm nợ xấu (> 90 ngày)
+            var criticalDate = now.AddDays(-90);
+            var criticalDebts = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate != null && i.PaymentDueDate < criticalDate)
+                .GroupBy(x => 1)
+                .Select(g => new
+                {
+                    TotalDebt = g.Sum(i => i.RemainingAmount),
+                    CustomerCount = g.Select(i => i.CustomerID).Distinct().Count()
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var metrics = new HodFinancialMetricsDto
+            {
+                NetRevenue = monthlyData?.NetRevenue ?? 0,
+                CashCollected = monthlyData?.CashCollected ?? 0,
+                EstimatedVAT = (monthlyData?.NetRevenue ?? 0) * 0.1m, // 10%
+                CriticalDebt = criticalDebts?.TotalDebt ?? 0,
+                CriticalDebtCount = criticalDebts?.CustomerCount ?? 0
+            };
+
+            if (metrics.NetRevenue > 0)
+                metrics.CollectionRate = Math.Round((double)(metrics.CashCollected / metrics.NetRevenue) * 100, 1);
+
+            // B. CASH FLOW (6 Tháng gần nhất)
+            var cashFlowRaw = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.IssuedDate >= sixMonthsAgo)
+                .GroupBy(i => new { i.IssuedDate.Value.Year, i.IssuedDate.Value.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Invoiced = g.Sum(i => i.TotalAmount),
+                    Collected = g.Sum(i => i.PaidAmount)
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync(cancellationToken);
+
+            var cashFlowList = cashFlowRaw.Select(x =>
+            {
+                decimal outstanding = x.Invoiced - x.Collected;
+                double rate = x.Invoiced > 0 ? (double)(x.Collected / x.Invoiced) * 100 : 0;
+
+                return new CashFlowDto
+                {
+                    MonthNumber = x.Month,
+                    Year = x.Year,
+                    Month = $"T{x.Month:D2}/{x.Year}",
+                    Invoiced = x.Invoiced,
+                    Collected = x.Collected,
+                    Outstanding = outstanding,
+                    CollectionRate = Math.Round(rate, 1)
+                };
+            }).ToList();
+
+            // C. DEBT AGING (Phân tích tuổi nợ)
+            // Lấy tất cả hóa đơn chưa thanh toán hết để xử lý
+            var unpaidInvoices = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.PaymentStatusID != 3) // != Paid
+                .Select(i => new { i.RemainingAmount, i.PaymentDueDate, i.CustomerID })
+                .ToListAsync(cancellationToken);
+
+            var debtAging = new DebtAgingReportDto
+            {
+                WithinDue = new DebtBucketDto { Label = "Trong hạn" },
+                Overdue1To30 = new DebtBucketDto { Label = "1-30 ngày" },
+                Overdue31To60 = new DebtBucketDto { Label = "31-60 ngày" },
+                CriticalOverdue60Plus = new DebtBucketDto { Label = "60+ ngày" }
+            };
+
+            var customersWithin = new HashSet<int>();
+            var customers1_30 = new HashSet<int>();
+            var customers31_60 = new HashSet<int>();
+            var customers60Plus = new HashSet<int>();
+
+            foreach (var inv in unpaidInvoices)
+            {
+                if (inv.PaymentDueDate == null || inv.PaymentDueDate >= now)
+                {
+                    debtAging.WithinDue.Amount += inv.RemainingAmount;
+                    customersWithin.Add(inv.CustomerID);
+                }
+                else
+                {
+                    int daysOverdue = (now - inv.PaymentDueDate.Value).Days;
+                    if (daysOverdue <= 30)
+                    {
+                        debtAging.Overdue1To30.Amount += inv.RemainingAmount;
+                        customers1_30.Add(inv.CustomerID);
+                    }
+                    else if (daysOverdue <= 60)
+                    {
+                        debtAging.Overdue31To60.Amount += inv.RemainingAmount;
+                        customers31_60.Add(inv.CustomerID);
+                    }
+                    else
+                    {
+                        debtAging.CriticalOverdue60Plus.Amount += inv.RemainingAmount;
+                        customers60Plus.Add(inv.CustomerID);
+                    }
+                }
+            }
+
+            debtAging.WithinDue.Count = customersWithin.Count;
+            debtAging.Overdue1To30.Count = customers1_30.Count;
+            debtAging.Overdue31To60.Count = customers31_60.Count;
+            debtAging.CriticalOverdue60Plus.Count = customers60Plus.Count;
+
+            var pendingStatusIds = new[] { 6 };
+
+            var pendingRaw = await _context.Invoices
+                .AsNoTracking()
+                .Include(i => i.Customer)
+                .Include(i => i.OriginalInvoice)
+                .Where(i => pendingStatusIds.Contains(i.InvoiceStatusID))
+                .OrderBy(i => i.CreatedAt)
+                .Take(50)
+                .Select(i => new
+                {
+                    i.InvoiceID,
+                    i.InvoiceNumber,
+                    CustomerName = i.Customer.CustomerName,
+                    i.TotalAmount,
+                    i.CreatedAt,
+                    TypeId = i.InvoiceType,
+                    i.ReferenceNote,
+                    RefNumber = i.OriginalInvoice != null ? i.OriginalInvoice.InvoiceNumber : (int?)null
+                })
+                .ToListAsync(cancellationToken);
+
+            var pendingList = pendingRaw.Select(x =>
+            {
+                double hours = (now - x.CreatedAt).TotalHours;
+                string priority = hours > 24 ? "High" : (hours > 12 ? "Medium" : "Low");
+
+                string GetTypeName(int id) => id switch
+                {
+                    1 => "Gốc",
+                    2 => "Điều chỉnh",
+                    3 => "Thay thế",
+                    4 => "Hủy",
+                    5 => "Giải trình",
+                    _ => "Khác"
+                };
+
+                return new PendingInvoiceDto
+                {
+                    InvoiceId = x.InvoiceID,
+                    InvoiceNumber = x.InvoiceNumber?.ToString() ?? "N/A",
+                    CustomerName = x.CustomerName,
+                    TotalAmount = x.TotalAmount,
+                    CreatedDate = x.CreatedAt,
+                    Priority = priority,
+                    HoursWaiting = Math.Round(hours, 1),
+                    InvoiceType = x.TypeId,
+                    TypeName = GetTypeName(x.TypeId),
+                    OriginalInvoiceNumber = x.RefNumber?.ToString() ?? "",
+                    AdjustmentReason = x.TypeId == 2 ? x.ReferenceNote : null,
+                    ReplacementReason = x.TypeId == 2 ? x.ReferenceNote : null,
+                    CancellationReason = x.TypeId == 3 ? x.ReferenceNote : null,
+                    ExplanationText = x.TypeId == 4 ? x.ReferenceNote : null,
+                };
+            })
+            .OrderByDescending(p => p.Priority == "High") // Sort High first
+            .ThenByDescending(p => p.Priority == "Medium")
+            .ThenBy(p => p.CreatedDate)
+            .ToList();
+            return new HodDashboardDto
+            {
+                Financials = metrics,
+                CashFlow = cashFlowList,
+                DebtAging = debtAging,
+                PendingInvoices = pendingList,
+                GeneratedAt = now,
+                FiscalMonth = now.ToString("yyyy-MM")
+            };
         }
     }
 }
