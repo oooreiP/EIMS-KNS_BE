@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.DTOs.Dashboard;
+using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
 using System;
@@ -14,7 +15,8 @@ namespace EIMS.Application.Commons.Interfaces
         Task<Invoice> CreateInvoiceAsync(Invoice invoice);
         public IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? column, string? direction);
         Task<CustomerDashboardDto> GetCustomerDashboardStatsAsync(int customerId);
-        Task<AdminDashboardDto> GetAdminDashboardStatsAsync(CancellationToken cancellationToken);
+        Task<AdminDashboardDto> GetAdminDashboardStatsAsync(string? period, CancellationToken cancellationToken);
         Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken);
+        Task<HodDashboardDto> GetHodDashboardStatsAsync(CancellationToken cancellationToken);
     }
 }

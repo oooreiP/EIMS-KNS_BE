@@ -14,5 +14,7 @@ namespace EIMS.Application.DTOs.Dashboard.Admin
         public decimal Amount { get; set; }
         public string StatusName { get; set; }
         public string PaymentStatus { get; set; }
+        public DateTime? DueDate { get; set; }
+        public bool IsOverdue { get; set; }
     }
 }
