@@ -23,5 +23,6 @@ namespace EIMS.Application.DTOs.Dashboard.HOD
         public string Reason { get; set; }     // Nội dung lý do
         public string ReasonType { get; set; } // Loại lý do (adjustment, cancellation...)
         public string OriginalInvoiceNumber { get; set; }
+        public string TypeBackgroundColor { get; set; }
     }
 }
