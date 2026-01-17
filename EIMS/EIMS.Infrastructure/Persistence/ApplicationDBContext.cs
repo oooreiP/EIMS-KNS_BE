@@ -355,8 +355,8 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceStatus { InvoiceStatusID = 7, StatusName = "Pending Sign" },
                 new InvoiceStatus { InvoiceStatusID = 8, StatusName = "Signed" },
                 new InvoiceStatus { InvoiceStatusID = 9, StatusName = "Sent" },
-                new InvoiceStatus { InvoiceStatusID = 10, StatusName = "Adjustment_in_process" },
-                new InvoiceStatus { InvoiceStatusID = 11, StatusName = "Replacement_in_process" },
+                new InvoiceStatus { InvoiceStatusID = 10, StatusName = "AdjustmentInProcess" },
+                new InvoiceStatus { InvoiceStatusID = 11, StatusName = "ReplacementInProcess" },
                 new InvoiceStatus { InvoiceStatusID = 12, StatusName = "TaxAuthority Approved" },
                 new InvoiceStatus { InvoiceStatusID = 13, StatusName = "TaxAuthority Rejected" },
                 new InvoiceStatus { InvoiceStatusID = 14, StatusName = "Processing" },
@@ -370,7 +370,7 @@ namespace EIMS.Infrastructure.Persistence
 
             modelBuilder.Entity<PaymentStatus>().HasData(
                 new PaymentStatus { PaymentStatusID = 1, StatusName = "Unpaid" },
-                new PaymentStatus { PaymentStatusID = 2, StatusName = "Partially Paid" },
+                new PaymentStatus { PaymentStatusID = 2, StatusName = "PartiallyPaid" },
                 new PaymentStatus { PaymentStatusID = 3, StatusName = "Paid" },
                 new PaymentStatus { PaymentStatusID = 4, StatusName = "Overdue" }
             );
