@@ -9,6 +9,5 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 {
     public class CreateInvoiceCommand : BaseInvoiceCommand, IRequest<Result<CreateInvoiceResponse>>
     {
-        
     }
 }

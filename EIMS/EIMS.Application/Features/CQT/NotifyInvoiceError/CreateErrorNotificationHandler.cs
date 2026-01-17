@@ -111,7 +111,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 case 1: 
                     if (invoice.InvoiceStatusID == 3) 
                     {
-                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY trước đó. Không thể thực hiện hủy lần nữa.");
+                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY trước đó.");
                     }
                     break;
 

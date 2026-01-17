@@ -36,5 +36,7 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<InvoiceStatement> Statements { get; set; } = new List<InvoiceStatement>();
         [InverseProperty("Customer")]
         public virtual ICollection<User> Users { get; set; } = new List<User>();
+        [InverseProperty("Customer")]
+        public virtual ICollection<InvoiceRequest> InvoiceRequests { get; set; }
     }
 }
