@@ -27,6 +27,7 @@ using Spire.Pdf.Interactive.DigitalSignatures;
 using PdfSignature = Spire.Pdf.Security.PdfSignature;
 using GraphicMode = Spire.Pdf.Security.GraphicMode;
 using System.Drawing.Drawing2D;
+using DocumentFormat.OpenXml.ExtendedProperties;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -215,7 +216,7 @@ namespace EIMS.Infrastructure.Service
                 InvoiceCustomerAddress = customer.Address,
                 InvoiceCustomerTaxCode = customer.TaxCode,
                 InvoiceStatusID = request.InvoiceStatusID,
-                IssuerID = request.SignedBy
+                CreatedBy = request.PerformedBy
             };
             string xmlContent = SerializeInvoiceToXml(invoice);
             var config = JsonSerializer.Deserialize<TemplateConfig>(
@@ -245,7 +246,6 @@ namespace EIMS.Infrastructure.Service
                 throw new Exception("Tờ khai chưa có dữ liệu XML.");
             }
             string xmlContent = await _xmlService.DownloadStringAsync(noti.XMLPath);
-
             // 3. Chuẩn bị tham số cho XSLT
             // Mẫu 04 đơn giản hơn Invoice, không cần config JSON phức tạp,
             // nhưng cần truyền Tên Công Ty vào vì XML gốc chỉ có MST.
@@ -391,7 +391,13 @@ namespace EIMS.Infrastructure.Service
         {
             var args = new XsltArgumentList();
             var company = await _uow.CompanyRepository.GetByIdAsync(1);
-            string companyName = company?.CompanyName ?? "TÊN CÔNG TY CHƯA CẬP NHẬT";
+            string companyName = noti.TaxpayerName ?? company?.CompanyName ?? "TÊN CÔNG TY CHƯA CẬP NHẬT";
+            string place = noti.Place;
+            string providerName = "Hệ thống EIMS";
+            bool isApproved = noti.Status == 4;
+            args.AddParam("IsApproved", "", isApproved ? "true" : "false");
+            args.AddParam("ProviderName", "", providerName);
+            args.AddParam("Place", "", place);
             args.AddParam("CompanyName", "", companyName);
             bool isDraft = noti.Status == 1;
             args.AddParam("IsDraft", "", isDraft ? "true" : "false");
