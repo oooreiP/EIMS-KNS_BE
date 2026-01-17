@@ -17,5 +17,6 @@ namespace EIMS.Application.DTOs.Dashboard.HOD
         public double OutstandingRate { get; set; }   // % còn phải thu
         public double VatRate { get; set; } = 10;     // Mặc định 10%
         public decimal TotalDebt { get; set; }
+        public int TotalDebtCount { get; set; }
     }
 }
