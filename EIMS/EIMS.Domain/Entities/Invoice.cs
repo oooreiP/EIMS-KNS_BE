@@ -34,6 +34,7 @@ namespace EIMS.Domain.Entities
         public int? IssuerID { get; set; }
         [ForeignKey("SalesID")]
         public int? SalesID { get; set; }
+        public int? CreatedBy { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
@@ -124,6 +125,8 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoicePayment> Payments { get; set; } = new List<InvoicePayment>();
+        [InverseProperty("CreatedInvoice")] 
+        public virtual InvoiceRequest? OriginRequest { get; set; }
 
         // 2. Add the Calculation Logic
         // [NotMapped]
