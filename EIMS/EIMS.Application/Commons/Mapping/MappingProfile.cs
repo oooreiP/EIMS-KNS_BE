@@ -132,6 +132,7 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<AuditLog, AuditLogDto>()
              .ForMember(dest => dest.AuditID, opt => opt.MapFrom(src => src.AuditID))
              .ForMember(dest => dest.TraceId, opt => opt.MapFrom(src => src.TraceId))
+             .ForMember(dest => dest.UserID, opt => opt.MapFrom(src => src.UserID))
              // Map UserName từ bảng User liên kết
              .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : "System"));
             CreateMap<SystemActivityLog, SystemActivityLogDto>();

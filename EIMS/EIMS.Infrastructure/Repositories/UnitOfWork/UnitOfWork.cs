@@ -41,6 +41,9 @@ namespace EIMS.Application.Commons.UnitOfWork
         public IBaseRepository<InvoiceLookupLog> InvoiceLookupLogRepository {get; set; }
         public IErrorNotificationRepository ErrorNotificationRepository { get; set; }
         public IBaseRepository<InvoiceErrorDetail> InvoiceErrorDetailRepository { get; set; }
+        public IBaseRepository<InvoiceRequest> InvoiceRequestRepository { get; set; }
+        public IBaseRepository<InvoiceRequestItem> InvoiceRequestItemRepository { get; set; }
+        public IBaseRepository<InvoiceRequestStatus> InvoiceRequestStatusRepository { get; set; }
         public UnitOfWork(ApplicationDbContext db, IConfiguration configuration)
         {
             _db = db;
@@ -72,6 +75,9 @@ namespace EIMS.Application.Commons.UnitOfWork
             NotificationRepository = new BaseRepository<Notification>(_db);
             NotificationStatusRepository = new BaseRepository<NotificationStatus>(_db);
             InvoiceLookupLogRepository = new BaseRepository<InvoiceLookupLog>(_db);
+            InvoiceRequestStatusRepository = new BaseRepository<InvoiceRequestStatus>(_db);
+            InvoiceRequestRepository = new BaseRepository<InvoiceRequest>(_db);
+            InvoiceRequestItemRepository = new BaseRepository<InvoiceRequestItem>(_db);
 
             ErrorNotificationRepository = new ErrorNotificationRepository(_db);
             InvoiceErrorDetailRepository = new BaseRepository<InvoiceErrorDetail>(_db);

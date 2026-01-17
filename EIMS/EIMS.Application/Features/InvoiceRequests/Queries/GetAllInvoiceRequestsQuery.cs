@@ -1,0 +1,21 @@
+﻿using EIMS.Application.Commons.Models;
+using EIMS.Application.DTOs.Requests;
+using FluentResults;
+using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EIMS.Application.Features.InvoiceRequests.Queries
+{
+    public class GetAllInvoiceRequestsQuery : IRequest<Result<PaginatedList<GetInvoiceRequestDto>>>
+    {
+        public int PageIndex { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SearchTerm { get; set; }
+        public int? StatusId { get; set; }
+        public int? SaleId { get; set; }
+    }
+}
