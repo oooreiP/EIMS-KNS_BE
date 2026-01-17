@@ -10,5 +10,6 @@ namespace EIMS.Application.DTOs.Dashboard.HOD
         public decimal Amount { get; set; }
         public int Count { get; set; } // Số khách hàng
         public string Label { get; set; }
+        public double Percentage { get; set; }
     }
 }
