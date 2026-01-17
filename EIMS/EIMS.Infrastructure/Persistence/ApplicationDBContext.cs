@@ -48,6 +48,9 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<InvoiceErrorNotification> InvoiceErrorNotifications { get; set; }
         public DbSet<InvoiceErrorDetail> InvoiceErrorDetails { get; set; }
         public DbSet<InvoiceLookupLog> InvoiceLookupLogs { get; set; }
+        public DbSet<InvoiceRequest> InvoiceRequests { get; set; }
+        public DbSet<InvoiceRequestItem> InvoiceRequestItems { get; set; }
+        public DbSet<InvoiceRequestStatus> InvoiceRequestStatuses { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.AddInterceptors(_auditableEntityInterceptor);
@@ -326,6 +329,7 @@ namespace EIMS.Infrastructure.Persistence
                 new Prefix { PrefixID = 9, PrefixName = "Hóa đơn bán hàng tích hợp biên lai thu thuế, phí, lệ phí" }
             );
             modelBuilder.Entity<InvoiceType>().HasData(
+                new InvoiceType { InvoiceTypeID = -1, Symbol = "0", TypeName = "Hóa đơn hệ thống không có ký hiệu" },
                 new InvoiceType { InvoiceTypeID = 1, Symbol = "T", TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân kinh doanh đăng ký sử dụng" },
                 new InvoiceType { InvoiceTypeID = 2, Symbol = "D", TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia hoặc hóa đơn điện tử đặc thù không nhất thiết phải có một số tiêu thức do các doanh nghiệp, tổ chức đăng ký sử dụng" },
                 new InvoiceType { InvoiceTypeID = 3, Symbol = "L", TypeName = "Hóa đơn Cơ quan thuế cấp theo từng lần phát sinh" },
@@ -337,9 +341,37 @@ namespace EIMS.Infrastructure.Persistence
                 new InvoiceType { InvoiceTypeID = 9, Symbol = "X", TypeName = "Hóa đơn thương mại điện tử" }
             );
             modelBuilder.Entity<SerialStatus>().HasData(
+                new SerialStatus { SerialStatusID = -1, Symbol = "0", StatusName = "Hóa đơn hệ thống không có ký hiệu" },
                 new SerialStatus { SerialStatusID = 1, Symbol = "C", StatusName = "Hóa đơn có mã của cơ quan thuế" },
                 new SerialStatus { SerialStatusID = 2, Symbol = "K", StatusName = "Hóa đơn không có mã của cơ quan thuế" }
             );
+            modelBuilder.Entity<Serial>().HasData(
+                new Serial
+                {
+                    SerialID = -1,  
+                    PrefixID = 1, 
+                    InvoiceTypeID = -1,
+                    Year = "00",
+                    Tail = "00",
+                    SerialStatusID = -1, 
+                    CurrentInvoiceNumber = 0
+                }
+            );
+            var template2Layout = """
+    {"table": {"columns": [{"id": "code", "label": "Mã hàng", "hasCode": false, "visible": false}, {"id": "name", "label": "Tên hàng hóa, dịch vụ", "hasCode": false, "visible": false}, {"id": "specs", "label": "Quy cách", "hasCode": false, "visible": false}, {"id": "unit", "label": "Đơn vị tính", "hasCode": false, "visible": true}, {"id": "quantity", "label": "Số lượng", "hasCode": true, "visible": true}, {"id": "price", "label": "Đơn giá", "hasCode": true, "visible": true}, {"id": "amount", "label": "Thành tiền", "hasCode": true, "visible": false}, {"id": "note", "label": "Ghi chú", "hasCode": false, "visible": false}, {"id": "warehouse", "label": "Kho nhập", "hasCode": false, "visible": false}], "rowCount": 5, "sttTitle": "STT", "sttContent": "[STT]"}, "company": {"name": "Công ty Cổ phần Giải pháp Tổng thể Kỷ Nguyên Số", "phone": "(028) 38 995 822", "fields": [{"id": "name", "label": "Đơn vị bán", "value": "Công ty Cổ phần Giải pháp Tổng thể Kỷ Nguyên Số", "visible": true}, {"id": "taxCode", "label": "Mã số thuế", "value": "0316882091", "visible": false}, {"id": "address", "label": "Địa chỉ", "value": "Tòa nhà ABC, 123 Đường XYZ, Phường Tân Định, Quận 1, TP. Hồ Chí Minh, Việt Nam", "visible": true}, {"id": "phone", "label": "Điện thoại", "value": "(028) 38 995 822", "visible": true}, {"id": "fax", "label": "Fax", "value": "", "visible": false}, {"id": "website", "label": "Website", "value": "kns.com.vn", "visible": false}, {"id": "email", "label": "Email", "value": "contact@kns.com.vn", "visible": false}, {"id": "bankAccount", "label": "Số tài khoản", "value": "245889119 - Ngân hàng TMCP Á Châu - CN Sài Gòn", "visible": true}], "address": "Tòa nhà ABC, 123 Đường XYZ, Phường Tân Định, Quận 1, TP. Hồ Chí Minh, Việt Nam", "taxCode": "0316882091", "bankAccount": "245889119 - Ngân hàng TMCP Á Châu - CN Sài Gòn"}, "settings": {"bilingual": false, "numberFont": "arial", "showQrCode": true, "visibility": {"showLogo": true, "showSignature": true, "showCompanyName": true, "showCompanyPhone": true, "showCompanyAddress": true, "showCompanyTaxCode": false, "showCompanyBankAccount": true}, "customerVisibility": {"customerName": false, "customerEmail": false, "customerPhone": false, "paymentMethod": false, "customerAddress": false, "customerTaxCode": false}}, "modelCode": "01GTKT", "background": {"frame": "https://res.cloudinary.com/djz86r9zd/image/upload/v1764156289/khunghoadon3_utka5u.png", "custom": null}, "invoiceDate": "2025-11-28T04:56:57.273Z", "templateCode": "1000000"}
+    """;
+            modelBuilder.Entity<InvoiceTemplate>().HasData(
+            new InvoiceTemplate
+            {
+                TemplateID = -1,
+                TemplateName = "Hóa hệ thống không có ký hiệu",
+                TemplateTypeID = 1,
+                SerialID = -1, 
+                IsActive = true,
+                CreatedByUserID = 1, 
+                LayoutDefinition = template2Layout,
+                TemplateFrameID = 1 // Đảm bảo Frame ID 1 tồn tại
+            });
             modelBuilder.Entity<TemplateType>().HasData(
                 new TemplateType { TemplateTypeID = 1, TypeName = "Hóa đơn mới", TypeCategory = "New" },
                 new TemplateType { TemplateTypeID = 2, TypeName = "Hóa đơn điều chỉnh", TypeCategory = "Adjustment" },
@@ -367,7 +399,38 @@ namespace EIMS.Infrastructure.Persistence
 
 
             );
-
+            modelBuilder.Entity<InvoiceRequestStatus>().HasData(
+        new InvoiceRequestStatus
+        {
+            StatusID = 1,
+            StatusName = "Pending",
+            Description = "Mới tạo, chờ kế toán kiểm tra và duyệt"
+        },
+        new InvoiceRequestStatus
+        {
+            StatusID = 2,
+            StatusName = "Approved",
+            Description = "Đã được duyệt và tạo thành hóa đơn chính thức"
+        },
+        new InvoiceRequestStatus
+        {
+            StatusID = 3,
+            StatusName = "Rejected",
+            Description = "Bị từ chối (cần sửa lại thông tin)"
+        },
+        new InvoiceRequestStatus
+        {
+            StatusID = 4,
+            StatusName = "Cancelled",
+            Description = "Đã bị hủy bởi người tạo"
+        },
+         new InvoiceRequestStatus
+         {
+             StatusID = 5,
+             StatusName = "Invoice_Issued",
+             Description = "Hóa đơn từ yêu cầu đã được phát hành"
+         }
+    );
             modelBuilder.Entity<PaymentStatus>().HasData(
                 new PaymentStatus { PaymentStatusID = 1, StatusName = "Unpaid" },
                 new PaymentStatus { PaymentStatusID = 2, StatusName = "PartiallyPaid" },

@@ -422,7 +422,8 @@ namespace EIMS.Application.Commons.Helpers
 
             var signedXml = new SignedXml(xmlDoc);
             signedXml.SigningKey = signingCert.GetRSAPrivateKey();
-
+            string signatureId = "Signature_" + Guid.NewGuid().ToString("N");
+            signedXml.Signature.Id = signatureId;
             var keyInfo = new KeyInfo();
             keyInfo.AddClause(new KeyInfoX509Data(signingCert));
             signedXml.KeyInfo = keyInfo;
@@ -433,17 +434,30 @@ namespace EIMS.Application.Commons.Helpers
             signedXml.AddReference(reference);
 
             // Thêm Metadata (SigningTime)
-            var signatureProperty = xmlDoc.CreateElement("SignatureProperty");
-            signatureProperty.SetAttribute("Target", "");
-            var signingTimeElement = xmlDoc.CreateElement("SigningTime");
-            signingTimeElement.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-            signatureProperty.AppendChild(signingTimeElement);
+            var dataObject = new DataObject();
 
-            var signatureProperties = xmlDoc.CreateElement("SignatureProperties");
+            // Namespace chuẩn của XMLDSig
+            string dsigNs = SignedXml.XmlDsigNamespaceUrl; // "http://www.w3.org/2000/09/xmldsig#"
+
+            // Tạo SignatureProperties có Namespace
+            var signatureProperties = xmlDoc.CreateElement("SignatureProperties", dsigNs);
+
+            // Tạo SignatureProperty có Namespace
+            var signatureProperty = xmlDoc.CreateElement("SignatureProperty", dsigNs);
+            // Target phải trỏ về ID của chữ ký
+            signatureProperty.SetAttribute("Target", "#" + signatureId);
+
+            // Tạo SigningTime có Namespace
+            var signingTime = xmlDoc.CreateElement("SigningTime", dsigNs);
+            signingTime.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+
+            // Ghép các thẻ lại
+            signatureProperty.AppendChild(signingTime);
             signatureProperties.AppendChild(signatureProperty);
-            var xmlObject = xmlDoc.CreateElement("Object");
-            xmlObject.AppendChild(signatureProperties);
-            signedXml.AddObject(new DataObject { Data = xmlObject.ChildNodes });
+
+            // Đưa vào DataObject
+            dataObject.Data = signatureProperties.SelectNodes(".");
+            signedXml.AddObject(dataObject);
 
             // Compute Signature
             signedXml.ComputeSignature();
@@ -455,7 +469,7 @@ namespace EIMS.Application.Commons.Helpers
 
             if (tBaoNode != null)
             {
-                var dscksNode = xmlDoc.CreateElement("DSCKS");
+                var dscksNode = xmlDoc.CreateElement("DSCKS", tBaoNode.NamespaceURI);
                 dscksNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
                 tBaoNode.AppendChild(dscksNode);
             }

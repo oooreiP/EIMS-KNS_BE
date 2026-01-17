@@ -217,7 +217,7 @@ namespace EIMS.Infrastructure.Service
         public async Task<(XmlDocument XmlDoc, string MessageId)> Generate04SSXmlDocumentAsync(InvoiceErrorNotification notification)
         {
             // Cấu hình cứng (Hard-code) hoặc lấy từ Config
-            string companyTaxCode = "0311357436";
+            string companyTaxCode =notification.TaxCode;
             string mnGui = "K" + companyTaxCode; // Thường T-VAN sẽ thêm prefix K
             var messageCode = new TaxMessageCode { MessageCode = "300", FlowType = 1 };
             var ttChung = InvoiceXmlMapper.GenerateTTChung(messageCode, 1, mnGui);
@@ -228,21 +228,21 @@ namespace EIMS.Infrastructure.Service
             foreach (var detail in notification.Details)
             {
                 // Logic tách Ký hiệu: VD "1C24TAA" -> KHMS="1", KHH="C24TAA"
+                string fullSerial = detail.InvoiceSerial?.Trim() ?? "";
                 string khmsHDon = "1";
-                string khHDon = detail.InvoiceSerial;
+                string khHDon = fullSerial;
                 if (!string.IsNullOrEmpty(detail.InvoiceSerial) && detail.InvoiceSerial.Length > 1)
                 {
                     khmsHDon = detail.InvoiceSerial.Substring(0, 1);
                     khHDon = detail.InvoiceSerial.Substring(1);
                 }
 
-                // Logic map loại sai sót: Hủy(1) -> 1, Còn lại (Điều chỉnh/Thay thế/Giải trình) -> 2
-                int tctBao = (detail.ErrorType == 1) ? 1 : 2;
-
+                int tctBao = detail.ErrorType;
+                if (tctBao < 1 || tctBao > 3) tctBao = 3; // Mặc định là Giải trình
                 listHDon.Add(new HDonTB04
                 {
                     STT = stt++,
-                    MCCQT = detail.Invoice.TaxAuthorityCode,
+                    MCCQT = detail.InvoiceTaxCode,
                     KHMSHDon = khmsHDon,
                     KHHDon = khHDon,
                     SHDon = detail.InvoiceNumber, 
@@ -260,7 +260,7 @@ namespace EIMS.Infrastructure.Service
                 Loai = 1,
                 MCQT = notification.TaxAuthorityCode, 
                 TCQT = notification.TaxAuthorityName ?? "Cục Thuế TP. Hồ Chí Minh",    
-                So = await GenerateNextNotificationNumberAsync(), 
+                So = notification.NotificationNumber, 
                 NTBCCQT = notification.ReportDate.ToString("yyyy-MM-dd"),
                 DLTBao = new DLTBao
                 {

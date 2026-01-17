@@ -43,7 +43,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     var signedXml = XmlHelpers.SignTB04Xml(rawXml, cert);
                     string signedXmlPayload = signedXml.SignedXml;
                     var taxResponse = await _taxClient.SendTaxMessageAsync(signedXmlPayload, noti.MTDiep);
-                    string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
+                    string apiStatusCode = taxResponse.MLTDiep == "301" ? "KQ01" :
                                           taxResponse.MLTDiep == "204" ? "TBxx" :
                                           "TB01";
                 var responseLog = new TaxApiLog
@@ -55,12 +55,12 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     MCCQT = taxResponse.MCCQT,
                     TaxApiStatusID = XmlHelpers.MapApiCodeToStatusId(apiStatusCode),
                     Timestamp = DateTime.UtcNow
-                };
-
+                };              
                 await _uow.TaxApiLogRepository.CreateAsync(responseLog);
                 await _uow.SaveChanges();
                 string xmlContent = taxResponse.RawResponse;
                 byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(xmlContent);
+                byte[] SignedbyteArray = System.Text.Encoding.UTF8.GetBytes(signedXmlPayload);
                 using (var stream = new MemoryStream(byteArray))
                 {
                     string fileName = $"TaxResponse_{taxResponse.MTDiep}_{DateTime.Now:yyyyMMddHHmmss}.xml";
@@ -71,9 +71,19 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                         noti.TaxResponsePath = uploadResult.Value.Url;                       
                     }
                 }
+                using (var stream = new MemoryStream(SignedbyteArray))
+                {
+                    string fileName = $"04SS_{Guid.NewGuid()}.xml";
+                    var uploadResult = await _fileService.UploadFileAsync(stream, fileName, "tax-responses");
+
+                    if (uploadResult.IsSuccess)
+                    {
+                        noti.XMLPath = uploadResult.Value.Url;
+                    }
+                }
                 if (taxResponse.IsSuccess)
                 {
-                    noti.Status = 3; 
+                    noti.Status = 4; 
                     noti.SignedData = signedXml.SignatureValue;
                     if (noti.Details != null)
                     {

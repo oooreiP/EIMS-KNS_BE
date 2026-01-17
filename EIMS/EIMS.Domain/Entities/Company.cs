@@ -25,6 +25,8 @@
             // --- Navigation Properties ---
             [InverseProperty("Company")]
             public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+            [InverseProperty("Company")]
+            public virtual ICollection<InvoiceRequest> InvoiceRequests { get; set; }
 
-        }
     }
+}

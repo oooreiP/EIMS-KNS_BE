@@ -82,7 +82,7 @@ namespace EIMS.Infrastructure.Service
             return Task.FromResult(new TaxApiResponse
             {
                 IsSuccess = true, 
-                MLTDiep = "301",
+                MLTDiep = "204",
                 SoTBao = "TB_REJECT",
                 RawResponse = xml
             });

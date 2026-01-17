@@ -38,7 +38,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
-            if (invoice == null)
+            if (invoice == null)    
                 return Result.Fail("Không tìm thấy hóa đơn");
             if (invoice.InvoiceStatusID != 8 && invoice.DigitalSignature == null)
             {
