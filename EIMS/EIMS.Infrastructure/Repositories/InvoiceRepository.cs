@@ -503,7 +503,7 @@ namespace EIMS.Infrastructure.Repositories
                 VatRate = 10,
                 TotalDebt = totalDebtAll
             };
-
+            metrics.Outstanding = metrics.NetRevenue - metrics.CashCollected;
             if (metrics.NetRevenue > 0)
                 metrics.CollectionRate = Math.Round((double)metrics.CashCollected / (double)metrics.NetRevenue * 100, 2);
             metrics.OutstandingRate = Math.Round((double)metrics.Outstanding / (double)metrics.NetRevenue * 100, 2);
