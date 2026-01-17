@@ -150,6 +150,11 @@ namespace EIMS.Application.Features.Emails.Commands
                         FileContent = signedPdfBytes, 
                         FileUrl = signedFileUrl       
                     });
+                    attachmentList.Add(new FileAttachment
+                    {
+                        FileName = minutesFileName,
+                        FileContent = minutesFileBytes
+                    });
                     string GetFileNameFromUrl(string url)
                     {
                         try { return Path.GetFileName(new Uri(url).LocalPath); }

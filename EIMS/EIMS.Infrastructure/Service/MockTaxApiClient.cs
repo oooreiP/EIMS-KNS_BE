@@ -93,6 +93,7 @@ namespace EIMS.Infrastructure.Service
             string prefix = $"TB/{currentYear}/";
             var soThongBao = $"{prefix}{new Random().Next(100000000, 999999999)}";
             var error = XmlHelpers.Validate(xmlPayload);
+            var errorContent = string.Join("", error.Select(e => $"<LDo>{e}</LDo>"));
             if (error.Any())
             {
                 var mlTDiepLoi = "204";
@@ -111,7 +112,7 @@ namespace EIMS.Infrastructure.Service
                         <TBao>
                             <MTDiep>{referenceId}</MTDiep>
                             <NNhan>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}</NNhan>
-                            <TTTNhan>1</TTTNhan> {error} </TBao>
+                            <TTTNhan>0</TTTNhan> {errorContent} </TBao>
                     </DLieu>
                 </TDiep>";
 
