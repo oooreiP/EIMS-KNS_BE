@@ -13,5 +13,6 @@ namespace EIMS.Application.Features.Dashboard.Queries
     {
         public int AuthenticatedUserId { get; set; }
         public int? CustomerId { get; set; } 
+        public string? Period { get; set; }
     }
 }

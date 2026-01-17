@@ -25,7 +25,7 @@ namespace EIMS.Application.Features.Dashboard.Queries
             var user = await _unitOfWork.UserRepository.GetByIdAsync(request.AuthenticatedUserId);
             if(user.RoleID != 1)
                 return Result.Fail(new Error($"User with id {request.AuthenticatedUserId} is not admin"));
-            var stats = await _unitOfWork.InvoicesRepository.GetAdminDashboardStatsAsync(cancellationToken);
+            var stats = await _unitOfWork.InvoicesRepository.GetAdminDashboardStatsAsync(request.Period, cancellationToken);
             return Result.Ok(stats);
         }
     }
