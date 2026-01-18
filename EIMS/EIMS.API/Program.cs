@@ -121,13 +121,23 @@ var forwardOptions = new ForwardedHeadersOptions
 forwardOptions.KnownNetworks.Clear(); 
 forwardOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardOptions);
-using (var scope = app.Services.CreateScope())
+Task.Run(async () =>
 {
-    Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
-    var browserFetcher = new BrowserFetcher();
-    await browserFetcher.DownloadAsync();
-    Console.WriteLine("Đã tải xong trình duyệt!");
-}
+    using (var scope = app.Services.CreateScope())
+    {
+        try
+        {
+            Console.WriteLine("Đang tải Chromium trong nền...");
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+            Console.WriteLine("Tải Chromium hoàn tất!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi tải Chromium: {ex.Message}");
+        }
+    }
+});
 try
 {
     using (var scope = app.Services.CreateScope())
