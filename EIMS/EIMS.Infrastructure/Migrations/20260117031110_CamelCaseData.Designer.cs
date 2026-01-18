@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260117031110_CamelCaseData")]
+    partial class CamelCaseData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -391,9 +394,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("CreatedBy")
-                        .HasColumnType("integer");
 
                     b.Property<int>("CustomerID")
                         .HasColumnType("integer");
@@ -782,182 +782,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.ToTable("InvoicePayment");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequest", b =>
-                {
-                    b.Property<int>("RequestID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RequestID"));
-
-                    b.Property<int?>("CompanyID")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("CreatedInvoiceID")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CustomerID")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("InvoiceCustomerAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("InvoiceCustomerName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("InvoiceCustomerTaxCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("MinRows")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("text");
-
-                    b.Property<int>("RequestStatusID")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SaleID")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SalesUserID")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("SubtotalAmount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("TotalAmountInWords")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<decimal>("VATAmount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("VATRate")
-                        .HasColumnType("decimal(5, 2)");
-
-                    b.HasKey("RequestID");
-
-                    b.HasIndex("CompanyID");
-
-                    b.HasIndex("CreatedInvoiceID")
-                        .IsUnique();
-
-                    b.HasIndex("CustomerID");
-
-                    b.HasIndex("RequestStatusID");
-
-                    b.HasIndex("SalesUserID");
-
-                    b.ToTable("InvoiceRequests");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequestItem", b =>
-                {
-                    b.Property<int>("RequestItemID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RequestItemID"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("text");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("Quantity")
-                        .HasColumnType("decimal(18, 4)");
-
-                    b.Property<int>("RequestID")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("VATAmount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.HasKey("RequestItemID");
-
-                    b.HasIndex("ProductID");
-
-                    b.HasIndex("RequestID");
-
-                    b.ToTable("InvoiceRequestItems");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequestStatus", b =>
-                {
-                    b.Property<int>("StatusID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StatusID"));
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("StatusName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("StatusID");
-
-                    b.ToTable("InvoiceRequestStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            StatusID = 1,
-                            Description = "Mới tạo, chờ kế toán kiểm tra và duyệt",
-                            StatusName = "Pending"
-                        },
-                        new
-                        {
-                            StatusID = 2,
-                            Description = "Đã được duyệt và tạo thành hóa đơn chính thức",
-                            StatusName = "Approved"
-                        },
-                        new
-                        {
-                            StatusID = 3,
-                            Description = "Bị từ chối (cần sửa lại thông tin)",
-                            StatusName = "Rejected"
-                        },
-                        new
-                        {
-                            StatusID = 4,
-                            Description = "Đã bị hủy bởi người tạo",
-                            StatusName = "Cancelled"
-                        },
-                        new
-                        {
-                            StatusID = 5,
-                            Description = "Hóa đơn từ yêu cầu đã được phát hành",
-                            StatusName = "Invoice_Issued"
-                        });
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
                 {
                     b.Property<int>("StatementID")
@@ -1179,19 +1003,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("TemplateTypeID");
 
                     b.ToTable("InvoiceTemplates");
-
-                    b.HasData(
-                        new
-                        {
-                            TemplateID = -1,
-                            CreatedByUserID = 1,
-                            IsActive = true,
-                            LayoutDefinition = "{\"table\": {\"columns\": [{\"id\": \"code\", \"label\": \"Mã hàng\", \"hasCode\": false, \"visible\": false}, {\"id\": \"name\", \"label\": \"Tên hàng hóa, dịch vụ\", \"hasCode\": false, \"visible\": false}, {\"id\": \"specs\", \"label\": \"Quy cách\", \"hasCode\": false, \"visible\": false}, {\"id\": \"unit\", \"label\": \"Đơn vị tính\", \"hasCode\": false, \"visible\": true}, {\"id\": \"quantity\", \"label\": \"Số lượng\", \"hasCode\": true, \"visible\": true}, {\"id\": \"price\", \"label\": \"Đơn giá\", \"hasCode\": true, \"visible\": true}, {\"id\": \"amount\", \"label\": \"Thành tiền\", \"hasCode\": true, \"visible\": false}, {\"id\": \"note\", \"label\": \"Ghi chú\", \"hasCode\": false, \"visible\": false}, {\"id\": \"warehouse\", \"label\": \"Kho nhập\", \"hasCode\": false, \"visible\": false}], \"rowCount\": 5, \"sttTitle\": \"STT\", \"sttContent\": \"[STT]\"}, \"company\": {\"name\": \"Công ty Cổ phần Giải pháp Tổng thể Kỷ Nguyên Số\", \"phone\": \"(028) 38 995 822\", \"fields\": [{\"id\": \"name\", \"label\": \"Đơn vị bán\", \"value\": \"Công ty Cổ phần Giải pháp Tổng thể Kỷ Nguyên Số\", \"visible\": true}, {\"id\": \"taxCode\", \"label\": \"Mã số thuế\", \"value\": \"0316882091\", \"visible\": false}, {\"id\": \"address\", \"label\": \"Địa chỉ\", \"value\": \"Tòa nhà ABC, 123 Đường XYZ, Phường Tân Định, Quận 1, TP. Hồ Chí Minh, Việt Nam\", \"visible\": true}, {\"id\": \"phone\", \"label\": \"Điện thoại\", \"value\": \"(028) 38 995 822\", \"visible\": true}, {\"id\": \"fax\", \"label\": \"Fax\", \"value\": \"\", \"visible\": false}, {\"id\": \"website\", \"label\": \"Website\", \"value\": \"kns.com.vn\", \"visible\": false}, {\"id\": \"email\", \"label\": \"Email\", \"value\": \"contact@kns.com.vn\", \"visible\": false}, {\"id\": \"bankAccount\", \"label\": \"Số tài khoản\", \"value\": \"245889119 - Ngân hàng TMCP Á Châu - CN Sài Gòn\", \"visible\": true}], \"address\": \"Tòa nhà ABC, 123 Đường XYZ, Phường Tân Định, Quận 1, TP. Hồ Chí Minh, Việt Nam\", \"taxCode\": \"0316882091\", \"bankAccount\": \"245889119 - Ngân hàng TMCP Á Châu - CN Sài Gòn\"}, \"settings\": {\"bilingual\": false, \"numberFont\": \"arial\", \"showQrCode\": true, \"visibility\": {\"showLogo\": true, \"showSignature\": true, \"showCompanyName\": true, \"showCompanyPhone\": true, \"showCompanyAddress\": true, \"showCompanyTaxCode\": false, \"showCompanyBankAccount\": true}, \"customerVisibility\": {\"customerName\": false, \"customerEmail\": false, \"customerPhone\": false, \"paymentMethod\": false, \"customerAddress\": false, \"customerTaxCode\": false}}, \"modelCode\": \"01GTKT\", \"background\": {\"frame\": \"https://res.cloudinary.com/djz86r9zd/image/upload/v1764156289/khunghoadon3_utka5u.png\", \"custom\": null}, \"invoiceDate\": \"2025-11-28T04:56:57.273Z\", \"templateCode\": \"1000000\"}",
-                            SerialID = -1,
-                            TemplateFrameID = 1,
-                            TemplateName = "Hóa hệ thống không có ký hiệu",
-                            TemplateTypeID = 1
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceType", b =>
@@ -1215,12 +1026,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.ToTable("InvoiceTypes");
 
                     b.HasData(
-                        new
-                        {
-                            InvoiceTypeID = -1,
-                            Symbol = "0",
-                            TypeName = "Hóa đơn hệ thống không có ký hiệu"
-                        },
                         new
                         {
                             InvoiceTypeID = 1,
@@ -1708,18 +1513,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.HasIndex("SerialStatusID");
 
                     b.ToTable("Serials");
-
-                    b.HasData(
-                        new
-                        {
-                            SerialID = -1,
-                            CurrentInvoiceNumber = 0L,
-                            InvoiceTypeID = -1,
-                            PrefixID = 1,
-                            SerialStatusID = -1,
-                            Tail = "00",
-                            Year = "00"
-                        });
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.SerialStatus", b =>
@@ -1743,12 +1536,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.ToTable("SerialStatuses");
 
                     b.HasData(
-                        new
-                        {
-                            SerialStatusID = -1,
-                            StatusName = "Hóa đơn hệ thống không có ký hiệu",
-                            Symbol = "0"
-                        },
                         new
                         {
                             SerialStatusID = 1,
@@ -2963,62 +2750,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("Invoice");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequest", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.Company", "Company")
-                        .WithMany("InvoiceRequests")
-                        .HasForeignKey("CompanyID");
-
-                    b.HasOne("EIMS.Domain.Entities.Invoice", "CreatedInvoice")
-                        .WithOne("OriginRequest")
-                        .HasForeignKey("EIMS.Domain.Entities.InvoiceRequest", "CreatedInvoiceID");
-
-                    b.HasOne("EIMS.Domain.Entities.Customer", "Customer")
-                        .WithMany("InvoiceRequests")
-                        .HasForeignKey("CustomerID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.InvoiceRequestStatus", "RequestStatus")
-                        .WithMany("InvoiceRequests")
-                        .HasForeignKey("RequestStatusID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.User", "Sales")
-                        .WithMany("SalesRequests")
-                        .HasForeignKey("SalesUserID");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("CreatedInvoice");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("RequestStatus");
-
-                    b.Navigation("Sales");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequestItem", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.InvoiceRequest", "InvoiceRequests")
-                        .WithMany("InvoiceRequestItems")
-                        .HasForeignKey("RequestID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InvoiceRequests");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.User", "Creator")
@@ -3217,15 +2948,11 @@ namespace EIMS.Infrastructure.Migrations
 
             modelBuilder.Entity("EIMS.Domain.Entities.Company", b =>
                 {
-                    b.Navigation("InvoiceRequests");
-
                     b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Customer", b =>
                 {
-                    b.Navigation("InvoiceRequests");
-
                     b.Navigation("Invoices");
 
                     b.Navigation("Statements");
@@ -3239,8 +2966,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Navigation("InvoiceItems");
 
-                    b.Navigation("OriginRequest");
-
                     b.Navigation("Payments");
 
                     b.Navigation("ReferencedByHistory");
@@ -3253,16 +2978,6 @@ namespace EIMS.Infrastructure.Migrations
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceErrorNotification", b =>
                 {
                     b.Navigation("Details");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequest", b =>
-                {
-                    b.Navigation("InvoiceRequestItems");
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.InvoiceRequestStatus", b =>
-                {
-                    b.Navigation("InvoiceRequests");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.InvoiceStatement", b =>
@@ -3362,8 +3077,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("SalesInvoices");
-
-                    b.Navigation("SalesRequests");
                 });
 #pragma warning restore 612, 618
         }
