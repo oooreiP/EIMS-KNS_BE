@@ -60,8 +60,8 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
-        [HttpPost("preview-html")]
-        public async Task<IActionResult> PreviewInvoiceHTML(int id)
+        [HttpPost("preview-pdf")]
+        public async Task<IActionResult> PreviewInvoiceRequestPDF(int id)
         {
             var query = new PreviewInvoiceHTMLQuery
             {
@@ -72,7 +72,7 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
                 return BadRequest(result.Errors);
-            return Content(result.Value, "text/html", Encoding.UTF8);
+            return File(result.Value, "application/pdf", $"request_preview_id_{id}.pdf"); ;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

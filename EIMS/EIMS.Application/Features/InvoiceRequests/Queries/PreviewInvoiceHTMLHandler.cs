@@ -14,7 +14,7 @@ using EIMS.Application.Features.InvoiceRequests.Commands;
 
 namespace EIMS.Application.Features.InvoiceRequests.Queries
 {
-    public class PreviewInvoiceHTMLHandler : IRequestHandler<PreviewInvoiceHTMLQuery, Result<string>>
+    public class PreviewInvoiceHTMLHandler : IRequestHandler<PreviewInvoiceHTMLQuery, Result<byte[]>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IInvoiceXMLService _invoiceXMLService;
@@ -31,7 +31,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
             _pdfService = pdfService;
         }
 
-        public async Task<Result<string>> Handle(PreviewInvoiceHTMLQuery request, CancellationToken cancellationToken)
+        public async Task<Result<byte[]>> Handle(PreviewInvoiceHTMLQuery request, CancellationToken cancellationToken)
         {
             var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetAllQueryable()
                 .AsNoTracking() 
@@ -78,8 +78,8 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
             try
             {
                 string xmlContent = await _pdfService.PreviewInvoiceHtmlAsync(invoice, request.RootPath);
-
-                return Result.Ok(xmlContent);
+                byte[] PDFbyte = await _pdfService.ConvertHtmlToPdfAsync(xmlContent);
+                return Result.Ok(PDFbyte);
             }
             catch (Exception ex)
             {
