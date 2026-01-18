@@ -41,6 +41,7 @@ namespace EIMS.Domain.Entities
         public DateTime? SignDate { get; set; }
         public DateTime? IssuedDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
+        public DateTime? LastModified { get;set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal SubtotalAmount { get; set; }

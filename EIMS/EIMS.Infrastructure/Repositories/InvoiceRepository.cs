@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Dashboard;
+using EIMS.Application.DTOs.Dashboard.Accountant;
 using EIMS.Application.DTOs.Dashboard.Admin;
 using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
@@ -713,7 +714,7 @@ namespace EIMS.Infrastructure.Repositories
                         InvoiceType = x.TypeId,
                         TypeName = GetTypeName(x.TypeId),
                         OriginalInvoiceNumber = x.RefNumber?.ToString() ?? "",
-                        TypeBackgroundColor = GetTypeBackgroundColor(x.TypeId), 
+                        TypeBackgroundColor = GetTypeBackgroundColor(x.TypeId),
                         Reason = x.ReferenceNote,
                         TypeColor = GetTypeColor(x.TypeId),
                         TypeIcon = GetTypeIcon(x.TypeId),
@@ -736,6 +737,163 @@ namespace EIMS.Infrastructure.Repositories
                 PendingInvoices = pendingList,
                 GeneratedAt = now,
                 FiscalMonth = now.ToString("yyyy-MM")
+            };
+        }
+        public async Task<AccountantDashboardDto> GetAccountantDashboardAsync(int userId, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            var todayStart = now.Date; // 00:00:00 UTC
+            var sevenDaysAgo = now.AddDays(-7);
+            var thirtyDaysAgo = now.AddDays(-30);
+            var oneDayAgo = now.AddDays(-1);
+
+            // Lấy thông tin User
+            var user = await _context.Users.Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
+
+            // 1. Base Query (Chỉ lấy hóa đơn của User này hoặc do User này phụ trách)
+            // Giả sử logic là user tạo ra hóa đơn (CreatedBy) hoặc SaleID
+            // Ở đây dùng CreatedBy theo ngữ cảnh "Người tạo"
+            var baseQuery = _context.Invoices.AsNoTracking().Where(i => i.CreatedBy == userId || i.SalesID == userId);
+
+            // =========================================================
+            // B. KPIs
+            // =========================================================
+            // ID Status giả định: 1=Draft, 3=Paid, 4=Rejected, 2=Sent/Waiting
+            // Bạn cần map lại đúng ID trong DB của bạn
+            int statusDraft = 1;
+            int statusRejected = 4; // Check lại bảng InvoiceStatus
+            int statusSent = 2; // Check lại bảng InvoiceStatus (Trạng thái đã phát hành/Gửi CQT)
+
+            var kpiData = await baseQuery
+                .GroupBy(x => 1)
+                .Select(g => new
+                {
+                    Rejected = g.Count(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo),
+                    Drafts = g.Count(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo),
+                    SentToday = g.Count(i => i.InvoiceStatusID == statusSent && i.LastModified >= todayStart),
+                    // Khách nợ: Unpaid (PaymentStatus != 3) và Quá hạn > 30 ngày
+                    Debtors = g.Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
+                               .Select(i => i.CustomerID)
+                               .Distinct()
+                               .Count()
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            // =========================================================
+            // C. TASK QUEUE (Ghép 3 nguồn)
+            // =========================================================
+
+            // 1. Priority High: Rejected 7 ngày qua
+            var highPriority = await baseQuery
+                .Include(i => i.Customer)
+                .Include(i => i.InvoiceStatus)
+                .Where(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo)
+                .OrderByDescending(i => i.LastModified)
+                .Select(i => new TaskQueueItemDto
+                {
+                    InvoiceId = i.InvoiceID,
+                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    CustomerName = i.Customer.CustomerName,
+                    Amount = i.TotalAmount,
+                    Status = i.InvoiceStatus.StatusName,
+                    Priority = "High",
+                    TaskType = "Rejected",
+                    TaskDate = i.LastModified ?? i.CreatedAt,
+                    Reason = i.Notes 
+                })
+                .ToListAsync(cancellationToken);
+
+            // 2. Priority Medium: Draft cũ tồn đọng (tạo > 1 ngày trước)
+            var mediumPriority = await baseQuery
+                .Include(i => i.Customer)
+                .Include(i => i.InvoiceStatus)
+                .Where(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo && i.CreatedAt < oneDayAgo)
+                .OrderBy(i => i.CreatedAt) // Cũ nhất xử lý trước
+                .Select(i => new TaskQueueItemDto
+                {
+                    InvoiceId = i.InvoiceID,
+                    InvoiceNumber = "Draft",
+                    CustomerName = i.Customer.CustomerName,
+                    Amount = i.TotalAmount,
+                    Status = i.InvoiceStatus.StatusName,
+                    Priority = "Medium",
+                    TaskType = "Old Draft",
+                    TaskDate = i.CreatedAt,
+                    Reason = null
+                })
+                .ToListAsync(cancellationToken);
+
+            // 3. Priority Low: Quá hạn > 30 ngày (Max 20)
+            var lowPriority = await baseQuery
+                .Include(i => i.Customer)
+                .Include(i => i.InvoiceStatus)
+                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
+                .OrderBy(i => i.PaymentDueDate) // Quá hạn lâu nhất xử lý trước
+                .Take(20) 
+                .Select(i => new TaskQueueItemDto
+                {
+                    InvoiceId = i.InvoiceID,
+                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    CustomerName = i.Customer.CustomerName,
+                    Amount = i.TotalAmount,
+                    Status = "Overdue",
+                    Priority = "Low",
+                    TaskType = "Debt Collection",
+                    TaskDate = i.PaymentDueDate ?? i.CreatedAt,
+                    Reason = $"Quá hạn {(now - i.PaymentDueDate.Value).Days} ngày"
+                })
+                .ToListAsync(cancellationToken);
+
+            // Gộp List: High -> Medium -> Low
+            var taskQueue = new List<TaskQueueItemDto>();
+            taskQueue.AddRange(highPriority);
+            taskQueue.AddRange(mediumPriority);
+            taskQueue.AddRange(lowPriority);
+            taskQueue = taskQueue.Take(50).ToList(); // Cắt Max 50
+
+            // =========================================================
+            // D. RECENT INVOICES (Lịch sử làm việc)
+            // =========================================================
+            var recentWork = await baseQuery
+                .Include(i => i.Customer)
+                .Include(i => i.InvoiceStatus)
+                .Where(i => i.CreatedAt >= sevenDaysAgo)
+                .OrderByDescending(i => i.CreatedAt)
+                .Take(20)
+                .Select(i => new RecentWorkDto
+                {
+                    InvoiceId = i.InvoiceID,
+                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "Draft",
+                    CustomerName = i.Customer.CustomerName,
+                    Status = i.InvoiceStatus.StatusName,
+                    TotalAmount = i.TotalAmount,
+                    CreatedAt = i.CreatedAt
+                })
+                .ToListAsync(cancellationToken);
+
+            // =========================================================
+            // E. ASSEMBLE
+            // =========================================================
+            return new AccountantDashboardDto
+            {
+                CurrentUser = new CurrentUserDto
+                {
+                    UserId = user?.UserID ?? 0,
+                    FullName = user?.FullName ?? "Unknown",
+                    Role = user?.Role?.RoleName ?? "",
+                    Email = user?.Email ?? "",
+                },
+                Kpis = new AccountantKpiDto
+                {
+                    RejectedCount = kpiData?.Rejected ?? 0,
+                    DraftsCount = kpiData?.Drafts ?? 0,
+                    SentToday = kpiData?.SentToday ?? 0,
+                    CustomersToCall = kpiData?.Debtors ?? 0
+                },
+                TaskQueue = taskQueue,
+                RecentInvoices = recentWork,
+                GeneratedAt = now
             };
         }
     }
