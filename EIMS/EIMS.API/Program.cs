@@ -121,13 +121,13 @@ var forwardOptions = new ForwardedHeadersOptions
 forwardOptions.KnownNetworks.Clear(); 
 forwardOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardOptions);
-// using (var scope = app.Services.CreateScope())
-// {
-//     Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
-//     var browserFetcher = new BrowserFetcher();
-//     await browserFetcher.DownloadAsync();
-//     Console.WriteLine("Đã tải xong trình duyệt!");
-// }
+using (var scope = app.Services.CreateScope())
+{
+    Console.WriteLine("Đang kiểm tra và tải trình duyệt Chromium...");
+    var browserFetcher = new BrowserFetcher();
+    await browserFetcher.DownloadAsync();
+    Console.WriteLine("Đã tải xong trình duyệt!");
+}
 try
 {
     using (var scope = app.Services.CreateScope())

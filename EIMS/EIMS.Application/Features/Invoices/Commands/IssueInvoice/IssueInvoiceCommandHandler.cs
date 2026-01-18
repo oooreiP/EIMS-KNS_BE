@@ -77,6 +77,14 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 }
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
             }
+            var invoiceRequest = await _uow.InvoiceRequestRepository
+            .GetAllQueryable()
+            .FirstOrDefaultAsync(r => r.CreatedInvoiceID == request.InvoiceId);
+            if (invoiceRequest != null)
+            {
+                invoiceRequest.RequestStatusID = 5;
+                await _uow.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
+            }
             var history = new InvoiceHistory
             {
                 InvoiceID = request.InvoiceId,

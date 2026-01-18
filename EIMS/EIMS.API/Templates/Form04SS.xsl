@@ -190,9 +190,7 @@
                 <td style="border: 1px solid black; padding: 3px 5px; text-align: center; vertical-align: top;">
                      <xsl:choose>
                         <xsl:when test="TCTBao='1'">Thông báo</xsl:when>
-                        <xsl:when test="TCTBao='2'">Điều chỉnh</xsl:when>
-                        <xsl:when test="TCTBao='3'">Thay thế</xsl:when>
-                        <xsl:when test="TCTBao='4'">Giải trình</xsl:when>
+                        <xsl:when test="TCTBao='2'">Giải trình</xsl:when>
                     </xsl:choose>
                 </td>
 

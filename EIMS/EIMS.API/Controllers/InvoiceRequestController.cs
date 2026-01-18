@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EIMS.API.Controllers
 {
@@ -56,5 +57,12 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+         => Ok(await _mediator.Send(new GetInvoiceRequestByIdQuery(id)));
+        [HttpPost("reject")]
+        //[Authorize(Roles = "Accountant,Admin")]
+        public async Task<IActionResult> Reject([FromBody] RejectInvoiceRequestCommand command)
+        => Ok(await _mediator.Send(command));
     }
 }
