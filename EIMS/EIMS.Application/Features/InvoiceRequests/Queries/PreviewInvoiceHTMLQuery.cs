@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.InvoiceRequests.Queries
 {
-    public class PreviewInvoiceHTMLQuery : IRequest<Result<string>>
+    public class PreviewInvoiceHTMLQuery : IRequest<Result<byte[]>>
     {
         public int RequestId { get; set; }
         public string RootPath { get; set; }

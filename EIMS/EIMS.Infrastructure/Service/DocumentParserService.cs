@@ -5,11 +5,21 @@ using EIMS.Application.Commons.Interfaces;
 using System.Xml.Xsl;
 using System.Xml;
 using Spire.Doc;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 
 namespace EIMS.Infrastructure.Service
 {
     public class DocumentParserService : IDocumentParserService
     {
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly IConfiguration _configuration;
+        public DocumentParserService(IHttpClientFactory clientFactory, IConfiguration configuration)
+        {
+            _clientFactory = clientFactory;
+            _configuration = configuration;
+        }
+
         public async Task<string> ConvertPdfToXmlAsync(Stream pdfStream)
         {
             using var mem = new MemoryStream();
@@ -82,26 +92,28 @@ namespace EIMS.Infrastructure.Service
         }
         public async Task<byte[]> ConvertDocxToPdfAsync(byte[] docxBytes)
         {
-            return await Task.Run(() =>
+            string baseUrl = _configuration["Gotenberg:Url"] ?? "http://localhost:3000";
+            string apiUrl = $"{baseUrl}/forms/libreoffice/convert";
+
+            using (var client = _clientFactory.CreateClient())
+            using (var content = new MultipartFormDataContent())
+            using (var fileStream = new MemoryStream(docxBytes))
             {
-                try
+                var fileContent = new StreamContent(fileStream);
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+                content.Add(fileContent, "files", "document.docx");
+
+                // Gọi API
+                var response = await client.PostAsync(apiUrl, content);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    using (var inputStream = new MemoryStream(docxBytes))
-                    {
-                        Document document = new Document();
-                        document.LoadFromStream(inputStream, FileFormat.Docx);
-                        using (var outputStream = new MemoryStream())
-                        {
-                            document.SaveToStream(outputStream, FileFormat.PDF);
-                            return outputStream.ToArray();
-                        }
-                    }
+                    throw new Exception($"Lỗi convert Gotenberg: {response.StatusCode}");
                 }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Lỗi khi convert DOCX sang PDF: {ex.Message}");
-                }
-            });
+
+                return await response.Content.ReadAsByteArrayAsync();
+            }
         }
     }
 }
