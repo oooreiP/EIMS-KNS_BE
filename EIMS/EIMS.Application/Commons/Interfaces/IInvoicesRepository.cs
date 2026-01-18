@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.DTOs.Dashboard;
+using EIMS.Application.DTOs.Dashboard.Accountant;
 using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Domain.Entities;
@@ -18,5 +19,6 @@ namespace EIMS.Application.Commons.Interfaces
         Task<AdminDashboardDto> GetAdminDashboardStatsAsync(string? period, CancellationToken cancellationToken);
         Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken);
         Task<HodDashboardDto> GetHodDashboardStatsAsync(CancellationToken cancellationToken);
+        Task<AccountantDashboardDto> GetAccountantDashboardAsync(int userId, CancellationToken cancellationToken);
     }
 }
