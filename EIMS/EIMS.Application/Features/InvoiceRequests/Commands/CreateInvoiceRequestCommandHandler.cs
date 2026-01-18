@@ -28,19 +28,25 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
         public async Task<Result<CreateRequestResponse>> Handle(CreateInvoiceRequestCommand request, CancellationToken cancellationToken)
         {
             var userId = int.Parse(_currentUser.UserId);
+            if (userId == 0)
+            {
+                return Result.Fail(new Error($"Đăng nhập trước khi thực hiện.")
+                    .WithMetadata("ErrorCode", "Unauthorize"));
+            }
             var user = await _unitOfWork.UserRepository.GetAllQueryable()
                                         .Include(u => u.Role)
                                         .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
+            
             if (user == null)
             {
-                return Result.Fail(new Error($"User with id {userId} not found")
+                return Result.Fail(new Error($"Không thể tìm thấy người dùng với ID là {userId}")
                     .WithMetadata("ErrorCode", "User.NotFound"));
             }
             if (!user.Role.RoleName.Equals("Sale", StringComparison.OrdinalIgnoreCase))
-                return Result.Fail(new Error("Only Sale role can create Invoice Request"));
+                return Result.Fail(new Error("Chỉ có Sale mới được phép tạo Invoice Request"));
 
             if (request.Items == null || !request.Items.Any())
-                return Result.Fail("Request must have at least one item");
+                return Result.Fail("Request phải có ít nhất 1 vật phẩm");
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
