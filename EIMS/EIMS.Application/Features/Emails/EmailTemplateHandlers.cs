@@ -21,7 +21,8 @@ namespace EIMS.Application.Features.Emails
         IRequestHandler<CreateEmailTemplateCommand, Result<int>>,
         IRequestHandler<UpdateEmailTemplateCommand, Result>,
         IRequestHandler<DeleteEmailTemplateCommand, Result>,
-        IRequestHandler<GetEmailTemplateVariablesQuery, Result<List<string>>>
+        IRequestHandler<GetEmailTemplateVariablesQuery, Result<List<string>>>,
+        IRequestHandler<GetBaseContentByCodeQuery, Result<string>>
     {
         private readonly IUnitOfWork _uow;
 
@@ -163,6 +164,24 @@ namespace EIMS.Application.Features.Emails
             await _uow.SaveChanges();
 
             return Result.Ok();
+        }
+        public async Task<Result<string>> Handle(GetBaseContentByCodeQuery request, CancellationToken cancellationToken)
+        {
+            // Logic: Lấy bản ghi cũ nhất (được coi là bản gốc của hệ thống)
+            var content = await _uow.EmailTemplateRepository.GetAllQueryable()
+                .AsNoTracking()
+                .Where(x => x.TemplateCode == request.TemplateCode)
+                .OrderByDescending(x => x.IsSystemTemplate)
+                .ThenBy(x => x.CreatedAt)
+                .Select(x => x.BodyContent) 
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (string.IsNullOrEmpty(content))
+            {
+                return Result.Fail<string>($"Không tìm thấy mẫu email gốc cho mã: {request.TemplateCode}");
+            }
+
+            return Result.Ok(content);
         }
         public Task<Result<List<string>>> Handle(GetEmailTemplateVariablesQuery request, CancellationToken cancellationToken)
         {
