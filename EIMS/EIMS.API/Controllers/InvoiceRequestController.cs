@@ -16,9 +16,11 @@ namespace EIMS.API.Controllers
     public class InvoiceRequestController : ControllerBase
     {
         private readonly IMediator _mediator;
-        public InvoiceRequestController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public InvoiceRequestController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
+            _env = env;
         }
         [HttpPost]
         [ProducesResponseType(typeof(Invoice), StatusCodes.Status200OK)]
@@ -56,6 +58,20 @@ namespace EIMS.API.Controllers
             }
 
             return Ok(result.Value);
+        }
+        [HttpPost("preview-pdf")]
+        public async Task<IActionResult> PreviewInvoicePdf(int id)
+        {
+            var query = new PreviewInvoicePdfQuery
+            {
+                RootPath = _env.ContentRootPath,
+                RequestId = id
+            };
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+            return File(result.Value, "application/pdf", "invoice_preview.pdf");
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
