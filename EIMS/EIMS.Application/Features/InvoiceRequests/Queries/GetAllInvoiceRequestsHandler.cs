@@ -23,7 +23,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
 
         public async Task<Result<PaginatedList<GetInvoiceRequestDto>>> Handle(GetAllInvoiceRequestsQuery request, CancellationToken cancellationToken)
         {
-            var query = _unitOfWork.InvoiceRequestRepository.GetAllQueryable(includeProperties: "Customer,Sales,InvoiceRequestItems.Product,InvoiceRequestItems");
+            var query = _unitOfWork.InvoiceRequestRepository.GetAllQueryable(includeProperties: "Customer,Sales,RequestStatus");
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
                 var term = request.SearchTerm.Trim().ToLower();

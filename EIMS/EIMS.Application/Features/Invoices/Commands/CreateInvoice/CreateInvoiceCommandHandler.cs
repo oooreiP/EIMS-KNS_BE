@@ -192,6 +192,13 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 await _notiService.SendToRoleAsync("HOD",
                 $"Có hóa đơn đã được khởi tạo. Vui lòng xác nhận.",
                 typeId: 2);
+                if(request.RequestID != null && request.RequestID != 0)
+                {
+                   var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetByIdAsync(request.RequestID ?? 1);
+                    invoiceRequest.RequestStatusID = 3;
+                    invoiceRequest.CreatedInvoiceID = fullInvoice.InvoiceID;
+                    await _unitOfWork.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
+                }
                 await _unitOfWork.SaveChanges();
                 var response = new CreateInvoiceResponse
                 {

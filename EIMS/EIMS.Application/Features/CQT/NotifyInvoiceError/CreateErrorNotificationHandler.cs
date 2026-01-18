@@ -114,38 +114,11 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                         return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY trước đó.");
                     }
                     break;
-
-                case 2:
-                    if (invoice.InvoiceStatusID == 3)
-                    {
-                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Hóa đơn hủy không còn giá trị sử dụng nên KHÔNG THỂ ĐIỀU CHỈNH.");
-                    }
-                    if (invoice.InvoiceStatusID == 11)
-                    {
-                        return Result.Fail("Hóa đơn này đang trong quá trình Thay thế. Không nên thực hiện Điều chỉnh.");
-                    }
-                    break;
-
-                case 3: 
-                    if (invoice.InvoiceStatusID == 3)
-                    {
-                        return Result.Fail("Hóa đơn này ĐÃ BỊ HỦY. Vui lòng lập hóa đơn mới hoàn toàn thay vì dùng nghiệp vụ Thay thế.");
-                    }
-                    if (invoice.InvoiceStatusID == 10)
-                    {
-                        return Result.Fail("Hóa đơn này đang được Điều chỉnh. Không nên thực hiện Thay thế.");
-                    }
-                    if (invoice.InvoiceStatusID == 4 || invoice.InvoiceStatusID == 5)
-                    {
-                        return Result.Fail("Hóa đơn này đã được Điều chỉnh/ Thay thế từ trước. Không nên thực hiện Thay thế.");
-                    }
-                    break;
-
-                case 4: 
+                case 2: 
                     break;
 
                 default:
-                    return Result.Fail($"Loại sai sót không hợp lệ (ErrorType: {errorType}). Chỉ chấp nhận 1, 2, 3, 4.");
+                    return Result.Fail($"Loại sai sót không hợp lệ (ErrorType: {errorType}). Chỉ chấp nhận 1, 2.");
             }
             return Result.Ok();
         }

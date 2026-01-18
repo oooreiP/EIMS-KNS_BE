@@ -9,7 +9,7 @@ namespace EIMS.Application.DTOs.Requests
     public class InvoiceRequestItemDto
     {
         public string ProductName { get; set; }
-        public int Quantity { get; set; }
+        public double Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Amount { get; set; }
         public decimal VATAmount { get; set; }
