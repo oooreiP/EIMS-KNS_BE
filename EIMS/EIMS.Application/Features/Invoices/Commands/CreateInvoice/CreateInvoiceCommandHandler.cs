@@ -142,7 +142,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentStatusID = 1,
                     PaymentDueDate = DateTime.UtcNow.AddDays(30),
                     IssuerID = null,
-                    CreatedBy = request.PerformedBy,
+                    CreatedBy = request.AuthenticatedUserId,
                     MinRows = request.MinRows ?? 5,
                     PaidAmount = 0,
                     RemainingAmount = totalAmount,
