@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EIMS.API.Extensions;
 using EIMS.Application.Features.Dashboard.Queries;
+using EIMS.Application.Features.Invoices.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -53,6 +54,15 @@ namespace EIMS.API.Controllers
         public async Task<IActionResult> GetHodStats()
         {
             var query = new GetHodDashboardQuery();
+            var result = await _mediator.Send(query);
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+            return Ok(result.Value);
+        }
+        [HttpGet("accountant")]
+        public async Task<IActionResult> GetAccountantStats()
+        {
+            var query = new GetAccountantDashboardQuery();
             var result = await _mediator.Send(query);
             if (result.IsFailed)
                 return BadRequest(result.Errors);
