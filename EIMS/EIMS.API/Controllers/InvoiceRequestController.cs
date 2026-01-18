@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Authorization;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -59,10 +60,10 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
-        [HttpPost("preview-pdf")]
-        public async Task<IActionResult> PreviewInvoicePdf(int id)
+        [HttpPost("preview-html")]
+        public async Task<IActionResult> PreviewInvoiceHTML(int id)
         {
-            var query = new PreviewInvoicePdfQuery
+            var query = new PreviewInvoiceHTMLQuery
             {
                 RootPath = _env.ContentRootPath,
                 RequestId = id
@@ -71,7 +72,7 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
                 return BadRequest(result.Errors);
-            return File(result.Value, "application/pdf", "invoice_preview.pdf");
+            return Content(result.Value, "text/html", Encoding.UTF8);
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -80,5 +81,18 @@ namespace EIMS.API.Controllers
         //[Authorize(Roles = "Accountant,Admin")]
         public async Task<IActionResult> Reject([FromBody] RejectInvoiceRequestCommand command)
         => Ok(await _mediator.Send(command));
+        [HttpPut("{id}/cancel")]
+        public async Task<IActionResult> CancelRequest(int id)
+        {
+            var command = new CancelInvoiceRequestCommand(id);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+            return Ok(new { Message = "Đã hủy yêu cầu thành công." });
+        }
     }
+
 }
