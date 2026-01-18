@@ -42,7 +42,15 @@ namespace EIMS.API.Controllers
             if (result.IsFailed) return NotFound(result.Errors);
             return Ok(result.Value);
         }
+        [HttpGet("base-content/{code}")]
+        public async Task<IActionResult> GetBaseContent(string code)
+        {
+            var result = await _mediator.Send(new GetBaseContentByCodeQuery(code));
 
+            if (result.IsFailed)
+                return NotFound(result.Errors);
+            return Ok(new { Content = result.Value });
+        }
         // POST: api/email-templates
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateEmailTemplateCommand command)

@@ -25,7 +25,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
 
         public async Task<Result<string>> Handle(GetHashToSignCommand request, CancellationToken cancellationToken)
         {
-            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
+            var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,Company,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
             var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(invoice.TemplateID);
             var serial = await _uow.SerialRepository.GetByIdAndLockAsync(template.SerialID);
             if (serial == null)
