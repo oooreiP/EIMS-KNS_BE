@@ -41,6 +41,7 @@ namespace EIMS.Domain.Entities
         public DateTime? SignDate { get; set; }
         public DateTime? IssuedDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
+        public DateTime? LastModified { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal SubtotalAmount { get; set; }
@@ -97,7 +98,7 @@ namespace EIMS.Domain.Entities
         [Column(TypeName = "decimal(18, 2)")]
         public decimal RemainingAmount { get; set; }
         [JsonIgnore]
-        [InverseProperty("SalesInvoices")] 
+        [InverseProperty("SalesInvoices")]
         public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("Invoices")]
@@ -125,8 +126,11 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
         [InverseProperty("Invoice")]
         public virtual ICollection<InvoicePayment> Payments { get; set; } = new List<InvoicePayment>();
-        [InverseProperty("CreatedInvoice")] 
+        [InverseProperty("CreatedInvoice")]
         public virtual InvoiceRequest? OriginRequest { get; set; }
+        [ForeignKey("CreatedBy")]
+        [InverseProperty("CreatedInvoices")] // Points to User.CreatedInvoices
+        public virtual User? InvoiceCreator { get; set; }
 
         // 2. Add the Calculation Logic
         // [NotMapped]
