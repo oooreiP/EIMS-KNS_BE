@@ -811,7 +811,7 @@ namespace EIMS.Infrastructure.Repositories
                     Priority = "Medium",
                     TaskType = "Old Draft",
                     TaskDate = i.CreatedAt,
-                    Reason = null
+                    Reason = i.Notes
                 })
                 .ToListAsync(cancellationToken);
 
