@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.Features.Emails.Commands;
+using EIMS.Application.Features.Emails.Queries;
 using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -43,6 +44,21 @@ namespace EIMS.API.Controllers
             command.InvoiceId = invoiceId;
             var result = await _mediator.Send(command);
             return result.IsSuccess ? Ok(Result.Ok("Đã gửi biên bản thành công.")) : BadRequest(result);
+        }
+        [HttpPost("preview-minutes")]
+        public async Task<IActionResult> PreviewMinutes([FromBody] PreviewInvoiceMinutesQuery query)
+        {
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+            return File(
+                result.Value.FileContent,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                result.Value.FileName
+            );
         }
     }
 }

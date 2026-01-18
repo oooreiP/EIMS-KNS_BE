@@ -59,7 +59,7 @@ namespace EIMS.Domain.Entities
         [InverseProperty("InvoiceRequests")]
         public virtual Company Company { get; set; }
         [JsonIgnore]
-        [InverseProperty("SalesRequests")]
+        [InverseProperty("InvoiceRequests")]
         public virtual User? Sales { get; set; }
         [JsonIgnore]
         [InverseProperty("InvoiceRequests")]
