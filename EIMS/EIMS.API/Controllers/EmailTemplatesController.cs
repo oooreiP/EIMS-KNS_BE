@@ -3,6 +3,7 @@ using EIMS.Application.Features.Emails.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -49,7 +50,7 @@ namespace EIMS.API.Controllers
 
             if (result.IsFailed)
                 return NotFound(result.Errors);
-            return Ok(new { Content = result.Value });
+            return Content(result.Value, "text/html", Encoding.UTF8);
         }
         // POST: api/email-templates
         [HttpPost]
