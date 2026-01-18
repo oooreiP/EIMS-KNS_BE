@@ -116,6 +116,7 @@ namespace EIMS.Infrastructure.Service
             string xsltPath = System.IO.Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
             return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
         }
+
         public async Task<string> PreviewInvoiceHtmlAsync(BaseInvoiceCommand request, string rootPath)
         {
             if (request.Items == null || !request.Items.Any())
@@ -420,7 +421,7 @@ namespace EIMS.Infrastructure.Service
                 return stringWriter.ToString();
             }
         }
-        private string SerializeInvoiceToXml(Invoice invoice)
+        public string SerializeInvoiceToXml(Invoice invoice)
         {
             var xmlModel = InvoiceXmlMapper.MapInvoiceToXmlModel(invoice);
             var ns = new XmlSerializerNamespaces();
