@@ -12,6 +12,7 @@ namespace EIMS.Application.DTOs.Invoices
         public int PaymentStatusID { get; set; }
         public int? CompanyId { get; set; }
         public int CustomerID { get; set; }
+        public int? SalesID { get; set; }
         public int? IssuerID { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }

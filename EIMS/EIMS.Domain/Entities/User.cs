@@ -63,6 +63,6 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
         public virtual Customer? Customer { get; set; }
         [InverseProperty("Sales")]
-        public virtual ICollection<InvoiceRequest> SalesRequests { get; set; }
+        public virtual ICollection<InvoiceRequest> InvoiceRequests { get; set; } = new List<InvoiceRequest>();
     }
 }
