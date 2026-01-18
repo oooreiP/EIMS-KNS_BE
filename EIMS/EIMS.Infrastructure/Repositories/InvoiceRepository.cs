@@ -742,28 +742,21 @@ namespace EIMS.Infrastructure.Repositories
         public async Task<AccountantDashboardDto> GetAccountantDashboardAsync(int userId, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            var todayStart = now.Date; // 00:00:00 UTC
+            var todayStart = now.Date; 
             var sevenDaysAgo = now.AddDays(-7);
             var thirtyDaysAgo = now.AddDays(-30);
             var oneDayAgo = now.AddDays(-1);
 
-            // Lấy thông tin User
             var user = await _context.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
 
             // 1. Base Query (Chỉ lấy hóa đơn của User này hoặc do User này phụ trách)
-            // Giả sử logic là user tạo ra hóa đơn (CreatedBy) hoặc SaleID
-            // Ở đây dùng CreatedBy theo ngữ cảnh "Người tạo"
             var baseQuery = _context.Invoices.AsNoTracking().Where(i => i.CreatedBy == userId || i.SalesID == userId);
 
-            // =========================================================
             // B. KPIs
-            // =========================================================
-            // ID Status giả định: 1=Draft, 3=Paid, 4=Rejected, 2=Sent/Waiting
-            // Bạn cần map lại đúng ID trong DB của bạn
             int statusDraft = 1;
-            int statusRejected = 4; // Check lại bảng InvoiceStatus
-            int statusSent = 2; // Check lại bảng InvoiceStatus (Trạng thái đã phát hành/Gửi CQT)
+            int statusRejected = 16; 
+            int statusSent = 9;
 
             var kpiData = await baseQuery
                 .GroupBy(x => 1)
@@ -780,9 +773,7 @@ namespace EIMS.Infrastructure.Repositories
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            // =========================================================
             // C. TASK QUEUE (Ghép 3 nguồn)
-            // =========================================================
 
             // 1. Priority High: Rejected 7 ngày qua
             var highPriority = await baseQuery
@@ -809,7 +800,7 @@ namespace EIMS.Infrastructure.Repositories
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo && i.CreatedAt < oneDayAgo)
-                .OrderBy(i => i.CreatedAt) // Cũ nhất xử lý trước
+                .OrderBy(i => i.CreatedAt)
                 .Select(i => new TaskQueueItemDto
                 {
                     InvoiceId = i.InvoiceID,
@@ -829,7 +820,7 @@ namespace EIMS.Infrastructure.Repositories
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
-                .OrderBy(i => i.PaymentDueDate) // Quá hạn lâu nhất xử lý trước
+                .OrderBy(i => i.PaymentDueDate) 
                 .Take(20) 
                 .Select(i => new TaskQueueItemDto
                 {
@@ -850,11 +841,9 @@ namespace EIMS.Infrastructure.Repositories
             taskQueue.AddRange(highPriority);
             taskQueue.AddRange(mediumPriority);
             taskQueue.AddRange(lowPriority);
-            taskQueue = taskQueue.Take(50).ToList(); // Cắt Max 50
+            taskQueue = taskQueue.Take(50).ToList(); 
 
-            // =========================================================
             // D. RECENT INVOICES (Lịch sử làm việc)
-            // =========================================================
             var recentWork = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
@@ -872,9 +861,7 @@ namespace EIMS.Infrastructure.Repositories
                 })
                 .ToListAsync(cancellationToken);
 
-            // =========================================================
             // E. ASSEMBLE
-            // =========================================================
             return new AccountantDashboardDto
             {
                 CurrentUser = new CurrentUserDto
