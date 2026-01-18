@@ -7,10 +7,8 @@ using MediatR;
 
 namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
 {
-    public class CreateInvoiceCommand : BaseInvoiceCommand, IRequest<Result<CreateInvoiceResponse>>,IAuthenticatedCommand
+    public class CreateInvoiceCommand : BaseInvoiceCommand, IRequest<Result<CreateInvoiceResponse>>
     {
         public int? RequestID { get; set; }
-        public int AuthenticatedUserId { get; set; }
-        public int? CustomerId { get; set; }
     }
 }
