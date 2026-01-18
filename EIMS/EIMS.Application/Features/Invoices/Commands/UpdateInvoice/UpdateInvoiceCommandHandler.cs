@@ -211,7 +211,7 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
 
                 if (request.MinRows.HasValue) invoice.MinRows = request.MinRows.Value;
                 // if (request.SignedBy.HasValue) invoice.IssuerID = request.SignedBy.Value;
-
+                invoice.LastModified = DateTime.UtcNow;
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
                 // 5. Regenerate XML
