@@ -1,5 +1,6 @@
 using EIMS.Application.Features.Invoices.Commands;
 using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
+using EIMS.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,6 @@ namespace EIMS.Application.Commons.Interfaces
         Task<string> GenerateNotificationHtmlAsync(int notificationId, string rootPath);
         Task<byte[]> ConvertNotificationToPdfAsync(int notificationId, string rootPath);
         byte[] SignPdfUsingSpire(byte[] pdfBytes, X509Certificate2 signingCert);
+        string SerializeInvoiceToXml(Invoice invoice);
     }
 }
