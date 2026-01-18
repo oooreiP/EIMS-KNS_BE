@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Requests;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +24,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
 
         public async Task<Result<PaginatedList<GetInvoiceRequestDto>>> Handle(GetAllInvoiceRequestsQuery request, CancellationToken cancellationToken)
         {
-            var query = _unitOfWork.InvoiceRequestRepository.GetAllQueryable(includeProperties: "Customer,Sales,RequestStatus");
+            IQueryable<InvoiceRequest> query = _unitOfWork.InvoiceRequestRepository.GetAllQueryable();
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
                 var term = request.SearchTerm.Trim().ToLower();
@@ -51,7 +52,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 TotalAmount = x.TotalAmount,
                 StatusName = x.RequestStatus.StatusName,
                 StatusId = x.RequestStatusID,
-                SaleName = x.Sales != null ? x.Sales.FullName : "N/A",
+                SaleName =  x.Sales.FullName,
                 CreatedAt = x.CreatedAt
             });
             var paginatedResult = await PaginatedList<GetInvoiceRequestDto>
