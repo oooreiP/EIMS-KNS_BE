@@ -15,7 +15,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<XmlDocument> LoadXmlFromUrlAsync(string url);
         Task<string> DownloadStringAsync(string path);
         Task<string> UploadXmlAsync(XmlDocument xmlDoc, string fileName);
-        Result<X509Certificate2> GetCertificate(string? serialNumber = null);
+        Task<Result<X509Certificate2>> GetCertificateAsync(int companyId);
         void EmbedMccqtIntoXml(XmlDocument xmlDoc, string mccqtValue);
         Task<Result> ValidateXmlForIssuanceAsync(string xmlUrl);
         Task<string> GenerateNextNotificationNumberAsync();

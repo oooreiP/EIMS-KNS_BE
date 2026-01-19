@@ -44,8 +44,8 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                .Include(x => x.Company)
                .OrderByDescending(x => x.InvoiceID)
                .FirstOrDefaultAsync(x => x.InvoiceID == invoice.OriginalInvoiceID);
-                if (original.InvoiceType == 3) original.InvoiceStatusID = 5;
-                else if (original.InvoiceType == 2) original.InvoiceStatusID = 4;
+                if (invoice.InvoiceType == 3) original.InvoiceStatusID = 5;
+                else if (invoice.InvoiceType == 2) original.InvoiceStatusID = 4;
             }
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
