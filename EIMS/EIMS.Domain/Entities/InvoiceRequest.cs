@@ -21,7 +21,6 @@ namespace EIMS.Domain.Entities
         public int? CompanyID { get; set; }
         [ForeignKey("CustomerID")]
         public int CustomerID { get; set; }
-        [ForeignKey("SaleID")]
         public int? SaleID { get; set; }
         [ForeignKey("CreatedInvoiceID")]
         public int? CreatedInvoiceID { get; set; }
@@ -59,6 +58,7 @@ namespace EIMS.Domain.Entities
         [InverseProperty("InvoiceRequests")]
         public virtual Company Company { get; set; }
         [JsonIgnore]
+        [ForeignKey("SaleID")]
         [InverseProperty("InvoiceRequests")]
         public virtual User? Sales { get; set; }
         [JsonIgnore]
