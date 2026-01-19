@@ -22,6 +22,8 @@
             public string? AccountNumber { get; set; }
             [StringLength(255)]
             public string? BankName { get; set; }
+            public byte[]? DigitalSignature { get; set; }
+            public string? DigitalSignaturePassword { get; set; }
             // --- Navigation Properties ---
             [InverseProperty("Company")]
             public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
