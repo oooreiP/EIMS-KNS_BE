@@ -189,7 +189,6 @@ namespace EIMS.API.Controllers
         /// Gets a paginated list of all users with optional search and filtering.
         /// </summary>
         [HttpGet("users")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers([FromQuery] GetUsersQuery query)
         {
             var result = await _sender.Send(query);

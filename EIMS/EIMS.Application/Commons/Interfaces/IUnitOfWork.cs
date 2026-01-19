@@ -5,6 +5,9 @@ namespace EIMS.Application.Commons.Interfaces
 {
     public interface IUnitOfWork
     {
+        IBaseRepository<InvoiceRequest> InvoiceRequestRepository { get; }
+        IBaseRepository<InvoiceRequestItem> InvoiceRequestItemRepository { get; }
+        IBaseRepository<InvoiceRequestStatus> InvoiceRequestStatusRepository { get; }
         IProductRepository ProductRepository { get; }
         ICustomerRepository CustomerRepository { get; }
         IInvoicesRepository InvoicesRepository { get; }
@@ -34,9 +37,7 @@ namespace EIMS.Application.Commons.Interfaces
         IErrorNotificationRepository ErrorNotificationRepository { get; }
         IBaseRepository<InvoiceErrorDetail> InvoiceErrorDetailRepository { get; }
         IBaseRepository<InvoiceLookupLog> InvoiceLookupLogRepository {get; }
-        IBaseRepository<InvoiceRequestItem> InvoiceRequestItemRepository { get; }
-        IBaseRepository<InvoiceRequestStatus> InvoiceRequestStatusRepository { get; }
-        IBaseRepository<InvoiceRequest> InvoiceRequestRepository { get; }
+        
         Task SaveChanges();
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();
