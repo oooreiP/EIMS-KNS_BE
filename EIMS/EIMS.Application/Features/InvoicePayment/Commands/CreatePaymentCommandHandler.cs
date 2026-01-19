@@ -35,8 +35,9 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                     return Result.Fail("Cannot add payment to a Draft invoice. Please Sign/Issue the invoice first.");
                 }
                 //calcute balance
-                decimal currentlyPaid = invoice.Payments.Sum(p => p.AmountPaid);
-                decimal remaining = invoice.TotalAmount - currentlyPaid;
+                decimal remaining = invoice.RemainingAmount;
+                if (remaining <= 0)
+                    return Result.Fail("This invoice has been fully paid. Cannot paid for more");
                 if (request.Amount > remaining)
                     return Result.Fail($"Payment amount ({request.Amount:N0}) exceeds remaining balance ({remaining:N0}).");
                 //create payment
@@ -51,9 +52,9 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                     CreatedBy = request.UserId
                 };
                 await _uow.InvoicePaymentRepository.CreateAsync(payment);
-                decimal newTotalPaid = currentlyPaid + request.Amount;
-                invoice.PaidAmount = newTotalPaid;
-                invoice.RemainingAmount = invoice.TotalAmount - newTotalPaid;
+                invoice.PaidAmount += request.Amount;
+                invoice.RemainingAmount -= request.Amount;
+                if (invoice.RemainingAmount < 0) invoice.RemainingAmount = 0;
                 if (invoice.RemainingAmount <= 0) // Fully Paid
                 {
                     invoice.PaymentStatusID = 3;

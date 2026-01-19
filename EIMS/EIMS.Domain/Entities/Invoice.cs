@@ -34,6 +34,9 @@ namespace EIMS.Domain.Entities
         public int? IssuerID { get; set; }
         [ForeignKey("SalesID")]
         public int? SalesID { get; set; }
+
+        [ForeignKey("RequestID")]
+        public int? RequestID { get; set; }
         public int? CreatedBy { get; set; }
         public int InvoiceType { get; set; } = 1;
         public int? OriginalInvoiceID { get; set; }

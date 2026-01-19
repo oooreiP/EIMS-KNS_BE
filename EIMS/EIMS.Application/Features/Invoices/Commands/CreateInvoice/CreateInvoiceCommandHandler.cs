@@ -126,6 +126,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 decimal invoiceVatRate = (subtotal > 0) ? Math.Round((vatAmount / subtotal) * 100, 2) : 0;
                 var invoice = new Invoice
                 {
+                    RequestID = request.RequestID,
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
                     CreatedAt = DateTime.UtcNow,
