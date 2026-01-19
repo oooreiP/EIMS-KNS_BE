@@ -27,12 +27,13 @@ namespace EIMS.Application.Features.Invoices.Queries
 
         public async Task<Result<PaginatedList<InvoiceDTO>>> Handle(GetSaleInvoicesQuery request, CancellationToken cancellationToken)
         {
-            // 1. Khởi tạo Query
+            var allowedStatuses = new List<int> { 2, 4, 5 };
             var query = _uow.InvoicesRepository.GetAllQueryable()
                             .AsNoTracking() 
                             .Include(x => x.Customer) 
                             .Include(x => x.Sales) 
-                            .Where(x => x.SalesID != null); 
+                            .Where(x => x.SalesID != null)
+                            .Where(x => allowedStatuses.Contains(x.InvoiceStatusID));
 
             // 2. Các bộ lọc bổ sung (Filter)
 
