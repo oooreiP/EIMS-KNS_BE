@@ -135,12 +135,14 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             }
             else if (responseLog.TaxApiStatusID == 3) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
-                invoice.InvoiceStatusID = 8; 
-                original.InvoiceStatusID = 2; // Trả lại status về phát hành để tạo lại hóa đơn thay thế
+                invoice.InvoiceStatusID = 8;
+                if (original != null)
+                {
+                    original.InvoiceStatusID = 2; // Trả lại status về phát hành để tạo lại hóa đơn thay thế
+                    await _uow.InvoicesRepository.UpdateAsync(original);
+                }
             }
-            await _uow.InvoicesRepository.UpdateAsync(invoice);
-            if(original != null) 
-            await _uow.InvoicesRepository.UpdateAsync(original);
+            await _uow.InvoicesRepository.UpdateAsync(invoice);           
             var history = new InvoiceHistory
             {
                 InvoiceID = request.invoiceId,
