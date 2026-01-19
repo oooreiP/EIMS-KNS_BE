@@ -20,16 +20,18 @@ namespace EIMS.Infrastructure.Service
     public class InvoiceXmlService : IInvoiceXMLService
     {
         private readonly IFileStorageService _fileStorageService;
+        private readonly IEncryptionService _encryptionService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
 
-        public InvoiceXmlService(IFileStorageService fileStorageService, HttpClient httpClient, IConfiguration config, IUnitOfWork unitOfWork)
+        public InvoiceXmlService(IFileStorageService fileStorageService, HttpClient httpClient, IConfiguration config, IUnitOfWork unitOfWork, IEncryptionService encryptionService)
         {
             _fileStorageService = fileStorageService;
             _httpClient = httpClient;
             _config = config;
             _unitOfWork = unitOfWork;
+            _encryptionService = encryptionService;
         }
 
         // Hàm tải XML từ Cloudinary về XmlDocument
@@ -74,22 +76,60 @@ namespace EIMS.Infrastructure.Service
 
             return uploadResult.Value.Url;
         }
-        public Result<X509Certificate2> GetCertificate(string? serialNumber = null)
+        public async Task<Result<X509Certificate2>> GetCertificateAsync(int companyId)
         {
+            // ---------------------------------------------------------
+            // BƯỚC 1: CỐ GẮNG LẤY TỪ DATABASE (COMPANY)
+            // ---------------------------------------------------------
+            try
+            {
+                var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId);
+                if (company != null && company.DigitalSignature != null && company.DigitalSignature.Length > 0)
+                {
+                    string dbPassword = "";
+                    if (!string.IsNullOrEmpty(company.DigitalSignaturePassword))
+                    {
+                        dbPassword = _encryptionService.Decrypt(company.DigitalSignaturePassword);
+                    }
+
+                    var dbFlags = X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable;
+                    var dbCert = new X509Certificate2(company.DigitalSignature, dbPassword, dbFlags);
+
+                    // Nếu load thành công -> Trả về ngay
+                    return Result.Ok(dbCert);
+                }
+            }
+            catch (Exception)
+            {
+               Console.WriteLine("Không lấy được cert từ DB, chuyển sang file local...");
+            }
             try
             {
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 var path = _config["Signature:PfxPath"];
                 var password = _config["Signature:Password"];
+
+                // Nếu cấu hình không tồn tại thì báo lỗi luôn
+                if (string.IsNullOrEmpty(path))
+                {
+                    return Result.Fail<X509Certificate2>("Không tìm thấy cấu hình chữ ký số trong Database lẫn appsettings.");
+                }
+
                 string fullPath = Path.Combine(basePath, path);
-                // Load cert
+
+                if (!File.Exists(fullPath))
+                {
+                    return Result.Fail<X509Certificate2>($"Không tìm thấy file chứng thư số tại: {fullPath}");
+                }
+
                 var flags = X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable;
-                var cert = new X509Certificate2(fullPath, password,flags);
-                return Result.Ok(cert);
+                var localCert = new X509Certificate2(fullPath, password, flags);
+
+                return Result.Ok(localCert);
             }
             catch (Exception ex)
             {
-                return Result.Fail($"Lỗi tải chứng thư số: {ex.Message}");
+                return Result.Fail<X509Certificate2>($"Lỗi tải chứng thư số (Fallback): {ex.Message}");
             }
         }
         public void EmbedMccqtIntoXml(XmlDocument xmlDoc, string mccqtValue)

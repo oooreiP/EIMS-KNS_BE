@@ -201,7 +201,7 @@ namespace EIMS.Application.Features.Emails.Commands
                         minutesFileName = $"BienBan_DieuChinh_{original.InvoiceNumber}_to_{adjustment.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_ADJUST";
                     }
-                    var certResult = xmlService.GetCertificate(request.CertificateSerial);
+                    var certResult = await xmlService.GetCertificateAsync(adjustment.CompanyId ?? 1);
 
                     if (certResult.IsFailed)
                     {

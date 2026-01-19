@@ -55,82 +55,127 @@ namespace EIMS.Application.Features.Emails.Queries
             {
                 var sbBefore = new StringBuilder();
                 var sbAfter = new StringBuilder();
-                bool IsDifferent(string? s1, string? s2)
+                // =================================================================================
+                // TRƯỜNG HỢP 1: BIÊN BẢN ĐIỀU CHỈNH (Chỉ quan tâm Tiền/Hàng tăng giảm)
+                // =================================================================================
+                // Giả sử Type = 2 là Điều chỉnh (Bạn sửa lại enum/const cho khớp project)
+                if (request.Type == MinutesType.Adjustment)
                 {
-                    string v1 = s1?.Trim() ?? "";
-                    string v2 = s2?.Trim() ?? "";
-                    return !string.Equals(v1, v2, StringComparison.OrdinalIgnoreCase);
-                }
-                if (IsDifferent(original.InvoiceCustomerTaxCode, adjustment.InvoiceCustomerTaxCode))
-                {
-                    sbBefore.AppendLine($"- Mã số thuế: {original.InvoiceCustomerTaxCode}");
-                    sbAfter.AppendLine($"- Mã số thuế: {adjustment.InvoiceCustomerTaxCode}");
-                }
-                if (IsDifferent(original.PaymentMethod, adjustment.PaymentMethod))
-                {
-                    sbBefore.AppendLine($"- HTTT: {original.PaymentMethod}");
-                    sbAfter.AppendLine($"- HTTT: {adjustment.PaymentMethod}");
-                }
-                if (IsDifferent(original.InvoiceCustomerAddress, adjustment.InvoiceCustomerAddress))
-                {
-                    sbBefore.AppendLine($"- Địa chỉ: {original.InvoiceCustomerAddress}");
-                    sbAfter.AppendLine($"- Địa chỉ: {adjustment.InvoiceCustomerAddress}");
-                }
-                string nameOld = original.InvoiceCustomerName.Trim() ?? "";
-                string nameNew = adjustment.InvoiceCustomerName.Trim() ?? "";
-                if (!string.Equals(nameOld, nameNew, StringComparison.OrdinalIgnoreCase))
-                {
-                    sbBefore.AppendLine($"- Tên đơn vị: {original.InvoiceCustomerName}");
-                    sbAfter.AppendLine($"- Tên đơn vị: {adjustment.InvoiceCustomerName}");
-                }
-                var originalItems = original.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
-                var newItems = adjustment.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
-                var matchedOriginalItemIds = new HashSet<int>();
-
-                foreach (var newItem in newItems)
-                {
-                    InvoiceItem? matchedOldItem = null;
-                    if (newItem.OriginalInvoiceItemID.HasValue)
-                        matchedOldItem = originalItems.FirstOrDefault(x => x.InvoiceItemID == newItem.OriginalInvoiceItemID.Value);
-
-                    if (matchedOldItem == null)
-                        matchedOldItem = originalItems.FirstOrDefault(x => x.ProductID == newItem.ProductID && !matchedOriginalItemIds.Contains(x.InvoiceItemID));
-
-                    if (matchedOldItem != null)
+                    sbBefore.AppendLine($"Thông tin hóa đơn gốc số {original.InvoiceNumber?.ToString("D7")} " +
+                                        $"ký hiệu {original.Template?.Serial?.SerialStatus?.Symbol}" +
+                                        $"{original.Template?.Serial?.Year}" +
+                                        $"{original.Template?.Serial?.InvoiceType?.Symbol}" +
+                                        $"{original.Template?.Serial?.Tail} " +
+                                        $"ngày {original.IssuedDate:dd/MM/yyyy}:");
+                    sbBefore.AppendLine($"- Tổng tiền thanh toán: {original.TotalAmount:N0} VNĐ");
+                    foreach (var item in adjustment.InvoiceItems)
                     {
-                        matchedOriginalItemIds.Add(matchedOldItem.InvoiceItemID);
-                        string diffDetail = "";
-                        bool isDiff = false;
-
-                        if (matchedOldItem.Quantity != newItem.Quantity) { isDiff = true; diffDetail += $"SL: {matchedOldItem.Quantity} -> {newItem.Quantity}; "; }
-                        if (matchedOldItem.UnitPrice != newItem.UnitPrice) { isDiff = true; diffDetail += $"Giá: {matchedOldItem.UnitPrice:N0} -> {newItem.UnitPrice:N0}; "; }
-                        if (matchedOldItem.Amount != newItem.Amount) { isDiff = true; diffDetail += $"Thành tiền: {matchedOldItem.Amount:N0} -> {newItem.Amount:N0}; "; }
-
-                        if (isDiff)
+                        if (item.Quantity != 0)
                         {
-                            string pName = newItem.Product?.Name ?? "Sản phẩm";
-                            sbBefore.AppendLine($"- {pName}: {GetItemString(matchedOldItem)}");
-                            sbAfter.AppendLine($"- {pName}: {GetItemString(newItem)} ({diffDetail.TrimEnd(' ', ';')})");
+                            string action = item.Quantity > 0 ? "tăng" : "giảm";
+                            string pName = item.Product?.Name ?? "Sản phẩm";
+                            sbAfter.AppendLine($"- {pName}: Điều chỉnh {action} số lượng {Math.Abs(item.Quantity)} {item.Product?.Unit}");
                         }
+
+                        if (item.UnitPrice != 0)
+                        {
+                            string action = item.UnitPrice > 0 ? "tăng" : "giảm";
+                            string pName = item.Product?.Name ?? "Sản phẩm";
+                            sbAfter.AppendLine($"- {pName}: Điều chỉnh {action} đơn giá {Math.Abs(item.UnitPrice):N0} VNĐ");
+                        }
+                    }
+                    if (adjustment.TotalAmount != 0)
+                    {
+                        string moneyAction = adjustment.TotalAmount > 0 ? "tăng" : "giảm";
+                        sbAfter.AppendLine($"=> Tổng cộng tiền hóa đơn điều chỉnh {moneyAction}: {Math.Abs(adjustment.TotalAmount):N0} VNĐ (Đã bao gồm thuế)");
                     }
                     else
                     {
-                        string pName = newItem.Product?.Name ?? "Sản phẩm mới";
-                        sbBefore.AppendLine($"- {pName}: (Không có)");
-                        sbAfter.AppendLine($"- {pName}: {GetItemString(newItem)} (Thêm mới)");
+                        sbAfter.AppendLine("=> Tổng tiền thanh toán không thay đổi.");
                     }
                 }
-
-                foreach (var oldItem in originalItems)
+                // =================================================================================
+                // TRƯỜNG HỢP 2: BIÊN BẢN THAY THẾ / ĐIỀU CHỈNH THÔNG TIN (Logic cũ của bạn)
+                // =================================================================================
+                else
                 {
-                    if (!matchedOriginalItemIds.Contains(oldItem.InvoiceItemID))
+                    bool IsDifferent(string? s1, string? s2)
                     {
-                        string pName = oldItem.Product?.Name ?? "Sản phẩm cũ";
-                        sbBefore.AppendLine($"- {pName}: {GetItemString(oldItem)}");
-                        sbAfter.AppendLine($"- {pName}: (Đã xóa)");
+                        string v1 = s1?.Trim() ?? "";
+                        string v2 = s2?.Trim() ?? "";
+                        return !string.Equals(v1, v2, StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    // --- So sánh thông tin chung ---
+                    if (IsDifferent(original.InvoiceCustomerTaxCode, adjustment.InvoiceCustomerTaxCode))
+                    {
+                        sbBefore.AppendLine($"- Mã số thuế: {original.InvoiceCustomerTaxCode}");
+                        sbAfter.AppendLine($"- Mã số thuế: {adjustment.InvoiceCustomerTaxCode}");
+                    }
+                    if (IsDifferent(original.InvoiceCustomerAddress, adjustment.InvoiceCustomerAddress))
+                    {
+                        sbBefore.AppendLine($"- Địa chỉ: {original.InvoiceCustomerAddress}");
+                        sbAfter.AppendLine($"- Địa chỉ: {adjustment.InvoiceCustomerAddress}");
+                    }
+                    string nameOld = original.InvoiceCustomerName?.Trim() ?? "";
+                    string nameNew = adjustment.InvoiceCustomerName?.Trim() ?? "";
+                    if (!string.Equals(nameOld, nameNew, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sbBefore.AppendLine($"- Tên đơn vị: {original.InvoiceCustomerName}");
+                        sbAfter.AppendLine($"- Tên đơn vị: {adjustment.InvoiceCustomerName}");
+                    }
+
+                    // --- So sánh Items (Logic cũ: Tìm sự thay đổi cụ thể) ---
+                    var originalItems = original.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
+                    var newItems = adjustment.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
+                    var matchedOriginalItemIds = new HashSet<int>();
+
+                    foreach (var newItem in newItems)
+                    {
+                        InvoiceItem? matchedOldItem = null;
+                        if (newItem.OriginalInvoiceItemID.HasValue)
+                            matchedOldItem = originalItems.FirstOrDefault(x => x.InvoiceItemID == newItem.OriginalInvoiceItemID.Value);
+
+                        if (matchedOldItem == null)
+                            matchedOldItem = originalItems.FirstOrDefault(x => x.ProductID == newItem.ProductID && !matchedOriginalItemIds.Contains(x.InvoiceItemID));
+
+                        if (matchedOldItem != null)
+                        {
+                            matchedOriginalItemIds.Add(matchedOldItem.InvoiceItemID);
+                            string diffDetail = "";
+                            bool isDiff = false;
+
+                            if (matchedOldItem.Quantity != newItem.Quantity) { isDiff = true; diffDetail += $"SL: {matchedOldItem.Quantity} -> {newItem.Quantity}; "; }
+                            if (matchedOldItem.UnitPrice != newItem.UnitPrice) { isDiff = true; diffDetail += $"Giá: {matchedOldItem.UnitPrice:N0} -> {newItem.UnitPrice:N0}; "; }
+                            if (matchedOldItem.Amount != newItem.Amount) { isDiff = true; diffDetail += $"Thành tiền: {matchedOldItem.Amount:N0} -> {newItem.Amount:N0}; "; }
+
+                            if (isDiff)
+                            {
+                                string pName = newItem.Product?.Name ?? "Sản phẩm";
+                                sbBefore.AppendLine($"- {pName}: {GetItemString(matchedOldItem)}");
+                                sbAfter.AppendLine($"- {pName}: {GetItemString(newItem)} ({diffDetail.TrimEnd(' ', ';')})");
+                            }
+                        }
+                        else
+                        {
+                            string pName = newItem.Product?.Name ?? "Sản phẩm mới";
+                            sbBefore.AppendLine($"- {pName}: (Không có)");
+                            sbAfter.AppendLine($"- {pName}: {GetItemString(newItem)} (Thêm mới)");
+                        }
+                    }
+
+                    foreach (var oldItem in originalItems)
+                    {
+                        if (!matchedOriginalItemIds.Contains(oldItem.InvoiceItemID))
+                        {
+                            string pName = oldItem.Product?.Name ?? "Sản phẩm cũ";
+                            sbBefore.AppendLine($"- {pName}: {GetItemString(oldItem)}");
+                            sbAfter.AppendLine($"- {pName}: (Đã xóa)");
+                        }
                     }
                 }
 
+                // --- Gán giá trị cuối cùng ---
                 if (sbBefore.Length > 0 || sbAfter.Length > 0)
                 {
                     contentBefore += sbBefore.ToString();
