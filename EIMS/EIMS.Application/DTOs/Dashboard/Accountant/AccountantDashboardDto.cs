@@ -11,6 +11,8 @@ namespace EIMS.Application.DTOs.Dashboard.Accountant
         public AccountantKpiDto Kpis { get; set; } = new();
         public List<TaskQueueItemDto> TaskQueue { get; set; } = new();
         public List<RecentWorkDto> RecentInvoices { get; set; } = new();
+        public int TaskQueueTotal { get; set; }
+        public int RecentInvoicesTotal { get; set; }
         public DateTime GeneratedAt { get; set; }
     }
 }
