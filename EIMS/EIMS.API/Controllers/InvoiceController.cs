@@ -19,6 +19,7 @@ using Microsoft.Extensions.Caching.Memory;
 using EIMS.API.Extensions;
 using EIMS.Application.Features.Invoices.Commands.ViewInvoices;
 using FluentResults;
+using EIMS.Application.Commons.Models;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
@@ -108,6 +109,24 @@ namespace EIMS.API.Controllers
 
             var result = await _mediator.Send(query);
             return Ok(result);
+        }
+        /// <summary>
+        /// Lấy danh sách hóa đơn của Sale (có thể lọc theo SaleId cụ thể hoặc lấy tất cả)
+        /// GET: api/invoices/sale-assigned?pageIndex=1&pageSize=10&searchTerm=ABC&specificSaleId=5
+        /// </summary>
+        [HttpGet("sale-assigned")]
+        [ProducesResponseType(typeof(PaginatedList<InvoiceDTO>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetSaleInvoices([FromQuery] GetSaleInvoicesQuery query)
+        {
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
         }
         [HttpPut("draft/{id}")]
         public async Task<IActionResult> UpdateInvoice(int id, [FromBody] UpdateInvoiceRequest request)
