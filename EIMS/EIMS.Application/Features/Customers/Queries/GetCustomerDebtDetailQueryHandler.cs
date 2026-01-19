@@ -46,8 +46,8 @@ namespace EIMS.Application.Features.Customers.Queries
                 ? DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Utc)
                 : null;
             var validDebtStatus = 2;
-            // Invoice status valid (đã phát hành, đã ký...)
-            var validDebtStatuses = new[] { 2, 8, 9, 12, 15 };
+            // Invoice status valid (Issued, Adjusted)
+            var validDebtStatuses = new[] { 2, 4 };
 
 
             // base query 

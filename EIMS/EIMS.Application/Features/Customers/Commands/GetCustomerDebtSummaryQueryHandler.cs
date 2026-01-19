@@ -33,8 +33,8 @@ namespace EIMS.Application.Features.Customers.Commands
             }
 
             // --- KEY FIX: Define Valid Debt Statuses ---
-            // 2=Issued, 8=Signed, 9=Sent, 12=TaxApproved, 15=SendError
-            var validStatuses = new[] { 2, 8, 9, 12, 15 };
+            // 2=Issued, 4 = Adjusted
+            var validStatuses = new[] { 2, 4 };
             var nowUtc = DateTime.UtcNow;
 
             // 3. Project directly to DTO
