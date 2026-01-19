@@ -57,7 +57,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                 await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                 await _unitOfWork.SaveChanges();
             // }
-            var certResult = _invoiceXmlService.GetCertificate(request.CertificateSerial);
+            var certResult = await _invoiceXmlService.GetCertificateAsync(invoice.CompanyId ?? 1);
             if (certResult.IsFailed)
                 return Result.Fail(certResult.Errors);
             var signingCert = certResult.Value;

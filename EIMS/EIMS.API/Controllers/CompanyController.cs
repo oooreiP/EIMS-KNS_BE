@@ -53,5 +53,18 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        [HttpPost("upload-signature")]
+        public async Task<IActionResult> UploadSignature([FromForm] UploadSignatureCommand command)
+        {
+            command.CompanyId = 1;
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result.Value); 
+            }
+            return BadRequest(result.Errors);
+        }
     }
 }

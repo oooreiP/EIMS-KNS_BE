@@ -22,7 +22,8 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
         {
             var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetAllQueryable()
                 .Include(i => i.Customer)
-                .Include(i => i.InvoiceRequestItems)
+                .Include(i => i.Sales)
+                .Include(i => i.InvoiceRequestItems)              
                 .ThenInclude(it => it.Product)
                 .FirstOrDefaultAsync(i => i.RequestID == request.RequestId, cancellationToken);
             if (invoiceRequest == null)

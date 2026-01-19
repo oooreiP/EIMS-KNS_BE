@@ -82,12 +82,102 @@ namespace EIMS.Application.Features.Emails.Commands
                     }
                     else
                     {
+                        // Sử dụng StringBuilder để tối ưu hiệu năng nối chuỗi
+                        var sbBefore = new StringBuilder();
+                        var sbAfter = new StringBuilder();
+
+                        // 1. So sánh thông tin chung (Customer)
                         string nameOld = original.Customer?.CustomerName?.Trim() ?? "";
                         string nameNew = adjustment.Customer?.CustomerName?.Trim() ?? "";
                         if (!string.Equals(nameOld, nameNew, StringComparison.OrdinalIgnoreCase))
                         {
-                            contentBefore += $"- Tên đơn vị: {original.Customer?.CustomerName}\n";
-                            contentAfter += $"- Tên đơn vị: {adjustment.Customer?.CustomerName}\n";
+                            sbBefore.AppendLine($"- Tên đơn vị: {original.Customer?.CustomerName}");
+                            sbAfter.AppendLine($"- Tên đơn vị: {adjustment.Customer?.CustomerName}");
+                        }
+
+                        // 2. So sánh danh sách Hàng hóa (Products)
+                        // Lấy danh sách item gốc để dễ tra cứu (dùng Dictionary hoặc List)
+                        var originalItems = original.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
+                        var newItems = adjustment.InvoiceItems?.ToList() ?? new List<InvoiceItem>();
+
+                        // Danh sách các ID của item gốc đã được so khớp (để tí nữa tìm các item bị xóa)
+                        var matchedOriginalItemIds = new HashSet<int>();
+
+                        foreach (var newItem in newItems)
+                        {
+                            InvoiceItem? matchedOldItem = null;
+
+                            // ƯU TIÊN 1: Tìm theo Link (Trường hợp Điều chỉnh có lưu vết)
+                            if (newItem.OriginalInvoiceItemID.HasValue)
+                            {
+                                matchedOldItem = originalItems.FirstOrDefault(x => x.InvoiceItemID == newItem.OriginalInvoiceItemID.Value);
+                            }
+
+                            // ƯU TIÊN 2: Tìm theo ProductID (Trường hợp Thay thế hoặc chưa link)
+                            // Logic: Tìm item gốc có cùng ProductID mà chưa được khớp với item mới nào
+                            if (matchedOldItem == null)
+                            {
+                                matchedOldItem = originalItems
+                                    .FirstOrDefault(x => x.ProductID == newItem.ProductID && !matchedOriginalItemIds.Contains(x.InvoiceItemID));
+                            }
+
+                            if (matchedOldItem != null)
+                            {
+                                // Đánh dấu là đã khớp
+                                matchedOriginalItemIds.Add(matchedOldItem.InvoiceItemID);
+
+                                // So sánh chi tiết xem có gì khác không
+                                bool isDiff = false;
+                                string diffDetail = "";
+
+                                if (matchedOldItem.Quantity != newItem.Quantity)
+                                {
+                                    isDiff = true;
+                                    diffDetail += $"SL: {matchedOldItem.Quantity} -> {newItem.Quantity}; ";
+                                }
+                                if (matchedOldItem.UnitPrice != newItem.UnitPrice)
+                                {
+                                    isDiff = true;
+                                    diffDetail += $"Giá: {matchedOldItem.UnitPrice:N0} -> {newItem.UnitPrice:N0}; ";
+                                }
+                                if (matchedOldItem.Amount != newItem.Amount)
+                                {
+                                    isDiff = true;
+                                    diffDetail += $"Thành tiền: {matchedOldItem.Amount:N0} -> {newItem.Amount:N0}; ";
+                                }
+
+                                // Nếu có khác biệt thì ghi log
+                                if (isDiff)
+                                {
+                                    string productName = newItem.Product?.Name ?? "Sản phẩm";
+                                    sbBefore.AppendLine($"- {productName}: {GetItemString(matchedOldItem)}");
+                                    sbAfter.AppendLine($"- {productName}: {GetItemString(newItem)} ({diffDetail.TrimEnd(' ', ';')})");
+                                }
+                            }
+                            else
+                            {
+                                // Trường hợp: Item Mới này không có trong hóa đơn cũ (Hàng mới thêm vào)
+                                string productName = newItem.Product?.Name ?? "Sản phẩm mới";
+                                sbBefore.AppendLine($"- {productName}: (Không có)");
+                                sbAfter.AppendLine($"- {productName}: {GetItemString(newItem)} (Thêm mới)");
+                            }
+                        }
+
+                        // 3. Tìm các item có ở Gốc nhưng bị xóa ở Mới (Chỉ xảy ra ở Thay thế)
+                        foreach (var oldItem in originalItems)
+                        {
+                            if (!matchedOriginalItemIds.Contains(oldItem.InvoiceItemID))
+                            {
+                                string productName = oldItem.Product?.Name ?? "Sản phẩm cũ";
+                                sbBefore.AppendLine($"- {productName}: {GetItemString(oldItem)}");
+                                sbAfter.AppendLine($"- {productName}: (Đã xóa)");
+                            }
+                        }
+                        if (sbBefore.Length > 0 || sbAfter.Length > 0)
+                        {
+                            // Nối với dữ liệu cũ (nếu có)
+                            contentBefore += sbBefore.ToString();
+                            contentAfter += sbAfter.ToString();
                         }
                         if (string.IsNullOrEmpty(contentBefore))
                         {
@@ -95,7 +185,7 @@ namespace EIMS.Application.Features.Emails.Commands
                             contentAfter = "................................................";
                         }
                     }
-                    byte[] minutesFileBytes;
+                        byte[] minutesFileBytes;
                     string minutesFileName;
                     string defaultTemplateCode;
 
@@ -111,7 +201,7 @@ namespace EIMS.Application.Features.Emails.Commands
                         minutesFileName = $"BienBan_DieuChinh_{original.InvoiceNumber}_to_{adjustment.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_ADJUST";
                     }
-                    var certResult = xmlService.GetCertificate(request.CertificateSerial);
+                    var certResult = await xmlService.GetCertificateAsync(adjustment.CompanyId ?? 1);
 
                     if (certResult.IsFailed)
                     {
@@ -120,11 +210,11 @@ namespace EIMS.Application.Features.Emails.Commands
                     }
 
                     var signingCert = certResult.Value;
-                    byte[] pdfBytes = await documentParser.ConvertDocxToPdfAsync(minutesFileBytes);
-                    byte[] signedPdfBytes = pdfService.SignPdfUsingSpire(pdfBytes, signingCert);
-                    string signedFileName = $"{minutesFileName}_Signed.pdf";
-                    var uploadResult = await fileStorageService.UploadFileAsync(new MemoryStream(signedPdfBytes), signedFileName, "minutes");
-                    string signedFileUrl = uploadResult.Value.Url;
+                    //byte[] pdfBytes = await documentParser.ConvertDocxToPdfAsync(minutesFileBytes);
+                    //byte[] signedPdfBytes = pdfService.SignPdfUsingSpire(pdfBytes, signingCert);
+                    //string signedFileName = $"{minutesFileName}_Signed.pdf";
+                    //var uploadResult = await fileStorageService.UploadFileAsync(new MemoryStream(signedPdfBytes), signedFileName, "minutes");
+                    //string signedFileUrl = uploadResult.Value.Url;
                     EmailTemplate emailTemplate = null;
 
                     if (request.EmailTemplateId.HasValue)
@@ -144,12 +234,12 @@ namespace EIMS.Application.Features.Emails.Commands
                         return;
                     }
                     var attachmentList = new List<FileAttachment>();
-                    attachmentList.Add(new FileAttachment
-                    {
-                        FileName = signedFileName,
-                        FileContent = signedPdfBytes, 
-                        FileUrl = signedFileUrl       
-                    });
+                    //attachmentList.Add(new FileAttachment
+                    //{
+                    //    FileName = signedFileName,
+                    //    FileContent = signedPdfBytes, 
+                    //    FileUrl = signedFileUrl       
+                    //});
                     attachmentList.Add(new FileAttachment
                     {
                         FileName = minutesFileName,
@@ -238,6 +328,10 @@ namespace EIMS.Application.Features.Emails.Commands
                 text = text.Replace(item.Key, item.Value ?? "");
             }
             return text;
+        }
+        string GetItemString(InvoiceItem item)
+        {
+            return $"SL: {item.Quantity} x Giá: {item.UnitPrice:N0} = {item.Amount:N0}";
         }
     }
 }

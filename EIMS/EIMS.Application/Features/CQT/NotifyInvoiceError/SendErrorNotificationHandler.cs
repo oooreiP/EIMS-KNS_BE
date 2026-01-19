@@ -37,7 +37,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 try
                 {
                     var rawXml = await _invoiceXmlService.DownloadStringAsync(noti.XMLPath);
-                    var certResult = _invoiceXmlService.GetCertificate();
+                    var certResult = await _invoiceXmlService.GetCertificateAsync(1);
                     if (certResult.IsFailed) return Result.Fail(certResult.Errors);
                     var cert = certResult.Value;
                     var signedXml = XmlHelpers.SignTB04Xml(rawXml, cert);

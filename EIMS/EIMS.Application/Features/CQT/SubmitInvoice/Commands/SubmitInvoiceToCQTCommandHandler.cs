@@ -36,6 +36,16 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         CancellationToken cancellationToken)
         {
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
+            var original = new Invoice();
+            if (invoice.OriginalInvoiceID != null)
+            {
+                original = await _uow.InvoicesRepository.GetAllQueryable()
+               .Include(x => x.InvoiceItems)
+               .Include(x => x.Customer)
+               .Include(x => x.Company)
+               .OrderByDescending(x => x.InvoiceID)
+               .FirstOrDefaultAsync(x => x.InvoiceID == invoice.OriginalInvoiceID);
+            }
             var messageCode = await _uow.TaxMessageCodeRepository.GetByIdAsync(19);
 
             if (invoice == null)    
@@ -125,9 +135,12 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             }
             else if (responseLog.TaxApiStatusID == 3) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
-                invoice.InvoiceStatusID = 8; // Ví dụ: Bị từ chối
+                invoice.InvoiceStatusID = 8; 
+                original.InvoiceStatusID = 2; // Trả lại status về phát hành để tạo lại hóa đơn thay thế
             }
             await _uow.InvoicesRepository.UpdateAsync(invoice);
+            if(original != null) 
+            await _uow.InvoicesRepository.UpdateAsync(original);
             var history = new InvoiceHistory
             {
                 InvoiceID = request.invoiceId,

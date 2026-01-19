@@ -14,14 +14,14 @@ using EIMS.Application.Features.InvoiceRequests.Commands;
 
 namespace EIMS.Application.Features.InvoiceRequests.Queries
 {
-    public class PreviewInvoicePdfHandler : IRequestHandler<PreviewInvoicePdfQuery, Result<byte[]>>
+    public class PreviewInvoiceHTMLHandler : IRequestHandler<PreviewInvoiceHTMLQuery, Result<byte[]>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly IPdfService _pdfService;
 
 
-        public PreviewInvoicePdfHandler(
+        public PreviewInvoiceHTMLHandler(
             IUnitOfWork unitOfWork,
             IInvoiceXMLService invoiceXMLService,
             IPdfService pdfService)
@@ -31,7 +31,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
             _pdfService = pdfService;
         }
 
-        public async Task<Result<byte[]>> Handle(PreviewInvoicePdfQuery request, CancellationToken cancellationToken)
+        public async Task<Result<byte[]>> Handle(PreviewInvoiceHTMLQuery request, CancellationToken cancellationToken)
         {
             var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetAllQueryable()
                 .AsNoTracking() 
@@ -78,9 +78,8 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
             try
             {
                 string xmlContent = await _pdfService.PreviewInvoiceHtmlAsync(invoice, request.RootPath);
-                byte[] pdfBytes = await _pdfService.ConvertHtmlToPdfAsync(xmlContent);
-
-                return Result.Ok(pdfBytes);
+                byte[] PDFbyte = await _pdfService.ConvertHtmlToPdfAsync(xmlContent);
+                return Result.Ok(PDFbyte);
             }
             catch (Exception ex)
             {
