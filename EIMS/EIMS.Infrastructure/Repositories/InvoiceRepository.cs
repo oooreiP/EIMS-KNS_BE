@@ -747,6 +747,18 @@ namespace EIMS.Infrastructure.Repositories
             var thirtyDaysAgo = now.AddDays(-30);
             var oneDayAgo = now.AddDays(-1);
 
+            string? NormalizeInvoiceNumber(long? invoiceNumber) => invoiceNumber.HasValue ? invoiceNumber.Value.ToString() : null;
+            string? NormalizeReason(string? reason) => string.IsNullOrWhiteSpace(reason) ? null : reason;
+            string GetInvoiceTypeName(int id) => id switch
+            {
+                1 => "Gốc",
+                2 => "Điều chỉnh",
+                3 => "Thay thế",
+                4 => "Hủy",
+                5 => "Giải trình",
+                _ => "Khác"
+            };
+
             var user = await _context.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
 
@@ -757,6 +769,7 @@ namespace EIMS.Infrastructure.Repositories
             int statusDraft = 1;
             int statusRejected = 16; 
             int statusSent = 9;
+            int statusPendingApproval = 6;
 
             var kpiData = await baseQuery
                 .GroupBy(x => 1)
@@ -765,6 +778,7 @@ namespace EIMS.Infrastructure.Repositories
                     Rejected = g.Count(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo),
                     Drafts = g.Count(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo),
                     SentToday = g.Count(i => i.InvoiceStatusID == statusSent && i.LastModified >= todayStart),
+                    PendingApproval = g.Count(i => i.InvoiceStatusID == statusPendingApproval),
                     // Khách nợ: Unpaid (PaymentStatus != 3) và Quá hạn > 30 ngày
                     Debtors = g.Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
                                .Select(i => i.CustomerID)
@@ -776,72 +790,123 @@ namespace EIMS.Infrastructure.Repositories
             // C. TASK QUEUE (Ghép 3 nguồn)
 
             // 1. Priority High: Rejected 7 ngày qua
-            var highPriority = await baseQuery
+            var highPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo)
                 .OrderByDescending(i => i.LastModified)
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
+                    i.TotalAmount,
                     Status = i.InvoiceStatus.StatusName,
-                    Priority = "High",
-                    TaskType = "Rejected",
                     TaskDate = i.LastModified ?? i.CreatedAt,
-                    Reason = i.Notes 
+                    i.Notes,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
 
+            var highPriority = highPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = i.Status,
+                Priority = "High",
+                TaskType = "Rejected",
+                TaskDate = i.TaskDate,
+                Reason = NormalizeReason(i.Notes),
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = null
+            }).ToList();
+
             // 2. Priority Medium: Draft cũ tồn đọng (tạo > 1 ngày trước)
-            var mediumPriority = await baseQuery
+            var mediumPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo && i.CreatedAt < oneDayAgo)
                 .OrderBy(i => i.CreatedAt)
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = "Draft",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
+                    i.TotalAmount,
                     Status = i.InvoiceStatus.StatusName,
-                    Priority = "Medium",
-                    TaskType = "Old Draft",
-                    TaskDate = i.CreatedAt,
-                    Reason = i.Notes
+                    i.CreatedAt,
+                    i.Notes,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
 
+            var mediumPriority = mediumPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = i.Status,
+                Priority = "Medium",
+                TaskType = "Old Draft",
+                TaskDate = i.CreatedAt,
+                Reason = NormalizeReason(i.Notes),
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = (int)(now - i.CreatedAt).TotalDays
+            }).ToList();
+
             // 3. Priority Low: Quá hạn > 30 ngày (Max 20)
-            var lowPriority = await baseQuery
+            var lowPriorityTotal = await baseQuery
+                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
+                .CountAsync(cancellationToken);
+
+            var lowPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
                 .OrderBy(i => i.PaymentDueDate) 
                 .Take(20) 
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
-                    Status = "Overdue",
-                    Priority = "Low",
-                    TaskType = "Debt Collection",
+                    i.TotalAmount,
                     TaskDate = i.PaymentDueDate ?? i.CreatedAt,
-                    Reason = $"Quá hạn {(now - i.PaymentDueDate.Value).Days} ngày"
+                    i.PaymentDueDate,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
+
+            var lowPriority = lowPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = "Overdue",
+                Priority = "Low",
+                TaskType = "Debt Collection",
+                TaskDate = i.TaskDate,
+                Reason = $"Quá hạn {(now - i.PaymentDueDate!.Value).Days} ngày",
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = null
+            }).ToList();
 
             // Gộp List: High -> Medium -> Low
             var taskQueue = new List<TaskQueueItemDto>();
             taskQueue.AddRange(highPriority);
             taskQueue.AddRange(mediumPriority);
             taskQueue.AddRange(lowPriority);
+            var taskQueueTotal = highPriority.Count + mediumPriority.Count + lowPriorityTotal;
             taskQueue = taskQueue.Take(50).ToList(); 
+
+            var urgentTasks = taskQueue.Count(t => (now - t.TaskDate).TotalHours > 24);
 
             // D. RECENT INVOICES (Lịch sử làm việc)
             var recentWork = await baseQuery
@@ -853,13 +918,17 @@ namespace EIMS.Infrastructure.Repositories
                 .Select(i => new RecentWorkDto
                 {
                     InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "Draft",
+                    InvoiceNumber = i.InvoiceNumber.HasValue ? i.InvoiceNumber.Value.ToString() : null,
                     CustomerName = i.Customer.CustomerName,
                     Status = i.InvoiceStatus.StatusName,
                     TotalAmount = i.TotalAmount,
                     CreatedAt = i.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
+
+            var recentInvoicesTotal = await baseQuery
+                .Where(i => i.CreatedAt >= sevenDaysAgo)
+                .CountAsync(cancellationToken);
 
             // E. ASSEMBLE
             return new AccountantDashboardDto
@@ -876,10 +945,14 @@ namespace EIMS.Infrastructure.Repositories
                     RejectedCount = kpiData?.Rejected ?? 0,
                     DraftsCount = kpiData?.Drafts ?? 0,
                     SentToday = kpiData?.SentToday ?? 0,
-                    CustomersToCall = kpiData?.Debtors ?? 0
+                    CustomersToCall = kpiData?.Debtors ?? 0,
+                    PendingApproval = kpiData?.PendingApproval ?? 0,
+                    UrgentTasks = urgentTasks
                 },
                 TaskQueue = taskQueue,
                 RecentInvoices = recentWork,
+                TaskQueueTotal = taskQueueTotal,
+                RecentInvoicesTotal = recentInvoicesTotal,
                 GeneratedAt = now
             };
         }
