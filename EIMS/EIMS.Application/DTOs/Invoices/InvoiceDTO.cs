@@ -6,6 +6,7 @@ namespace EIMS.Application.DTOs.Invoices
     public class InvoiceDTO
     {
         public int InvoiceID { get; set; }
+        public int? RequestID { get; set; }
         public int TemplateID { get; set; }
         public long InvoiceNumber { get; set; }
         public int InvoiceStatusID { get; set; }
