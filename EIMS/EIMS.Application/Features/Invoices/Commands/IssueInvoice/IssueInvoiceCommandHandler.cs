@@ -60,6 +60,38 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 invoice.InvoiceStatusID = 2;
                 invoice.IssuedDate = DateTime.UtcNow;
                 invoice.IssuerID = request.IssuerId;
+                decimal initialPaidAmount = 0;
+
+                // 1. Cộng dồn tiền từ hóa đơn gốc (nếu là thay thế)
+                if (invoice.InvoiceType == 3 && invoice.OriginalInvoiceID.HasValue)
+                {
+                    var originalInv = await _uow.InvoicesRepository.GetByIdAsync(invoice.OriginalInvoiceID.Value, "Payments");
+                    if (originalInv != null)
+                    {
+                        initialPaidAmount += originalInv.Payments.Sum(x => x.AmountPaid);
+                    }
+                }
+
+                // 2. Cộng dồn tiền đã cọc ở hóa đơn hiện tại (nếu có)
+                if (invoice.Payments != null)
+                {
+                    initialPaidAmount += invoice.Payments.Sum(x => x.AmountPaid);
+                }
+
+                // 3. Cập nhật vào hóa đơn (Cắt phần thừa nếu vượt quá Total)
+                if (initialPaidAmount >= invoice.TotalAmount)
+                {
+                    invoice.PaidAmount = invoice.TotalAmount;
+                    invoice.RemainingAmount = 0;
+                    invoice.PaymentStatusID = 3; // Fully Paid
+                }
+                else
+                {
+                    invoice.PaidAmount = initialPaidAmount;
+                    invoice.RemainingAmount = invoice.TotalAmount - initialPaidAmount;
+                    // Nếu đã có tiền (từ gốc hoặc cọc) thì là Partially Paid (2), chưa có xu nào thì Unpaid (1)
+                    invoice.PaymentStatusID = (invoice.PaidAmount > 0) ? 2 : 1;
+                }
                 if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
                 if (string.IsNullOrEmpty(invoice.LookupCode))
                 {
@@ -98,23 +130,38 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             if (request.AutoCreatePayment && request.PaymentAmount > 0)
             {
-                var paymentCommand = new CreatePaymentCommand
+                decimal currentRemaining = invoice.RemainingAmount;
+                if (invoice.RemainingAmount > 0)
                 {
-                    InvoiceId = invoice.InvoiceID,
-                    UserId = request.IssuerId,
-                    Amount = request.PaymentAmount.Value,
-                    PaymentDate = DateTime.UtcNow,
-                    PaymentMethod = request.PaymentMethod ?? "Cash",
-                    TransactionCode = $"AUTO-{invoice.InvoiceNumber}",
-                    Note = request.Note ?? "Thanh toán ngay khi phát hành"
-                };
+                    decimal realPayAmount = Math.Min(currentRemaining, request.PaymentAmount.Value);
+                    decimal changeAmount = request.PaymentAmount.Value - realPayAmount;
+                    var paymentCommand = new CreatePaymentCommand
+                    {
+                        InvoiceId = invoice.InvoiceID,
+                        UserId = request.IssuerId,
+                        Amount = realPayAmount,
+                        PaymentDate = DateTime.UtcNow,
+                        PaymentMethod = request.PaymentMethod ?? "Cash",
+                        TransactionCode = $"AUTO-{invoice.InvoiceNumber}",
+                        Note = request.Note ?? "Thanh toán ngay khi phát hành"
+                    };
 
-                // Gọi Handler tạo Payment thông qua Mediator
-                var paymentResult = await _mediator.Send(paymentCommand, cancellationToken);
+                    // Gọi Handler tạo Payment thông qua Mediator
+                    var paymentResult = await _mediator.Send(paymentCommand, cancellationToken);
 
-                if (paymentResult.IsFailed)
-                {
-                    return Result.Ok().WithSuccess("Phát hành thành công nhưng lỗi tạo thanh toán: " + paymentResult.Errors[0].Message);
+                    if (paymentResult.IsFailed)
+                    {
+                        return Result.Ok().WithSuccess("Phát hành thành công nhưng lỗi tạo thanh toán: " + paymentResult.Errors[0].Message);
+                    }
+                    else
+                    {
+                        string msg = "Phát hành và thanh toán thành công.";
+                        if (changeAmount > 0)
+                        {
+                            msg += $" Khách đưa {request.PaymentAmount.Value:N0}, thu {realPayAmount:N0}, trả lại {changeAmount:N0}.";
+                        }
+                        return Result.Ok().WithSuccess(msg);
+                    }
                 }
             }
             return Result.Ok();
