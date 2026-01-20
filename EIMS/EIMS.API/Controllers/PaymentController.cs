@@ -74,5 +74,17 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpGet("monthly-debt")]
+        public async Task<IActionResult> GetMonthlyDebt([FromQuery] int month, [FromQuery] int year, [FromQuery] int? customerId)
+        {
+            var query = new GetMonthlyDebtQuery
+            {
+                Month = month,
+                Year = year,
+                CustomerId = customerId
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 }

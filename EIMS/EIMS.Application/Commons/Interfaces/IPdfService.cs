@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using System.Xml.Xsl;
 
 namespace EIMS.Application.Commons.Interfaces
 {
@@ -17,6 +18,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<string> PreviewInvoiceHtmlAsync(BaseInvoiceCommand request, string rootPath);
         Task<string> GenerateNotificationHtmlAsync(int notificationId, string rootPath);
         Task<byte[]> ConvertNotificationToPdfAsync(int notificationId, string rootPath);
+        string TransformXmlToHtml(string xmlContent, string xsltPath, XsltArgumentList? args = null);
         byte[] SignPdfUsingSpire(byte[] pdfBytes, X509Certificate2 signingCert);
         string SerializeInvoiceToXml(Invoice invoice);
     }
