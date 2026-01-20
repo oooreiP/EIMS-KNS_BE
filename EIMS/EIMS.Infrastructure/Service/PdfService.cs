@@ -328,6 +328,77 @@ namespace EIMS.Infrastructure.Service
                 }
             }
         }
+        public async Task<string> GetBlankInvoicePreviewAsync(int templateId, int companyId, string rootPath)
+        {
+            var template = await _uow.InvoiceTemplateRepository.GetTemplateDetailsAsync(templateId);
+            if (template == null) throw new Exception("Mẫu hóa đơn không tồn tại.");
+
+            var company = await _uow.CompanyRepository.GetByIdAsync(companyId);
+            if (company == null) throw new Exception("Không tìm thấy thông tin đơn vị bán.");
+            var emptyCustomer = new Customer
+            {
+                CustomerName = "",
+                TaxCode = "",
+                Address = "",
+                ContactPerson = "",
+                ContactEmail = "",
+                ContactPhone = "" 
+            };
+            var emptyItems = new List<InvoiceItem>
+    {
+        new InvoiceItem
+        {
+            Product = new Product
+            {
+                Name = "", 
+                Unit = "",
+                Code = ""
+            },
+            Quantity = 0,     
+            UnitPrice = 0,
+            Amount = 0,
+            VATAmount = 0
+        }
+    };
+            var invoice = new Invoice
+            {
+                InvoiceID = 0,
+                CreatedAt = DateTime.UtcNow,
+                IssuedDate = DateTime.UtcNow,
+
+                InvoiceNumber = null, 
+
+                CompanyId = company.CompanyID,
+                Company = company, 
+
+                TemplateID = template.TemplateID,
+                Template = template,
+
+                Customer = emptyCustomer,
+                InvoiceCustomerName = "",
+                InvoiceCustomerAddress = "",
+                InvoiceCustomerTaxCode = "",
+
+                InvoiceItems = emptyItems, // Quan trọng: List có 1 item rỗng
+
+                SubtotalAmount = 0,
+                VATAmount = 0,
+                TotalAmount = 0,
+                TotalAmountInWords = "",
+
+                PaymentMethod = "",
+                Notes = "" 
+            };
+            string xmlContent = SerializeInvoiceToXml(invoice);
+            var config = JsonSerializer.Deserialize<TemplateConfig>(
+                template.LayoutDefinition ?? "{}"
+            ) ?? new TemplateConfig();
+            var xsltArgs = PrepareXsltArguments(config, invoice);
+
+            string xsltPath = System.IO.Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
+
+            return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
+        }
         private XsltArgumentList PrepareXsltArguments(TemplateConfig config, Invoice invoice)
         {
             var args = new XsltArgumentList();
