@@ -40,7 +40,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 .Include(i => i.Payments)
                 .Include(i => i.Customer)
                 .Where(i => i.CustomerID == request.CustomerID)
-                .Where(i => (i.IssuedDate ?? i.CreatedAt) <= statementDate)
+                .Where(i => i.IssuedDate != null)
+                .Where(i => i.IssuedDate  <= statementDate)
                 .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
                 .ToListAsync(cancellationToken);
             // 3. Calculate Remaining Amount in Memory & Filter
