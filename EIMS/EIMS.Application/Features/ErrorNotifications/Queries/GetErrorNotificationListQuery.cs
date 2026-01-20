@@ -16,6 +16,7 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
         public int PageSize { get; set; } = 10;
         public string? Keyword { get; set; } 
         public int? Status { get; set; }   
+        public int? CreatedBy { get; set; }   
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }
