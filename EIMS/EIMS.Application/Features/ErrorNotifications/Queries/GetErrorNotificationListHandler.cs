@@ -34,6 +34,10 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                 query = query.Where(x => x.Status == request.Status.Value);
             }
 
+            if (request.CreatedBy.HasValue)
+            {
+                query = query.Where(x => x.CreatedBy == request.CreatedBy.Value);
+            }
             if (request.FromDate.HasValue)
             {
                 query = query.Where(x => x.ReportDate >= request.FromDate.Value);
