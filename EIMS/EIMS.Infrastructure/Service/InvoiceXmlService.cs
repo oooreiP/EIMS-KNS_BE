@@ -1,9 +1,13 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using DocumentFormat.OpenXml.Vml.Office;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
+using EIMS.Application.DTOs.XMLModels.PaymentStatements;
 using EIMS.Application.DTOs.XMLModels.TB04;
 using EIMS.Domain.Entities;
 using FluentResults;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -335,6 +339,81 @@ namespace EIMS.Infrastructure.Service
             }
 
             return (doc, messageId);
+        }
+        public async Task<PaymentStatementDTO> GetPaymentRequestXmlAsync(int statementId)
+        {
+            var statementEntity = await _unitOfWork.InvoiceStatementRepository.GetAllQueryable()
+                .AsNoTracking()
+                .Include(s => s.Customer) 
+                .Include(s => s.Creator) 
+                .Include(s => s.StatementDetails)
+                    .ThenInclude(d => d.Invoice) 
+                .FirstOrDefaultAsync(s => s.StatementID == statementId);
+            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
+            if (company == null) throw new Exception("Company not found");
+            if (statementEntity == null) throw new Exception("Statement not found");
+            var xmlDto = new PaymentStatementDTO
+            {
+                ProviderInfo = new ProviderInfoDTO
+                {
+                    Name = company.CompanyName,
+                    Address = company.Address,
+                    Phone = company.ContactPhone
+                },
+
+                // B. Thông tin Header
+                HeaderInfo = new HeaderInfoDTO
+                {
+                    AccountantName = statementEntity.Creator.FullName,
+                    StatementDate = statementEntity.StatementDate.ToString("dd/MM/yyyy"),
+                    StatementMonth = statementEntity.StatementDate.ToString("MM/yyyy"),
+                    CustomerName = statementEntity.Customer?.CustomerName ?? "Unknown Customer",
+                    CustomerCode = $"KHACVT_{statementEntity.Customer?.CustomerID}",
+                    ContactEmail = "support@einvoice.vn"
+                },
+
+                // C. Chi tiết các khoản phải thu (Items)
+                Items = statementEntity.StatementDetails.Select(d =>
+                {
+                    var invoice = d.Invoice;
+                    string lastDayOfMonth = "";
+                    if (invoice != null)
+                    {
+                        int daysInMonth = DateTime.DaysInMonth(invoice.IssuedDate.Value.Year, invoice.IssuedDate.Value.Month);
+                        lastDayOfMonth = new DateTime(invoice.IssuedDate.Value.Year, invoice.IssuedDate.Value.Month, daysInMonth).ToString("dd/MM/yyyy");
+                    }
+                    return new StatementItemDTO
+                    {
+                        Description = invoice != null
+                            ? $"Thanh toán hóa đơn số {invoice.InvoiceNumber}"
+                            : "Chi tiết công nợ",
+                        PeriodFrom = invoice?.IssuedDate.Value.ToString("01/MM/yyyy") ?? "",
+                        PeriodTo = lastDayOfMonth,
+                        IndicatorOld = "0",
+                        IndicatorNew = "0",
+                        Quantity = 1,
+                        UnitPrice = invoice?.TotalAmount ?? 0,
+                        Amount = invoice?.TotalAmount ?? 0,
+                        VATRate = invoice.VATRate,
+                        VATAmount = (invoice?.TotalAmount ?? 0) * 0.1m,
+
+                        TotalCurrent = (invoice?.TotalAmount ?? 0) * 1.1m,
+                        PreviousDebt = 0,
+
+                        TotalPayable = d.OutstandingAmount
+                    };
+                }).ToList(),              
+            };
+            xmlDto.Summary = new StatementSummaryDTO
+            {
+                TotalAmount = xmlDto.Items.Sum(x => x.Amount),
+                TotalVAT = xmlDto.Items.Sum(x => x.VATAmount),
+                TotalCurrentPeriod = xmlDto.Items.Sum(x => x.TotalCurrent),
+                TotalPreviousDebt = 0,
+                GrandTotal = statementEntity.TotalAmount
+
+            };
+            return xmlDto;
         }
     }
 }
