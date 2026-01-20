@@ -364,46 +364,100 @@ namespace EIMS.Infrastructure.Service
                     CustomerCode = $"KHACVT_{statementEntity.Customer?.CustomerID}",
                     ContactEmail = "support@einvoice.vn"
                 },
+                Items = new List<StatementItemDTO>()                           
+            };
+            var startOfStatementPeriod = new DateTime(statementEntity.StatementDate.Year, statementEntity.StatementDate.Month, 1);
 
-                // C. Chi tiết các khoản phải thu (Items)
-                Items = statementEntity.StatementDetails.Select(d =>
-                {
-                    var invoice = d.Invoice;
-                    var issuedDate = invoice.IssuedDate ?? DateTime.UtcNow;
-                    string lastDayOfMonth = "";
-                    if (invoice != null)
+            // Lấy danh sách chi tiết từ Entity
+            var allDetails = statementEntity.StatementDetails.ToList();
+
+            // --- PHẦN A: XỬ LÝ CÔNG NỢ CŨ (Các tháng trước) ---
+            // Điều kiện: Ngày hóa đơn < Ngày đầu tháng này
+            var oldDetails = allDetails
+                .Where(d => (d.Invoice.IssuedDate ?? DateTime.MinValue) < startOfStatementPeriod)
+                .ToList();
+
+            if (oldDetails.Any())
+            {
+                var oldItemsSummary = oldDetails
+                    .GroupBy(d => new {
+                        Month = d.Invoice.IssuedDate?.Month ?? 0,
+                        Year = d.Invoice.IssuedDate?.Year ?? 0
+                    })
+                    .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                    .Select(g => new StatementItemDTO
                     {
-                        int daysInMonth = DateTime.DaysInMonth(issuedDate.Year, issuedDate.Month);
-                        lastDayOfMonth = new DateTime(issuedDate.Year, issuedDate.Month, daysInMonth).ToString("dd/MM/yyyy");
-                    }
-                    return new StatementItemDTO
-                    {
-                        Description = invoice != null
-                            ? $"Thanh toán hóa đơn số {invoice.InvoiceNumber}"
-                            : "Chi tiết công nợ",
-                        PeriodFrom = issuedDate.ToString("01/MM/yyyy") ?? "",
-                        PeriodTo = lastDayOfMonth,
+                        // Diễn giải gom nhóm: "Dư nợ quá hạn tháng 09/2025"
+                        Description = $"Dư nợ quá hạn tháng {g.Key.Month.ToString("00")}/{g.Key.Year}",
+
+                        // Thời gian
+                        PeriodFrom = $"{g.Key.Month.ToString("00")}/{g.Key.Year}",
+                        PeriodTo = $"{g.Key.Month.ToString("00")}/{g.Key.Year}",
+
                         IndicatorOld = "0",
                         IndicatorNew = "0",
                         Quantity = 1,
-                        UnitPrice = invoice?.TotalAmount ?? 0,
-                        Amount = invoice?.TotalAmount ?? 0,
-                        VATRate = invoice.VATRate,
-                        VATAmount = (invoice?.TotalAmount ?? 0) * 0.1m,
 
-                        TotalCurrent = (invoice?.TotalAmount ?? 0) * 1.1m,
-                        PreviousDebt = 0,
+                        // --- LOGIC QUAN TRỌNG CHO NỢ CŨ ---
+                        // Chỉ lấy OutstandingAmount (Số tiền còn lại phải trả)
+                        // Không hiển thị VAT hay Doanh thu gốc vì đã kê khai ở tháng trước rồi
 
-                        TotalPayable = d.OutstandingAmount
-                    };
-                }).ToList(),              
-            };
+                        UnitPrice = g.Sum(x => x.OutstandingAmount),
+                        Amount = g.Sum(x => x.OutstandingAmount),
+
+                        VATRate = 0, // Để trống
+                        VATAmount = 0, // Coi như bằng 0 để không cộng dồn thuế sai kỳ
+
+                        TotalCurrent = 0, // Không phải phát sinh kỳ này
+                        PreviousDebt = g.Sum(x => x.OutstandingAmount), // Đưa vào cột Nợ cũ (nếu template có cột này)
+
+                        TotalPayable = g.Sum(x => x.OutstandingAmount) // Tổng phải trả = Tổng số dư nợ
+                    });
+
+                xmlDto.Items.AddRange(oldItemsSummary);
+            }
+
+            // --- PHẦN B: XỬ LÝ PHÁT SINH TRONG KỲ (Tháng hiện tại) ---
+            // Điều kiện: Ngày hóa đơn >= Ngày đầu tháng này
+            var currentDetails = allDetails
+                .Where(d => (d.Invoice.IssuedDate ?? DateTime.MinValue) >= startOfStatementPeriod)
+                .OrderBy(d => d.Invoice.IssuedDate)
+                .ToList();
+
+            var currentItemsMapped = currentDetails.Select(d =>
+            {
+                var invoice = d.Invoice;
+                var issuedDate = invoice.IssuedDate ?? DateTime.UtcNow;
+                int daysInMonth = DateTime.DaysInMonth(issuedDate.Year, issuedDate.Month);
+                string lastDayOfMonth = new DateTime(issuedDate.Year, issuedDate.Month, daysInMonth).ToString("dd/MM/yyyy");
+
+                return new StatementItemDTO
+                {
+                    Description = invoice != null
+                        ? $"Thanh toán hóa đơn số {invoice.InvoiceNumber}"
+                        : "Chi tiết công nợ",
+                    PeriodFrom = issuedDate.ToString("dd/MM/yyyy"),
+                    PeriodTo = lastDayOfMonth,
+                    IndicatorOld = "0",
+                    IndicatorNew = "0",
+                    Quantity = 1,
+                    UnitPrice = invoice?.TotalAmount ?? 0, 
+                    Amount = invoice?.TotalAmount ?? 0, 
+                    VATRate = invoice?.VATRate ?? 0,
+                    VATAmount = (invoice?.TotalAmount ?? 0) * 0.1m, 
+                    TotalCurrent = (invoice?.TotalAmount ?? 0) * 1.1m,
+                    PreviousDebt = 0,
+                    TotalPayable = d.OutstandingAmount
+                };
+            });
+
+            xmlDto.Items.AddRange(currentItemsMapped);
             xmlDto.Summary = new StatementSummaryDTO
             {
                 TotalAmount = xmlDto.Items.Sum(x => x.Amount),
                 TotalVAT = xmlDto.Items.Sum(x => x.VATAmount),
-                TotalCurrentPeriod = xmlDto.Items.Sum(x => x.TotalCurrent),
-                TotalPreviousDebt = 0,
+                TotalCurrentPeriod = xmlDto.Items.Where(x => x.PreviousDebt == 0).Sum(x => x.TotalCurrent),
+                TotalPreviousDebt = xmlDto.Items.Sum(x => x.PreviousDebt),
                 GrandTotal = statementEntity.TotalAmount
 
             };
