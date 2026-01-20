@@ -16,10 +16,12 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-        public CreatePaymentCommandHandler(IUnitOfWork uow, IMapper mapper)
+        private readonly ICurrentUserService _currentUser;
+        public CreatePaymentCommandHandler(IUnitOfWork uow, IMapper mapper, ICurrentUserService currentUser)
         {
             _uow = uow;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
         public async Task<Result<InvoicePaymentDTO>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
         {
@@ -27,6 +29,7 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
             try
             {
                 //fetch invoice 
+                var userId = int.Parse(_currentUser.UserId);
                 var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Payments");
                 if (invoice == null)
                     return Result.Fail($"Invoice with id {request.InvoiceId} not found");
@@ -49,6 +52,7 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                     PaymentMethod = request.PaymentMethod,
                     TransactionCode = request.TransactionCode,
                     Note = request.Note,
+                    Invoice = invoice,
                     CreatedBy = request.UserId
                 };
                 await _uow.InvoicePaymentRepository.CreateAsync(payment);
@@ -92,7 +96,7 @@ namespace EIMS.Application.Features.InvoicePayment.Commands
                 {
                     InvoiceID = request.InvoiceId,
                     ActionType = InvoiceActionTypes.PaymentAdded,
-                    PerformedBy = request.UserId,
+                    PerformedBy = userId,
                     Date = DateTime.UtcNow,
                     ReferenceInvoiceID = null
                 };

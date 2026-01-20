@@ -164,7 +164,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     ActionType = "Created",
                     ReferenceInvoiceID = null,
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.PerformedBy,
+                    PerformedBy = userId,
                 };
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();

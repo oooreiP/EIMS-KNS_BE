@@ -23,7 +23,7 @@ namespace EIMS.Application.Features.InvoicePayment.Queries
         public async Task<Result<PaginatedList<InvoicePaymentDTO>>> Handle(GetInvoicePayments request, CancellationToken cancellationToken)
         {
             //get Queryable
-            var query = _uow.InvoicePaymentRepository.GetAllQueryable(includeProperties: "Invoice,Invoice.Customer");
+            var query = _uow.InvoicePaymentRepository.GetAllQueryable(includeProperties: "Invoice,Invoice.Customer,Invoice.Payments");
             //Filter
             if (request.InvoiceId.HasValue)
             {
