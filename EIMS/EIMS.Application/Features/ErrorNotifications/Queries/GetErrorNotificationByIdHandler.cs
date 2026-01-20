@@ -32,6 +32,7 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                 NotificationTypeCode = entity.NotificationTypeCode,
                 TaxAuthorityName = entity.TaxAuthorityName,
                 CreatedDate = entity.ReportDate,
+                CreatedBy = entity.CreatedBy,
                 StatusCode = entity.Status,
                 Status = GetStatusName(entity.Status),
                 MTDiep = entity.MTDiep,
