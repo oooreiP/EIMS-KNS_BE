@@ -28,6 +28,7 @@ using PdfSignature = Spire.Pdf.Security.PdfSignature;
 using GraphicMode = Spire.Pdf.Security.GraphicMode;
 using System.Drawing.Drawing2D;
 using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.Vml.Office;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -44,7 +45,6 @@ namespace EIMS.Infrastructure.Service
             _xmlService = xmlService;
             _qrService = qrService;
         }
-
         private async Task<byte[]> GeneratePdfBytesAsync(string htmlContent)
         {
             string executablePath = null;
@@ -404,7 +404,7 @@ namespace EIMS.Infrastructure.Service
             args.AddParam("IsDraft", "", isDraft ? "true" : "false");
             return args;
         }
-        private string TransformXmlToHtml(string xmlContent, string xsltPath, XsltArgumentList args)
+        public string TransformXmlToHtml(string xmlContent, string xsltPath, XsltArgumentList? args = null)
         {
             if (!File.Exists(xsltPath))
                 throw new FileNotFoundException($"Không tìm thấy file mẫu in tại: {xsltPath}");

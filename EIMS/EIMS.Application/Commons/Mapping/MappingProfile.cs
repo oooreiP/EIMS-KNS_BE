@@ -108,7 +108,12 @@ namespace EIMS.Application.Common.Mapping
                .ReverseMap();
             CreateMap<Customer, CustomerDto>();
             CreateMap<UpdateInvoiceRequest, UpdateInvoiceCommand>();
-            CreateMap<InvoicePayment, InvoicePaymentDTO>();
+            CreateMap<InvoicePayment, InvoicePaymentDTO>()
+                    .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src =>
+                    src.Invoice != null
+                    ? src.Invoice.TotalAmount - src.Invoice.Payments.Sum(p => p.AmountPaid)
+                    : 0
+                )); 
             CreateMap<InvoiceStatementDetail, StatementInvoiceDto>()
                   .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber : 0))
                   .ForMember(dest => dest.SignDate, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.SignDate : null))

@@ -340,15 +340,8 @@ namespace EIMS.Infrastructure.Service
 
             return (doc, messageId);
         }
-        public async Task<PaymentStatementDTO> GetPaymentRequestXmlAsync(int statementId)
+        public async Task<PaymentStatementDTO> GetPaymentRequestXmlAsync(InvoiceStatement statementEntity)
         {
-            var statementEntity = await _unitOfWork.InvoiceStatementRepository.GetAllQueryable()
-                .AsNoTracking()
-                .Include(s => s.Customer) 
-                .Include(s => s.Creator) 
-                .Include(s => s.StatementDetails)
-                    .ThenInclude(d => d.Invoice) 
-                .FirstOrDefaultAsync(s => s.StatementID == statementId);
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
             if (company == null) throw new Exception("Company not found");
             if (statementEntity == null) throw new Exception("Statement not found");
@@ -376,18 +369,19 @@ namespace EIMS.Infrastructure.Service
                 Items = statementEntity.StatementDetails.Select(d =>
                 {
                     var invoice = d.Invoice;
+                    var issuedDate = invoice.IssuedDate ?? DateTime.UtcNow;
                     string lastDayOfMonth = "";
                     if (invoice != null)
                     {
-                        int daysInMonth = DateTime.DaysInMonth(invoice.IssuedDate.Value.Year, invoice.IssuedDate.Value.Month);
-                        lastDayOfMonth = new DateTime(invoice.IssuedDate.Value.Year, invoice.IssuedDate.Value.Month, daysInMonth).ToString("dd/MM/yyyy");
+                        int daysInMonth = DateTime.DaysInMonth(issuedDate.Year, issuedDate.Month);
+                        lastDayOfMonth = new DateTime(issuedDate.Year, issuedDate.Month, daysInMonth).ToString("dd/MM/yyyy");
                     }
                     return new StatementItemDTO
                     {
                         Description = invoice != null
                             ? $"Thanh toán hóa đơn số {invoice.InvoiceNumber}"
                             : "Chi tiết công nợ",
-                        PeriodFrom = invoice?.IssuedDate.Value.ToString("01/MM/yyyy") ?? "",
+                        PeriodFrom = issuedDate.ToString("01/MM/yyyy") ?? "",
                         PeriodTo = lastDayOfMonth,
                         IndicatorOld = "0",
                         IndicatorNew = "0",
