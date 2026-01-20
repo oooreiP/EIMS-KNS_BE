@@ -60,8 +60,7 @@ namespace EIMS.Application.Features.Invoices.Queries
                 query = query.Where(x => x.IssuedDate <= request.ToDate.Value);
 
             // 3. Sắp xếp (Mới nhất lên đầu)
-            query = query.OrderByDescending(x => x.IssuedDate)
-                         .ThenByDescending(x => x.InvoiceID);
+            query = query.OrderByDescending(x => x.InvoiceID);
             var result = await PaginatedList<InvoiceDTO>.CreateAsync(
                 query.ProjectTo<InvoiceDTO>(_mapper.ConfigurationProvider), 
                 request.PageIndex,
