@@ -15,6 +15,7 @@ namespace EIMS.Application.DTOs.TaxAPIDTO
         public DateTime CreatedDate { get; set; }
         public string Status { get; set; }     
         public int StatusCode { get; set; }     
+        public int? CreatedBy { get; set; }     
         public string? MTDiep { get; set; }
         public string? XMLPath { get; set; }
         public string? TaxResponsePath { get; set; }

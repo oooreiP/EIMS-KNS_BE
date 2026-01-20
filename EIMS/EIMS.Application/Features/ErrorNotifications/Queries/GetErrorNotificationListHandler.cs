@@ -62,6 +62,7 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                     Place = entity.Place,
                     CreatedDate = entity.ReportDate,
                     StatusCode = entity.Status,
+                    CreatedBy = entity.CreatedBy,
                     TaxResponsePath = entity.TaxResponsePath,
                     XMLPath = entity.XMLPath,
                     MTDiep = entity.MTDiep,
