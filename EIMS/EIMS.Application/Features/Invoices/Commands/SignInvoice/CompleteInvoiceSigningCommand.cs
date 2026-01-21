@@ -21,6 +21,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         // Để Server biết ai vừa ký và điền vào thẻ <X509Certificate>
         public string CertificateBase64 { get; set; }
 
-        public string RootPath { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? RootPath { get; set; }
     }
 }

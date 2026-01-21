@@ -328,8 +328,8 @@ namespace EIMS.API.Controllers
             return Ok(new
             {
                 InvoiceId = command.InvoiceId,
-                HashToSign = result.Value,
-                Algorithm = "SHA256" 
+                DataToSign = result.Value,
+                Algorithm = "RSA-SHA256 (SignedInfo C14N)"
             });
         }
 
@@ -344,6 +344,8 @@ namespace EIMS.API.Controllers
             {
                 return BadRequest("Vui lòng cung cấp Chữ ký số và Thông tin chứng thư.");
             }
+
+            command.RootPath = _env.ContentRootPath;
 
             var result = await _mediator.Send(command);
 
