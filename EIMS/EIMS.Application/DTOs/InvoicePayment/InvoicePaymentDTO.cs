@@ -10,6 +10,7 @@ namespace EIMS.Application.DTOs.InvoicePayment
         public int PaymentID { get; set; }
         public int InvoiceID { get; set; }
         public decimal AmountPaid { get; set; }
+        public decimal? RemainingAmount { get; set; }
         public string? PaymentMethod { get; set; }
         public string? TransactionCode { get; set; }
         public string? Note { get; set; }

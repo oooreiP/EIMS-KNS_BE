@@ -5,6 +5,7 @@ using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.XMLModels;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +22,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly INotificationService _notiService;
         private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUser;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService, ICurrentUserService currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -31,10 +33,12 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             _invoiceXMLService = invoiceXMLService;
             _notiService = notiService;
             _pdfService = pdfService;
+            _currentUser = currentUser;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
         {
+            var userId = int.Parse(_currentUser.UserId);
             if (request.Items == null || !request.Items.Any())
                 return Result.Fail(new Error("Invoice must has at least one item").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.TemplateID == null || request.TemplateID == 0)
@@ -143,7 +147,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     PaymentStatusID = 1,
                     PaymentDueDate = DateTime.UtcNow.AddDays(30),
                     IssuerID = null,
-                    CreatedBy = request.PerformedBy,
+                    CreatedBy = request.PerformedBy ?? userId,
                     MinRows = request.MinRows ?? 5,
                     PaidAmount = 0,
                     RemainingAmount = totalAmount,
@@ -160,7 +164,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     ActionType = "Created",
                     ReferenceInvoiceID = null,
                     Date = DateTime.UtcNow,
-                    PerformedBy = request.PerformedBy,
+                    PerformedBy = userId,
                 };
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();
@@ -196,7 +200,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 if(request.RequestID != null && request.RequestID != 0)
                 {
                    var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetByIdAsync(request.RequestID ?? 1);
-                    invoiceRequest.RequestStatusID = 3;
+                    invoiceRequest.RequestStatusID = (int)EInvoiceRequestStatus.Approved;
                     invoiceRequest.CreatedInvoiceID = fullInvoice.InvoiceID;
                     await _unitOfWork.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
                 }

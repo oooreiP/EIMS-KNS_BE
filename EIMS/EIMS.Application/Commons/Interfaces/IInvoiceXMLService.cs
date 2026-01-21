@@ -1,4 +1,5 @@
-﻿using EIMS.Domain.Entities;
+﻿using EIMS.Application.DTOs.XMLModels.PaymentStatements;
+using EIMS.Domain.Entities;
 using FluentResults;
 using System;
 using System.Collections.Generic;

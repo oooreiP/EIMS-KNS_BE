@@ -1,9 +1,13 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using DocumentFormat.OpenXml.Vml.Office;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
+using EIMS.Application.DTOs.XMLModels.PaymentStatements;
 using EIMS.Application.DTOs.XMLModels.TB04;
 using EIMS.Domain.Entities;
 using FluentResults;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -336,5 +340,6 @@ namespace EIMS.Infrastructure.Service
 
             return (doc, messageId);
         }
+       
     }
 }

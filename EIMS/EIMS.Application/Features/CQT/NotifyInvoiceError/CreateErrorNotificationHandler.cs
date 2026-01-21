@@ -17,16 +17,23 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _xmlService;
         private readonly IFileStorageService _fileService;
-
-        public CreateErrorNotificationHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IFileStorageService fileService)
+        private readonly ICurrentUserService _currentUser;
+        public CreateErrorNotificationHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IFileStorageService fileService, ICurrentUserService currentUser)
         {
             _uow = uow;
             _xmlService = xmlService;
             _fileService = fileService;
+            _currentUser = currentUser;
         }
 
         public async Task<Result<CreateErrorNotificationResponse>> Handle(CreateErrorNotificationCommand request, CancellationToken cancellationToken)
         {
+            var userId = int.Parse(_currentUser.UserId);
+            if (userId == 0)
+            {
+                return Result.Fail(new Error($"Đăng nhập trước khi thực hiện.")
+                    .WithMetadata("ErrorCode", "Unauthorize"));
+            }
             var exists = await _uow.ErrorNotificationRepository.GetByNotificationNumberAsync(request.NotificationNumber);
             if (exists != null)
             {
@@ -36,6 +43,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
             {
                 Status = 1, // Draft
                 CreatedAt = request.CreatedDate ?? DateTime.UtcNow,
+                CreatedBy = userId,
                 NotificationNumber = request.NotificationNumber,
                 NotificationTypeCode = request.NotificationTypeCode,
                 TaxAuthorityName = request.TaxAuthority, 
@@ -78,7 +86,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     InvoiceNumber = invoice.InvoiceNumber.ToString(),
                     InvoiceDate = invoice.IssuedDate ?? DateTime.UtcNow,
                     ErrorType = item.ErrorType,
-                    Reason = item.Reason
+                    Reason = item.Reason,
                 });
             }
             var result = await _xmlService.Generate04SSXmlDocumentAsync(notification);

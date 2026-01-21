@@ -6,6 +6,7 @@ using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -25,18 +26,23 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
         public async Task<Result<StatementDetailResponse>> Handle(CreateStatementCommand request, CancellationToken cancellationToken)
         {
-            
+
 
             //find the date boundary
             var startOfMonth = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var statementDate = startOfMonth.AddMonths(1).AddDays(-1);            // 2. Fetch Invoices WITH Payments to calculate real balance
+            var statementDate = startOfMonth.AddMonths(1).AddDays(-1);
+            var allowedStatuses = new List<int> { 
+                (int)EInvoiceStatus.Issued,
+                (int)EInvoiceStatus.Adjusted,
+            };
             var rawInvoices = await _uow.InvoicesRepository
                 .GetAllQueryable()
                 .Include(i => i.Payments)
                 .Include(i => i.Customer)
                 .Where(i => i.CustomerID == request.CustomerID)
-                .Where(i => (i.SignDate ?? i.CreatedAt) <= statementDate)
-                .Where(i => i.InvoiceStatusID != 1)
+                .Where(i => i.IssuedDate != null)
+                .Where(i => i.IssuedDate  <= statementDate)
+                .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
                 .ToListAsync(cancellationToken);
             // 3. Calculate Remaining Amount in Memory & Filter
             var debtItems = rawInvoices

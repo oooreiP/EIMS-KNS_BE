@@ -34,6 +34,10 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                 query = query.Where(x => x.Status == request.Status.Value);
             }
 
+            if (request.CreatedBy.HasValue)
+            {
+                query = query.Where(x => x.CreatedBy == request.CreatedBy.Value);
+            }
             if (request.FromDate.HasValue)
             {
                 query = query.Where(x => x.ReportDate >= request.FromDate.Value);
@@ -58,6 +62,7 @@ namespace EIMS.Application.Features.ErrorNotifications.Queries
                     Place = entity.Place,
                     CreatedDate = entity.ReportDate,
                     StatusCode = entity.Status,
+                    CreatedBy = entity.CreatedBy,
                     TaxResponsePath = entity.TaxResponsePath,
                     XMLPath = entity.XMLPath,
                     MTDiep = entity.MTDiep,

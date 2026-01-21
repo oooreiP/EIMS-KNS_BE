@@ -14,11 +14,12 @@ namespace EIMS.API.Controllers
     {
         private readonly ISender _sender;
         private readonly IMapper _mapper;
-
-        public InvoiceTemplateController(ISender sender, IMapper mapper)
+        private readonly IWebHostEnvironment _env;
+        public InvoiceTemplateController(ISender sender, IMapper mapper, IWebHostEnvironment env)
         {
             _sender = sender;
             _mapper = mapper;
+            _env = env;
         }
         [HttpPost]
         public async Task<IActionResult> CreateTemplate([FromBody] CreateTemplateRequest request)
@@ -100,6 +101,22 @@ namespace EIMS.API.Controllers
             // Return HTML directly so the browser/frontend can render it
             return Content(result.Value, "text/html");
         }
+        [HttpGet("preview-template/{templateId}")]
+        public async Task<IActionResult> PreviewTemplate(int templateId)
+        {
+
+            var query = new GetInvoiceTemplatePreviewQuery
+            {
+                TemplateID = templateId,
+                CompanyID = 1,
+                RootPath = _env.ContentRootPath
+            };
+
+            var htmlContent = await _sender.Send(query);
+
+            return Content(htmlContent, "text/html");
+        }
+
     }
 }
 

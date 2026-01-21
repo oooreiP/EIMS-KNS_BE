@@ -18,5 +18,6 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         // 3. TÙY CHỌN: Mã PIN (Nếu chứng thư số yêu cầu mở khóa mỗi lần ký)
         // Lưu ý: Chỉ dùng nếu lưu PFX có password hoặc Token cắm tại server cần PIN
         public string? SecretPin { get; set; }
+        public string? RootPath { get; set; }
     }
 }

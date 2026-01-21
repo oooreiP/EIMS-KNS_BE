@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using EIMS.Application.DTOs.InvoiceStatement;
+using EIMS.Application.DTOs.Mails;
 using EIMS.Application.Features.InvoiceStatements.Commands;
 using EIMS.Application.Features.InvoiceStatements.Queries;
+using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,15 +12,17 @@ namespace EIMS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class StatementController : ControllerBase
     {
         private readonly ISender _sender;
         private readonly IMapper _mapper;
-        public StatementController(ISender sender, IMapper mapper)
+        private readonly IWebHostEnvironment _env;
+        public StatementController(ISender sender, IMapper mapper, IWebHostEnvironment env)
         {
             _sender = sender;
             _mapper = mapper;
+            _env = env;
         }
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateStatement([FromBody] GenerateStatementRequest request)
@@ -101,6 +105,25 @@ namespace EIMS.API.Controllers
                 return Ok(new { message = $"Đã gửi thông báo nhắc nợ tới {result.Value} khách hàng." });
             }
             return BadRequest(result.Errors);
+        }
+        [HttpGet("{id}/export-pdf")]
+        public async Task<IActionResult> ExportPdf(int id)
+        {
+            string rootPath = _env.ContentRootPath;
+            var query = new GetStatementPdfQuery(id, rootPath);
+
+            Result<FileAttachment> result = await _sender.Send(query);
+            if (result.IsFailed)
+            {
+                return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
+            }
+
+            var fileData = result.Value;
+            return File(
+                fileData.FileContent,   
+                "application/pdf",     
+                fileData.FileName      
+            );
         }
     }
 }
