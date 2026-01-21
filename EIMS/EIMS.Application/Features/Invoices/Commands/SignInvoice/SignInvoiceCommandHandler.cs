@@ -77,8 +77,8 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             await _unitOfWork.SaveChanges();
             try
             {
-                string rootPath = AppDomain.CurrentDomain.BaseDirectory;
-                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(invoice.InvoiceID, rootPath);
+                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(invoice.InvoiceID, request.RootPath);
+                double sizeInKB = pdfBytes.Length / 1024.0;
                 using (var pdfStream = new MemoryStream(pdfBytes))
                 {
                     string fileName = $"Invoice_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";

@@ -13,8 +13,9 @@ namespace EIMS.Application.DTOs.InvoiceStatement
         public DateTime StatementDate { get; set; }
         public decimal? TotalAmount { get; set; }
         public string Status { get; set; } // e.g., "Sent"
-        
+
         // The list of invoices in this statement
+        public List<StatementProductDto> ProductSummaries { get; set; } = new();
         public List<StatementInvoiceDto> Invoices { get; set; } = new List<StatementInvoiceDto>();
     }
 }
