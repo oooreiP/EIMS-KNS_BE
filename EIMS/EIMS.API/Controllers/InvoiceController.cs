@@ -173,8 +173,8 @@ namespace EIMS.API.Controllers
             // 1. Tạo Command
             var command = new SignInvoiceCommand
             {
-                InvoiceId = invoiceId
-                // Lưu ý: Nếu cần, có thể thêm CertificateSerial hoặc SecretPin vào đây
+                InvoiceId = invoiceId,
+                RootPath = _env.ContentRootPath
             };
 
             // 2. Gửi Command qua Mediator

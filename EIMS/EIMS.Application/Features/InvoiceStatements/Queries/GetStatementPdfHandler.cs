@@ -15,14 +15,14 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
     public class GetStatementPdfHandler : IRequestHandler<GetStatementPdfQuery, Result<FileAttachment>>
     {
         private readonly IUnitOfWork _uow;
-        private readonly IInvoiceXMLService _xMLService;
+        private readonly IStatementService _statementService;
         private readonly IPdfService _pdfService;
         private const string XsltContent = @"... COPY NỘI DUNG XSL CỦA BẠN VÀO ĐÂY HOẶC LOAD TỪ FILE ...";
 
-        public GetStatementPdfHandler(IUnitOfWork uow, IInvoiceXMLService xMLService, IPdfService pdfService)
+        public GetStatementPdfHandler(IUnitOfWork uow, IStatementService statementService, IPdfService pdfService)
         {
             _uow = uow;
-            _xMLService = xMLService;
+            _statementService = statementService;
             _pdfService = pdfService;
         }
 
@@ -43,7 +43,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
 
             try
             {
-                var paymentDto = await _xMLService.GetPaymentRequestXmlAsync(entity);
+                var paymentDto = await _statementService.GetPaymentRequestXmlAsync(entity);
                 string xmlString = XmlHelpers.Serialize(paymentDto);
                 string fullPath = Path.Combine(request.RootPath, "Templates", "PaymentTemplate.xsl");
                 string htmlContent = _pdfService.TransformXmlToHtml(xmlString, fullPath);
