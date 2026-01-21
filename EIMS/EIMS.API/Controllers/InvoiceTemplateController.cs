@@ -22,19 +22,22 @@ namespace EIMS.API.Controllers
             _env = env;
         }
         [HttpPost]
+        [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task<IActionResult> CreateTemplate([FromBody] CreateTemplateRequest request)
         {
+            if (string.IsNullOrEmpty(request.RenderedHtml))
+                return BadRequest("HTML Content is required");
             var command = _mapper.Map<CreateTemplateCommand>(request);
             var result = await _sender.Send(command);
             if (result.IsFailed)
             {
                 var firstError = result.Errors.FirstOrDefault();
                 // Return error response
-                return BadRequest(new ProblemDetails // Use ProblemDetails for standard error responses
+                return BadRequest(new ProblemDetails 
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Invoice template creation failed",
-                    Detail = firstError?.Message ?? "Invalid credentials provided." // Use the message from the Result
+                    Detail = firstError?.Message ?? "Invalid credentials provided." 
                 });
             }
             return Ok(result.Value);

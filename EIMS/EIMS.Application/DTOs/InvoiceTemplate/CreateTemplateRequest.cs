@@ -21,6 +21,7 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         public object LayoutDefinition { get; set; }
         [Required]
         public int TemplateFrameID { get; set; }
+        public string RenderedHtml { get; set; }
         public string? LogoUrl { get; set; }
     }
 }

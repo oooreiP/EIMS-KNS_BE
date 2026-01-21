@@ -1,6 +1,7 @@
 ﻿using EIMS.Application.Commons.Helpers;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
+using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,14 +17,16 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
     {
         private readonly IUnitOfWork _uow;
         private readonly IStatementService _statementService;
+        private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly IPdfService _pdfService;
         private const string XsltContent = @"... COPY NỘI DUNG XSL CỦA BẠN VÀO ĐÂY HOẶC LOAD TỪ FILE ...";
 
-        public GetStatementPdfHandler(IUnitOfWork uow, IStatementService statementService, IPdfService pdfService)
+        public GetStatementPdfHandler(IUnitOfWork uow, IStatementService statementService, IPdfService pdfService, IInvoiceXMLService invoiceXMLService)
         {
             _uow = uow;
             _statementService = statementService;
             _pdfService = pdfService;
+            _invoiceXMLService = invoiceXMLService;
         }
 
         public async Task<Result<FileAttachment>> Handle(GetStatementPdfQuery request, CancellationToken cancellationToken)
@@ -43,10 +46,17 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
 
             try
             {
+                var certResult = await _invoiceXMLService.GetCertificateAsync(1);
+                if (certResult.IsFailed)
+                    return Result.Fail(certResult.Errors);
+                var signingCert = certResult.Value;
                 var paymentDto = await _statementService.GetPaymentRequestXmlAsync(entity);
+                string unsignedXmlString = XmlHelpers.Serialize(paymentDto);
+                var signedResult = XmlHelpers.SignElectronicDocument(unsignedXmlString, signingCert, true);
                 string xmlString = XmlHelpers.Serialize(paymentDto);
+                string signedXmlContent = signedResult.SignedXml;
                 string fullPath = Path.Combine(request.RootPath, "Templates", "PaymentTemplate.xsl");
-                string htmlContent = _pdfService.TransformXmlToHtml(xmlString, fullPath);
+                string htmlContent = _pdfService.TransformXmlToHtml(signedXmlContent, fullPath);
                 byte[] pdfBytes = await _pdfService.ConvertHtmlToPdfAsync(htmlContent);
 
                 return Result.Ok(new FileAttachment
