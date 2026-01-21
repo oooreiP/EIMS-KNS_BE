@@ -61,7 +61,6 @@ namespace EIMS.Application.Features.Files.Commands
                 AmountInWords = invoice.TotalAmountInWords,
                 SignDate = invoice.SignDate.ToString(),
             };
-
             // C. *** CALCULATE FILLER ROWS *** // This is the specific logic you asked about
             int targetMinRows = invoice.MinRows;
             int currentItems = viewModel.Items.Count;
