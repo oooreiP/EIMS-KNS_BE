@@ -34,6 +34,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 .Include(s => s.Creator)
                 .Include(s => s.StatementDetails)
                     .ThenInclude(d => d.Invoice)
+                        .ThenInclude(i => i.InvoiceItems) // 2. Vào tiếp danh sách Hàng hóa (InvoiceItems)
+                         .ThenInclude(it => it.Product)
                 .FirstOrDefaultAsync(s => s.StatementID == request.StatementId, cancellationToken);
 
             if (entity == null)
