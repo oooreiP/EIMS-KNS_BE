@@ -20,15 +20,18 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         private readonly IInvoiceXMLService _invoiceXmlService;
         private readonly IPdfService _pdfService;
         private readonly IFileStorageService _fileStorageService;
-        public SignInvoiceCommandHandler(IUnitOfWork unitOfWork, IInvoiceXMLService invoiceXmlService, IPdfService pdfService, IFileStorageService fileStorageService)
+        private readonly ICurrentUserService _currentUser;
+        public SignInvoiceCommandHandler(IUnitOfWork unitOfWork, IInvoiceXMLService invoiceXmlService, IPdfService pdfService, IFileStorageService fileStorageService, ICurrentUserService currentUser)
         {
             _unitOfWork = unitOfWork;
             _invoiceXmlService = invoiceXmlService;
             _pdfService = pdfService;
             _fileStorageService = fileStorageService;
+            _currentUser = currentUser;
         }
         public async Task<Result<long>> Handle(SignInvoiceCommand request, CancellationToken cancellationToken)
         {
+            var userId = int.Parse(_currentUser.UserId);
             // BƯỚC 1: VALIDATION NGHIỆP VỤ
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus,Company");
             var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(invoice.TemplateID);
@@ -62,7 +65,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                 return Result.Fail(certResult.Errors);
             var signingCert = certResult.Value;
             var xmlDoc = await _invoiceXmlService.LoadXmlFromUrlAsync(invoice.XMLPath);
-            var signedXmlContent = XmlHelpers.SignInvoiceXml(xmlDoc.OuterXml, signingCert);
+            var signedXmlContent = XmlHelpers.SignElectronicDocument(xmlDoc.OuterXml, signingCert);
             var signedXmlDoc = new XmlDocument();
             signedXmlDoc.PreserveWhitespace = true;
             signedXmlDoc.LoadXml(signedXmlContent.SignedXml);
@@ -99,7 +102,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             {
                 InvoiceID = request.InvoiceId,
                 ActionType = InvoiceActionTypes.Signed,
-                PerformedBy = invoice.IssuerID,
+                PerformedBy = userId,
                 Date = DateTime.UtcNow
             };
             await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);

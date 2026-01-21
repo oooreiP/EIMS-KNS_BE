@@ -27,6 +27,7 @@ namespace EIMS.Application.Features.InvoiceTemplate.Commands
                 LayoutDefinition = JsonSerializer.Serialize(request.LayoutDefinition),
                 TemplateFrameID = command.TemplateFrameID,
                 LogoUrl = command.LogoUrl,
+                RenderedHtml = command.RenderedHtml,
                 IsActive = true, // Set default
             };
             await _uow.InvoiceTemplateRepository.CreateAsync(newTemplate);

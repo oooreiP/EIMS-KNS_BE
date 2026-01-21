@@ -26,16 +26,19 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly IPdfService _pdfService;
         private readonly INotificationService _notiService;
-        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, INotificationService notiService, IPdfService pdfService, IInvoiceXMLService invoiceXMLService)
+        private readonly ICurrentUserService _currentUser;
+        public CreateAdjustmentInvoiceCommandHandler(IUnitOfWork uow, IFileStorageService fileStorageService, INotificationService notiService, IPdfService pdfService, IInvoiceXMLService invoiceXMLService, ICurrentUserService currentUser)
         {
             _uow = uow;
-            _fileStorageService = fileStorageService; 
+            _fileStorageService = fileStorageService;
             _notiService = notiService;
             _pdfService = pdfService;
             _invoiceXMLService = invoiceXMLService;
+            _currentUser = currentUser;
         }
         public async Task<Result<AdjustmentInvoiceDetailDto>> Handle(CreateAdjustmentInvoiceCommand request, CancellationToken cancellationToken)
         {
+            var userId = int.Parse(_currentUser.UserId);
             // =========================================================================
             // BƯỚC 1: LẤY HÓA ĐƠN GỐC & VALIDATE
             // =========================================================================
@@ -195,7 +198,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 InvoiceID = originalInvoice.InvoiceID,        // 100
                 ActionType = InvoiceActionTypes.Adjusted, // "Bị thay thế"
                 ReferenceInvoiceID = adjInvoice.InvoiceID, // Trỏ đến 200
-                PerformedBy = request.PerformedBy,
+                PerformedBy = userId,
                 Date = DateTime.UtcNow
             };
 
@@ -205,7 +208,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 InvoiceID = adjInvoice.InvoiceID,
                 ActionType = InvoiceActionTypes.Adjustment, // "Là bản thay thế"
                 ReferenceInvoiceID = originalInvoice.InvoiceID,
-                PerformedBy = request.PerformedBy,
+                PerformedBy = userId,
                 Date = DateTime.UtcNow
             };
 
