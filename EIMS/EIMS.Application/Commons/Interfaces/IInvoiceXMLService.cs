@@ -22,6 +22,5 @@ namespace EIMS.Application.Commons.Interfaces
         Task<string> GenerateNextNotificationNumberAsync();
         Task<string> GenerateAndUploadXmlAsync(Invoice fullInvoice);
         Task<(XmlDocument XmlDoc, string MessageId)> Generate04SSXmlDocumentAsync(InvoiceErrorNotification notification);
-        Task<PaymentStatementDTO> GetPaymentRequestXmlAsync(InvoiceStatement statementEntity);
     }
 }

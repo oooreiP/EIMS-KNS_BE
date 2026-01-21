@@ -33,6 +33,7 @@ namespace EIMS.Infrastructure
             services.AddScoped<IFileStorageService, FileStorageService>();
             services.AddScoped<IExternalCompanyLookupService, VietQrLookupService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IStatementService, StatementService>();
             services.AddHttpClient();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             
