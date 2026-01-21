@@ -36,7 +36,10 @@ namespace EIMS.Application.Features.Serial.Commands
             RuleFor(v => v.Tail)
                 .NotEmpty().WithMessage("Tail is required.")
                 .MaximumLength(2).WithMessage("Tail must not exceed 2 characters.");
-        }
+            RuleFor(x => x)
+                .MustAsync(BeUniqueSerial)
+                .WithMessage("This Serial is existed in your database.");
+    }
 
         // --- Database Existence Checks ---
 
@@ -56,6 +59,16 @@ namespace EIMS.Application.Features.Serial.Commands
         {
             // Checks if an entity with this ID exists in the SerialStatuses table
             return await _context.SerialStatuses.AnyAsync(ss => ss.SerialStatusID == id, cancellationToken);
+        }
+        private async Task<bool> BeUniqueSerial(CreateSerialCommand command, CancellationToken cancellationToken)
+        {
+            bool exists = await _context.Serials.AnyAsync(s =>
+                s.InvoiceTypeID == command.InvoiceTypeID &&
+                s.PrefixID == command.PrefixID &&
+                s.Year == command.Year &&
+                s.Tail == command.Tail, 
+                cancellationToken);
+            return !exists;
         }
     }
 }

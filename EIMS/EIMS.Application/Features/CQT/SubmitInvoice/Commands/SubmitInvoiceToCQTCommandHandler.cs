@@ -22,19 +22,22 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _invoiceXMLService;
         private readonly ITaxApiClient _taxClient;
+        private readonly ICurrentUserService _currentUser;
         private readonly HttpClient _httpClient;
-        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService, HttpClient httpClient)
+        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService, HttpClient httpClient, ICurrentUserService currentUser)
         {
             _uow = uow;
             _taxClient = taxClient;
             _invoiceXMLService = invoiceXMLService;
             _httpClient = httpClient;
+            _currentUser = currentUser;
         }
 
         public async Task<Result<SubmitInvoiceToCQTResult>> Handle(
         SubmitInvoiceToCQTCommand request,
         CancellationToken cancellationToken)
         {
+            var userId = int.Parse(_currentUser.UserId);
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
             var original = new Invoice();
             if (invoice.OriginalInvoiceID != null)
@@ -147,7 +150,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             {
                 InvoiceID = request.invoiceId,
                 ActionType = taxResponse.MLTDiep == "202" ? InvoiceActionTypes.CqtAccepted : InvoiceActionTypes.CqtRejected,
-                PerformedBy = invoice.IssuerID,
+                PerformedBy = userId,
                 Date = DateTime.UtcNow
             };
             await _uow.InvoiceHistoryRepository.CreateAsync(history);

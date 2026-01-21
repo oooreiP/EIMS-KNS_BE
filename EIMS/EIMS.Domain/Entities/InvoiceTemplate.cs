@@ -21,6 +21,8 @@ namespace EIMS.Domain.Entities
         public string? LogoUrl { get; set; } // Nullable, stores Cloudinary URL for the logo
         [Column(TypeName = "jsonb")]
         public string? LayoutDefinition { get; set; }
+        [MaxLength]
+        public string? RenderedHtml { get; set; }
         public bool IsActive { get; set; } = true;
         [ForeignKey("CreatedByUserID")]
         public int CreatedByUserID { get; set; }
