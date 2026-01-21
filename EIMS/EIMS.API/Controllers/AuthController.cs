@@ -2,6 +2,7 @@
 using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Authentication;
+using EIMS.Application.Features.Admin.Commands;
 using EIMS.Application.Features.Authentication.Commands;
 using EIMS.Application.Features.Commands;
 using EIMS.Domain.Entities;
@@ -36,11 +37,11 @@ namespace EIMS.API.Controllers
             if (loginResult.IsFailed)
             {
                 var firstError = loginResult.Errors.FirstOrDefault();
-                return Unauthorized(new ProblemDetails 
+                return Unauthorized(new ProblemDetails
                 {
                     Status = StatusCodes.Status401Unauthorized,
                     Title = "Authentication Failed",
-                    Detail = firstError?.Message ?? "Invalid credentials provided." 
+                    Detail = firstError?.Message ?? "Invalid credentials provided."
                 });
             }
             var loginResponse = loginResult.Value;
@@ -124,6 +125,16 @@ namespace EIMS.API.Controllers
             // 3. Clear the refresh token cookie
             _authCookieService.ClearRefreshTokenCookie();
             return Ok(new { message = "Logout successful" });
+        }
+        [HttpPut("reset")]
+        [Authorize]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetUserPasswordCommand request)
+        {
+            var result = await _sender.Send(request);
+            
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+            return Ok($"Password of the user {request.Email} has been reset. Temporary password is {result.Value}");
         }
     }
 }
