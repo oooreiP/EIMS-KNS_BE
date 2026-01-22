@@ -44,6 +44,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 .Where(i => i.IssuedDate  <= endOfMonth)
                 .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
                 .ToListAsync(cancellationToken);
+
+            // debt from before the request period
             decimal openingBalance = rawInvoices
             .Where(inv => inv.IssuedDate < startOfMonth) 
             .Sum(inv =>
@@ -51,14 +53,20 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     .Where(p => p.PaymentDate < startOfMonth) 
                     .Sum(p => p.AmountPaid)
             );
+
+            // debt this month
             decimal newCharges = rawInvoices
         .Where(inv => inv.IssuedDate >= startOfMonth && inv.IssuedDate <= endOfMonth)
         .Sum(inv => inv.TotalAmount);
+            // money payed this month
             decimal paymentsInPeriod = rawInvoices
         .SelectMany(i => i.Payments)
         .Where(p => p.PaymentDate >= startOfMonth && p.PaymentDate <= endOfMonth)
         .Sum(p => p.AmountPaid);
+            // summary the total money you must pay this period + before
             decimal closingBalance = openingBalance + newCharges - paymentsInPeriod;
+
+            // list of invoices which is partially paid and issued this month
             var debtItems = rawInvoices
         .Select(inv => {
             var paidTotal = inv.Payments.Where(p => p.PaymentDate <= endOfMonth).Sum(p => p.AmountPaid);
@@ -130,7 +138,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     Notes = $"Statement for {request.Month}/{request.Year}",
                     TotalAmount = closingBalance,
                     PaidAmount = paymentsInPeriod,
-                    StatusID = newStatusId,
+                    StatusID = 1,
                     Customer = rawInvoices.FirstOrDefault()?.Customer // For Mapper
                 };
 

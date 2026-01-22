@@ -125,5 +125,25 @@ namespace EIMS.API.Controllers
                 fileData.FileName      
             );
         }
+
+        [HttpPost("{id}/payments")]
+        public async Task<IActionResult> CreateStatementPayment(int id, [FromBody] CreateStatementPaymentCommand command)
+        {
+            command.StatementId = id;
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Create Statement Payment Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
