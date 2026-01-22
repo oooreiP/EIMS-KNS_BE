@@ -12,7 +12,7 @@ namespace EIMS.Application.Features.Customers.Commands
     public class UpdateCustomerCommand : IRequest<Result>
     {
         [Required]
-        public int? CustomerID { get; set; } 
+        public int CustomerID { get; set; } 
 
         [Required]
         public string CustomerName { get; set; } = string.Empty;

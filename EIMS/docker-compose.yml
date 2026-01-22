@@ -13,16 +13,6 @@ services:
       - "5432:5432"                 
     volumes:
       - pgdata:/var/lib/postgresql/data  
-  gotenberg:
-    image: gotenberg/gotenberg:8
-    container_name: eims-gotenberg
-    restart: always
-    ports:
-      - "3000:3000"
-    command:
-      - "gotenberg"
-      - "--api-port=3000"
-      - "--api-timeout=30s"
   eims.api:
     image: mcr.microsoft.com/dotnet/sdk:8.0
     container_name: eims-api
