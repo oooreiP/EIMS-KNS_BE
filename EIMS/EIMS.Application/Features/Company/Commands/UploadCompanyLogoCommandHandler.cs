@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using EIMS.Application.Commons.Interfaces;
 using FluentResults;
+using MediatR;
 
 namespace EIMS.Application.Features.Company.Commands
 {
-    public class UploadCompanyLogoCommandHandler
+    public class UploadCompanyLogoCommandHandler : IRequestHandler<UploadCompanyLogoCommand, Result<string>>
     {
         private readonly IUnitOfWork _uow;
         private readonly IFileStorageService _fileStorageService;
