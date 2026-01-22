@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoiceStatement;
 using FluentResults;
@@ -15,7 +16,9 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
         public string? Note { get; set; }
         public DateTime? PaymentDate { get; set; }
         public int? CreatedBy { get; set; }
+        [JsonIgnore]
         public int AuthenticatedUserId { get; set; }
+        [JsonIgnore]
         public int? CustomerId { get; set; }
     }
 }
