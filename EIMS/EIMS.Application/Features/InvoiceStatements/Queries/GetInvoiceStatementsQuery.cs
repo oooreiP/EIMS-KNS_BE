@@ -13,6 +13,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
         public string? StatementCode { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public int? PeriodMonth { get; set; }
+        public int? PeriodYear { get; set; }
         public int? StatusID { get; set; }
     }
 }

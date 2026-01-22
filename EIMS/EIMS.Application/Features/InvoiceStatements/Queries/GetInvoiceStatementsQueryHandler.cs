@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EIMS.Application.Features.InvoiceStatements.Queries
 {
-   public class GetInvoiceStatementsQueryHandler : IRequestHandler<GetInvoiceStatementsQuery, Result<PaginatedList<StatementSummaryResponse>>>
+    public class GetInvoiceStatementsQueryHandler : IRequestHandler<GetInvoiceStatementsQuery, Result<PaginatedList<StatementSummaryResponse>>>
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
@@ -25,7 +25,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
 
         public async Task<Result<PaginatedList<StatementSummaryResponse>>> Handle(GetInvoiceStatementsQuery request, CancellationToken cancellationToken)
         {
-            // 1.base query including necessary relations for display
+            // 1. Base query
             var query = _uow.InvoiceStatementRepository.GetAllQueryable()
                 .Include(s => s.Customer)
                 .Include(s => s.StatementStatus)
@@ -42,44 +42,54 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 query = query.Where(s => s.StatementCode.Contains(request.StatementCode));
             }
 
+            // Lọc theo Ngày tạo bảng kê
             if (request.FromDate.HasValue)
             {
-                // Reset time to start of day if needed, or rely on client passing correct time
                 query = query.Where(s => s.StatementDate >= request.FromDate.Value);
             }
 
             if (request.ToDate.HasValue)
             {
-                // Ensure we include the end date fully
                 var endDate = request.ToDate.Value.Date.AddDays(1).AddTicks(-1);
                 query = query.Where(s => s.StatementDate <= endDate);
             }
-
+            if (request.PeriodMonth.HasValue)
+                query = query.Where(s => s.PeriodMonth == request.PeriodMonth.Value);
+            if (request.PeriodYear.HasValue)
+                query = query.Where(s => s.PeriodYear == request.PeriodYear.Value);
             if (request.StatusID.HasValue)
             {
                 query = query.Where(s => s.StatusID == request.StatusID.Value);
             }
 
-            // 3. Ordering (Newest first)
+            // 3. Ordering (Mới nhất lên đầu)
             query = query.OrderByDescending(s => s.StatementDate);
 
-            // 4. Projection to DTO
-            // You can use AutoMapper here if you have a map configured: CreateMap<InvoiceStatement, StatementSummaryResponse>()
+            // 4. Projection to DTO (CẬP NHẬT QUAN TRỌNG)
             var projectedQuery = query.Select(s => new StatementSummaryResponse
             {
                 StatementID = s.StatementID,
-                StatementCode = s.StatementCode,
+                StatementCode = s.StatementCode ?? "",
                 CustomerName = s.Customer != null ? s.Customer.CustomerName : "Unknown",
-                StatementDate = s.StatementDate ,
+                StatementDate = s.StatementDate,
+                Period = $"{s.PeriodMonth:D2}/{s.PeriodYear}", 
+
+                OpeningBalance = s.OpeningBalance, 
+                NewCharges = s.NewCharges,         
+                PaidAmount = s.PaidAmount,         
                 TotalAmount = s.TotalAmount,
+                // -------------------------------
+
                 TotalInvoices = s.TotalInvoices ?? 0,
-                Status = s.StatementStatus != null ? s.StatementStatus.StatusName : "Unknown"
+                Status = s.StatementStatus != null ? s.StatementStatus.StatusName : "Unknown",
+                StatusID = s.StatusID, 
+                IsOverdue = (s.StatusID != 5) && (DateTime.UtcNow > s.DueDate)
             });
 
             // 5. Pagination
             var paginatedResult = await PaginatedList<StatementSummaryResponse>.CreateAsync(
-                projectedQuery, 
-                request.PageNumber, 
+                projectedQuery,
+                request.PageNumber,
                 request.PageSize
             );
 

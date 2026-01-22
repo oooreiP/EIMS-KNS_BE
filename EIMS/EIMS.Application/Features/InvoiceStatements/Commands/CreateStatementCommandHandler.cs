@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
             //find the date boundary
             var startOfMonth = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var statementDate = startOfMonth.AddMonths(1).AddDays(-1);
+            var endOfMonth = startOfMonth.AddMonths(1);
             var allowedStatuses = new List<int> { 
                 (int)EInvoiceStatus.Issued,
                 (int)EInvoiceStatus.Adjusted,
@@ -41,30 +41,41 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 .Include(i => i.Customer)
                 .Where(i => i.CustomerID == request.CustomerID)
                 .Where(i => i.IssuedDate != null)
-                .Where(i => i.IssuedDate  <= statementDate)
+                .Where(i => i.IssuedDate  <= endOfMonth)
                 .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
                 .ToListAsync(cancellationToken);
-            // 3. Calculate Remaining Amount in Memory & Filter
+            decimal openingBalance = rawInvoices
+            .Where(inv => inv.IssuedDate < startOfMonth) 
+            .Sum(inv =>
+                inv.TotalAmount - inv.Payments
+                    .Where(p => p.PaymentDate < startOfMonth) 
+                    .Sum(p => p.AmountPaid)
+            );
+            decimal newCharges = rawInvoices
+        .Where(inv => inv.IssuedDate >= startOfMonth && inv.IssuedDate <= endOfMonth)
+        .Sum(inv => inv.TotalAmount);
+            decimal paymentsInPeriod = rawInvoices
+        .SelectMany(i => i.Payments)
+        .Where(p => p.PaymentDate >= startOfMonth && p.PaymentDate <= endOfMonth)
+        .Sum(p => p.AmountPaid);
+            decimal closingBalance = openingBalance + newCharges - paymentsInPeriod;
             var debtItems = rawInvoices
-                .Select(inv => new
-                {
-                    Invoice = inv,
-                    Paid = inv.Payments.Sum(p => p.AmountPaid),
-                    Remaining = inv.TotalAmount - inv.Payments.Sum(p => p.AmountPaid)
-                })
-                .Where(x => x.Remaining > 0) // IMPORTANT: Filter out if fully paid (just in case status was wrong)
-                .ToList();
+        .Select(inv => {
+            var paidTotal = inv.Payments.Where(p => p.PaymentDate <= endOfMonth).Sum(p => p.AmountPaid);
+            var remaining = inv.TotalAmount - paidTotal;
+            return new { Invoice = inv, Remaining = remaining };
+        })
+        .Where(x => x.Remaining > 0 || (x.Invoice.IssuedDate >= startOfMonth)) 
+        .ToList();
 
-            if (!debtItems.Any())
+            if (closingBalance <= 0 && !debtItems.Any())
                 return Result.Fail(new Error($"Customer {request.CustomerID} has no outstanding debt for this period."));
-            decimal totalOriginalAmount = debtItems.Sum(x => x.Invoice.TotalAmount);
-            decimal totalPaidSoFar = debtItems.Sum(x => x.Paid);
-
-            int newStatusId = (totalPaidSoFar >= totalOriginalAmount) ? 5 : // Paid
-                                      (totalPaidSoFar > 0) ? 4 : // Partially Paid
-                                      1; // Draft
             string statementCode = $"ST-{request.CustomerID}-{request.Month:D2}{request.Year}";
-            // 2. CHECK FOR EXISTING STATEMENT
+            decimal totalDue = openingBalance + newCharges;
+
+            int newStatusId = (closingBalance <= 0) ? 5 : 
+                              (closingBalance < totalDue) ? 4 : 
+                              1; 
             var existingStatement = await _uow.InvoiceStatementRepository
                 .GetAllQueryable()
                 .Include(s => s.Customer)
@@ -77,8 +88,12 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             if (existingStatement != null)
             {
                 existingStatement.TotalInvoices = debtItems.Count;
-                existingStatement.TotalAmount = totalOriginalAmount;
-                existingStatement.PaidAmount = totalPaidSoFar;
+                existingStatement.PeriodMonth = request.Month;
+                existingStatement.PeriodYear = request.Year;
+                existingStatement.OpeningBalance = openingBalance;
+                existingStatement.NewCharges = newCharges;
+                existingStatement.TotalAmount = closingBalance;
+                existingStatement.PaidAmount = paymentsInPeriod;
                 existingStatement.StatusID = newStatusId;
                 existingStatement.StatementDate = DateTime.UtcNow; // Update timestamp
                 existingStatement.StatementDetails.Clear();
@@ -104,13 +119,17 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 {
                     CustomerID = request.CustomerID,
                     StatementCode = statementCode,
+                    PeriodMonth = request.Month,    // <--- Mới
+                    PeriodYear = request.Year,      // <--- Mới
+                    OpeningBalance = openingBalance,// <--- Mới
+                    NewCharges = newCharges,
                     StatementDate = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddDays(14),
                     CreatedBy = request.AuthenticatedUserId,
                     TotalInvoices = debtItems.Count,
                     Notes = $"Statement for {request.Month}/{request.Year}",
-                    TotalAmount = totalOriginalAmount,
-                    PaidAmount = totalPaidSoFar,
+                    TotalAmount = closingBalance,
+                    PaidAmount = paymentsInPeriod,
                     StatusID = newStatusId,
                     Customer = rawInvoices.FirstOrDefault()?.Customer // For Mapper
                 };

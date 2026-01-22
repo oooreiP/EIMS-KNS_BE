@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoiceStatement;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,11 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
             // 1. Determine the Date Boundary
             var baseDate = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var statementDate = baseDate.AddMonths(1).AddDays(-1);
+            var statementDate = baseDate.AddMonths(1);
+            var allowedStatuses = new List<int> {
+                (int)EInvoiceStatus.Issued,
+                (int)EInvoiceStatus.Adjusted,
+            };
             // 2. Find "Candidate" Customers
             // We want customers who have at least one invoice that is:
             // - Created/Signed before the statement date
@@ -36,8 +41,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             var candidateCustomerIds = await _uow.InvoicesRepository.GetAllQueryable()
                 .AsNoTracking()
                 .Where(i => (i.SignDate ?? i.CreatedAt) <= statementDate)
-                .Where(i => i.InvoiceStatusID != 1) // Ignore Draft Invoices
-                .Where(i => i.PaymentStatusID != 3) // Ignore Fully Paid (Optimization)
+                .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
                 .Select(i => i.CustomerID)
                 .Distinct()
                 .ToListAsync(cancellationToken);

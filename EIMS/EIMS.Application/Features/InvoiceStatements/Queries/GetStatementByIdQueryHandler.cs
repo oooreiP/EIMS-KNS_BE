@@ -27,6 +27,10 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 StatementCode = statement.StatementCode,
                 CustomerName = statement.Customer?.CustomerName ?? "Unknown",
                 StatementDate = statement.StatementDate,
+                Period = $"{statement.PeriodMonth:D2}/{statement.PeriodYear}",
+                OpeningBalance = statement.OpeningBalance,
+                NewCharges = statement.NewCharges,
+                PaidAmount = statement.PaidAmount,
                 TotalAmount = statement.TotalAmount,
                 Status = statement.StatementStatus?.StatusName ?? "Draft",
                 Invoices = statement.StatementDetails.Select(d => new StatementInvoiceDto

@@ -166,19 +166,24 @@
 
 		<table class="header-table">
 			<tr>
-				<td style="width: 20%; margin-top: -20px;">
+				<td style="width: 20%; margin-top: -40px;">
 					<xsl:if test="$ShowLogo = 'true' and $LogoUrl != ''">
 						<img src="{$LogoUrl}" style="max-width: 100%; height: auto;" />
 					</xsl:if>
 				</td>
 				<td style="width: 55%; text-align: center;">
-					<div class="invoice-title" style="margin-top: 40px;">HÓA ĐƠN GIÁ TRỊ GIA TĂNG</div>
-					<xsl:if test="$IsBilingual = 'true'">
-						<div class="italic" style="font-size: 16px; margin-top: 5px;">(VAT INVOICE)</div>
-					</xsl:if>
+					<div class="invoice-title" style="margin-top: 40px; color: #005088; text-align: center; font-weight: bold;">
+							HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+						</div>
+    
+						<xsl:if test="$IsBilingual = 'true'">
+							<div class="italic" style="font-size: 16px; margin-top: 5px; color: #005088; text-align: center; font-weight: bold;">
+								(VAT INVOICE)
+							</div>
+						</xsl:if>
 					<xsl:if test="count(//*[local-name()='MCCQT' and string-length(text()) > 0]) > 0">
 						<div style="margin-top: 2px; font-weight: bold;">
-							Mã CQT <xsl:if test="$IsBilingual = 'true'"><span class="en-label">(Tax Authority Code)</span></xsl:if>: <xsl:value-of select="(//*[local-name()='MCCQT' and string-length(text()) > 0])[1]"/>
+							Mã CQT <xsl:if test="$IsBilingual = 'true'"><span class="en-label">(Tax Code)</span></xsl:if>: <xsl:value-of select="(//*[local-name()='MCCQT' and string-length(text()) > 0])[1]"/>
 						</div>
 					</xsl:if>
 					<div style="margin-top: 2px;">
@@ -205,12 +210,24 @@
 
 					<div>
 						<strong>Số <xsl:if test="$IsBilingual = 'true'"><span class="en-label">(No.)</span></xsl:if>: </strong>
-						<span style="color: red; font-weight: bold; font-size: 18px; white-space:nowrap">
+    
+						<span style="
+							color: red;                    
+							background-color: #FFF9C4;     
+							font-weight: bold; 
+							font-size: 18px; 
+							font-style: italic; 
+							white-space:nowrap;
+							padding: 4px 10px;             
+							border-radius: 4px;">
+        
 							<xsl:choose>
 								<xsl:when test="string-length(*[local-name()='TTChung']/*[local-name()='SHDon']) > 0 and *[local-name()='TTChung']/*[local-name()='SHDon'] != '0'">
 									<xsl:value-of select="*[local-name()='TTChung']/*[local-name()='SHDon']"/>
 								</xsl:when>
-								<xsl:otherwise>BẢN NHÁP <xsl:if test="$IsBilingual = 'true'">(DRAFT)</xsl:if></xsl:otherwise>
+								<xsl:otherwise>
+									BẢN NHÁP <xsl:if test="$IsBilingual = 'true'">(DRAFT)</xsl:if>
+								</xsl:otherwise>
 							</xsl:choose>
 						</span>
 					</div>
