@@ -5,6 +5,7 @@ using EIMS.Application.DTOs.Customer;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Application.DTOs.Payments;
 using EIMS.Application.Features.InvoiceStatements.Queries;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,8 @@ namespace EIMS.Application.Features.InvoicePayment.Queries
             var query = _uow.InvoicesRepository.GetAllQueryable();
             query = query.Where(x => x.IssuedDate.Value.Month == request.Month &&
                                      x.IssuedDate.Value.Year == request.Year);
+            query = query.Where(x => x.InvoiceStatusID == (int)EInvoiceStatus.Issued
+                     || x.InvoiceStatusID == (int)EInvoiceStatus.Adjusted);
             if (request.CustomerId.HasValue)
             {
                 query = query.Where(x => x.CustomerID == request.CustomerId.Value);
