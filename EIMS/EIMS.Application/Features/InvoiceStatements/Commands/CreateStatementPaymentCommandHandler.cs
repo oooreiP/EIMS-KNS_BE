@@ -38,11 +38,12 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             if (statement.StatusID == 6 || statement.StatusID == 7)
                 return Result.Fail("Cannot add payment to a cancelled or refunded statement.");
 
-            if (statement.TotalAmount <= 0)
+            var remainingDue = statement.TotalAmount - statement.PaidAmount;
+            if (remainingDue <= 0)
                 return Result.Fail("This statement has no unpaid balance.");
 
-            if (request.Amount > statement.TotalAmount)
-                return Result.Fail($"Payment amount ({request.Amount:N0}) exceeds statement total ({statement.TotalAmount:N0}).");
+            if (request.Amount > remainingDue)
+                return Result.Fail($"Payment amount ({request.Amount:N0}) exceeds remaining balance ({remainingDue:N0}).");
 
             var invoices = statement.StatementDetails
                 .Select(d => d.Invoice)
@@ -159,7 +160,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     StatementId = statement.StatementID,
                     AppliedAmount = request.Amount - remainingToApply,
                     StatementPaidAmount = statement.PaidAmount,
-                    StatementBalanceDue = statement.TotalAmount - statement.PaidAmount,
+                    StatementBalanceDue = Math.Max(0, statement.TotalAmount - statement.PaidAmount),
                     StatementStatusId = statement.StatusID,
                     Payments = _mapper.Map<List<InvoicePaymentDTO>>(createdPayments)
                 };
