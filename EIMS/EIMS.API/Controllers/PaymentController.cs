@@ -33,7 +33,7 @@ namespace EIMS.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPaymentById(int id)
         {
-            var result = await _mediator.Send(new GetInvoicePaymentByIdQuery { Id = id });
+            var result = await _mediator.Send(new GetInvoicePaymentByIdQuery { PaymentID = id });
             if (result.IsFailed)
             {
                 var firstError = result.Errors.FirstOrDefault();
