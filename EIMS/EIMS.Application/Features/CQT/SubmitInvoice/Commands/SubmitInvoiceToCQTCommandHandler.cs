@@ -40,7 +40,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         {
             var userId = int.Parse(_currentUser.UserId);
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
-            var original = new Invoice();
+            Invoice? original = null;
             if (invoice.OriginalInvoiceID != null)
             {
                 original = await _uow.InvoicesRepository.GetAllQueryable()
@@ -135,10 +135,10 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             }
             else if (responseLog.TaxApiStatusID == 31) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
-                invoice.InvoiceStatusID = 8;
+                invoice.InvoiceStatusID = 13;
                 if (original != null)
                 {
-                    original.InvoiceStatusID = 2; // Trả lại status về phát hành để tạo lại hóa đơn thay thế
+                    original.InvoiceStatusID = 2; 
                     await _uow.InvoicesRepository.UpdateAsync(original);
                 }
             }

@@ -67,8 +67,16 @@ namespace EIMS.Infrastructure.Repositories
                 }
             }
 
-            // EF.Property để lấy cột ID theo tên entity (VD: InvoiceID)
-            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, typeof(T).Name + "ID") == id);
+            var keyName =   _db.Model
+                           .FindEntityType(typeof(T))
+                           .FindPrimaryKey()
+                           .Properties
+                           .Select(x => x.Name)
+                           .Single();
+
+            // Bước 2: Truyền tên khóa chính chính xác (PaymentID) vào EF.Property
+            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, keyName) == id);
+
             return entity;
         }
         public async Task<T> UpdateAsync(T entity)
