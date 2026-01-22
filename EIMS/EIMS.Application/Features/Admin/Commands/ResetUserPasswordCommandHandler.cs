@@ -14,11 +14,14 @@ namespace EIMS.Application.Features.Admin.Commands
         private readonly IUnitOfWork _uow;
         private readonly IEmailSenderService _emailService;
         private readonly IPasswordHasher _passHash;
-        public ResetUserPasswordCommandHandler(IUnitOfWork uow, IEmailSenderService emailService, IPasswordHasher passHash)
+        private readonly IUserRealtimeService _userRealtimeService;
+
+        public ResetUserPasswordCommandHandler(IUnitOfWork uow, IEmailSenderService emailService, IPasswordHasher passHash, IUserRealtimeService userRealtimeService)
         {
             _uow = uow;
             _emailService = emailService;
             _passHash = passHash;
+            _userRealtimeService = userRealtimeService;
         }
         public async Task<Result<string>> Handle(ResetUserPasswordCommand request, CancellationToken cancellationToken)
         {
@@ -35,6 +38,13 @@ namespace EIMS.Application.Features.Admin.Commands
             user.PasswordHash = passwordHash;
             await _uow.UserRepository.UpdateAsync(user);
             await _uow.SaveChanges();
+            await _userRealtimeService.NotifyUserChangedAsync(new EIMS.Application.Commons.Models.UserRealtimeEvent
+            {
+                UserId = user.UserID,
+                ChangeType = "PasswordReset",
+                RoleName = user.Role?.RoleName,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
             // 5.Send welcome email to HOD
             string emailBody = $@"
             <h3>Rest account EIMS</h3>

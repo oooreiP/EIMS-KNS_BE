@@ -11,14 +11,18 @@ namespace EIMS.Application.Features.Authentication.Commands
         private readonly IApplicationDBContext _context;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailSenderService _emailService;
+        private readonly IUserRealtimeService _userRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
 
         private const string DEFAULT_ROLE_NAME = "Accountant";
 
-        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailSenderService emailService)
+        public RegisterCommandHandler(IApplicationDBContext context, IPasswordHasher passwordHasher, IEmailSenderService emailService, IUserRealtimeService userRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
+            _userRealtimeService = userRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
 
         public async Task<Result<int>> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -87,6 +91,21 @@ namespace EIMS.Application.Features.Authentication.Commands
             }
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync(cancellationToken);
+            await _userRealtimeService.NotifyUserChangedAsync(new EIMS.Application.Commons.Models.UserRealtimeEvent
+            {
+                UserId = newUser.UserID,
+                ChangeType = "Created",
+                RoleName = requestedRole.RoleName,
+                IsActive = newUser.IsActive,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
+            await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+            {
+                Scope = "Users",
+                ChangeType = "Created",
+                EntityId = newUser.UserID,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
             // 5.Send welcome email to HOD
             string emailBody = $@"
             <h3>Welcome to EIMS</h3>

@@ -13,11 +13,16 @@ namespace EIMS.Application.Features.Admin.Commands
         private readonly IApplicationDBContext _context;
         private readonly IEmailService _emailService;
         private readonly INotificationService _notificationService;
-        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IEmailService emailService, INotificationService notificationService)
+        private readonly IUserRealtimeService _userRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
+
+        public UpdateUserStatusCommandHanlder(IApplicationDBContext context, IEmailService emailService, INotificationService notificationService, IUserRealtimeService userRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _context = context;
             _emailService = emailService;
             _notificationService = notificationService;
+            _userRealtimeService = userRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
         public async Task<Result> Handle(UpdateUserStatusCommand request, CancellationToken cancellationToken)
         {
@@ -48,6 +53,21 @@ namespace EIMS.Application.Features.Admin.Commands
                             "<p>Please contact support if you have any questions.</p><p>Thank you.</p>";
             }
             await _context.SaveChangesAsync(cancellationToken);
+            await _userRealtimeService.NotifyUserChangedAsync(new EIMS.Application.Commons.Models.UserRealtimeEvent
+            {
+                UserId = user.UserID,
+                ChangeType = request.NewStatus == true ? "Activated" : "Deactivated",
+                RoleName = user.Role?.RoleName,
+                IsActive = user.IsActive,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
+            await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+            {
+                Scope = "Users",
+                ChangeType = request.NewStatus == true ? "Activated" : "Deactivated",
+                EntityId = user.UserID,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
             // Send email
             var mailRequest = new MailRequest
             {

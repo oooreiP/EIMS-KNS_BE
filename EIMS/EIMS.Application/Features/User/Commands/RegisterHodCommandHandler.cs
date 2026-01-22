@@ -19,12 +19,17 @@ namespace EIMS.Application.Features.User.Commands
         private readonly IMapper _mapper;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
-        public RegisterHodCommandHandler(IApplicationDBContext context, IMapper mapper, IPasswordHasher passwordHasher, IEmailService emailService)
+        private readonly IUserRealtimeService _userRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
+
+        public RegisterHodCommandHandler(IApplicationDBContext context, IMapper mapper, IPasswordHasher passwordHasher, IEmailService emailService, IUserRealtimeService userRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _context = context;
             _mapper = mapper;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
+            _userRealtimeService = userRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
         public async Task<Result<UserResponse>> Handle(RegisterHodCommand request, CancellationToken cancellationToken)
         {
@@ -49,6 +54,21 @@ namespace EIMS.Application.Features.User.Commands
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
+            await _userRealtimeService.NotifyUserChangedAsync(new EIMS.Application.Commons.Models.UserRealtimeEvent
+            {
+                UserId = user.UserID,
+                ChangeType = "Created",
+                RoleName = hodRole.RoleName,
+                IsActive = user.IsActive,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
+            await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+            {
+                Scope = "Users",
+                ChangeType = "Created",
+                EntityId = user.UserID,
+                Roles = new[] { "Admin" }
+            }, cancellationToken);
 
             // 5. Send welcome email to HOD
             string emailBody = $@"
