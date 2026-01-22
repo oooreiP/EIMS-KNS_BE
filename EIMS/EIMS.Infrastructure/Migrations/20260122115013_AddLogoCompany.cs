@@ -11,17 +11,9 @@ namespace EIMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_InvoiceRequests_Users_SalesUserID",
-                table: "InvoiceRequests");
-
-            migrationBuilder.DropIndex(
-                name: "IX_InvoiceRequests_SalesUserID",
-                table: "InvoiceRequests");
-
-            migrationBuilder.DropColumn(
-                name: "SalesUserID",
-                table: "InvoiceRequests");
+            migrationBuilder.Sql("ALTER TABLE \"InvoiceRequests\" DROP CONSTRAINT IF EXISTS \"FK_InvoiceRequests_Users_SalesUserID\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_InvoiceRequests_SalesUserID\";");
+            migrationBuilder.Sql("ALTER TABLE \"InvoiceRequests\" DROP COLUMN IF EXISTS \"SalesUserID\";");
 
             migrationBuilder.AddColumn<string>(
                 name: "LogoUrl",
