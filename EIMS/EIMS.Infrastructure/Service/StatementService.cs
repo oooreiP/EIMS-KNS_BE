@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.DTOs.XMLModels.PaymentStatements;
 using EIMS.Domain.Entities;
@@ -183,7 +184,7 @@ namespace EIMS.Infrastructure.Service
                             Amount = totalAmountBeforeTax, // Tổng tiền trước thuế
 
                             // Thuế
-                            VATRate = 0, // Khó để hiển thị 1 mức thuế nếu gộp nhiều dòng, hoặc bạn có thể lấy g.First().VATRate
+                            VATRate = Math.Round((g.First().VATAmount / g.First().Amount) * 100, 2), // Khó để hiển thị 1 mức thuế nếu gộp nhiều dòng, hoặc bạn có thể lấy g.First().VATRate
                             VATAmount = totalVATAmount,
 
                             // Tổng tiền thanh toán

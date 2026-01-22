@@ -63,10 +63,7 @@ namespace EIMS.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerCommand command)
         {
-            if (id != command.CustomerID)
-            {
-                return BadRequest("Mismatched Customer ID in URL and Body.");
-            }
+            command.CustomerID = id;
 
             var result = await _mediator.Send(command);
 

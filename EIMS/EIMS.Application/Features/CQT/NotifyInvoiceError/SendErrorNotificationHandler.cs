@@ -40,7 +40,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                     var certResult = await _invoiceXmlService.GetCertificateAsync(1);
                     if (certResult.IsFailed) return Result.Fail(certResult.Errors);
                     var cert = certResult.Value;
-                    var signedXml = XmlHelpers.SignTB04Xml(rawXml, cert);
+                    var signedXml = XmlHelpers.SignElectronicDocument(rawXml, cert, false);
                     string signedXmlPayload = signedXml.SignedXml;
                     var taxResponse = await _taxClient.SendTaxMessageAsync(signedXmlPayload, noti.MTDiep);
                     string apiStatusCode = taxResponse.MLTDiep == "301" ? "KQ01" :

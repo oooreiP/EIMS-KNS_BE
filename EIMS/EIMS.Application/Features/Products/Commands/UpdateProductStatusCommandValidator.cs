@@ -10,7 +10,6 @@ namespace EIMS.Application.Features.Products.Commands
     {
         public UpdateProductStatusCommandValidator()
         {
-            // 1. Validate the ID
             RuleFor(x => x.ProductID)
                 .GreaterThan(0)
                 .WithMessage("Product ID must be greater than 0.");

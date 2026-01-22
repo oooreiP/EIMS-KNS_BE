@@ -214,79 +214,78 @@ namespace EIMS.Application.Commons.Helpers
             string mtDiep = prefix + idString + uuidPart;
             return mtDiep.Length > MtDiepLength ? mtDiep.Substring(0, MtDiepLength) : mtDiep;
         }
-        public static InvoiceSigningResult SignInvoiceXml(string rawInvoiceXml, X509Certificate2 signingCert)
+        public static InvoiceSigningResult SignElectronicDocument(string rawXml, X509Certificate2 signingCert, bool useNBanWrapper = true)
         {
             var xmlDoc = new XmlDocument();
             xmlDoc.PreserveWhitespace = true;
-            xmlDoc.LoadXml(rawInvoiceXml);
+            xmlDoc.LoadXml(rawXml);
 
-            // --- BƯỚC 1: XÁC ĐỊNH ID CHO SIGNATURE ---
-            // ID này dùng để liên kết Signature và SignatureProperty
-            string signatureId = "NBan"; // Có thể dùng "Signature-NBan" hoặc "NBan" tùy mẫu
+            // 1. Xác định ID và Namespace chuẩn
+            string signatureId = useNBanWrapper ? "NBan" : "Signature_" + Guid.NewGuid().ToString("N");
+            string dsigNs = SignedXml.XmlDsigNamespaceUrl; // "http://www.w3.org/2000/09/xmldsig#"
 
             var signedXml = new SignedXml(xmlDoc);
             signedXml.SigningKey = signingCert.GetRSAPrivateKey();
-
-            // --- BƯỚC 2: GÁN ID CHO SIGNATURE ---
             signedXml.Signature.Id = signatureId;
 
-            // --- BƯỚC 3: CẤU HÌNH KEYINFO (Thêm SubjectName) ---
+            // 2. KeyInfo & SubjectName
             var keyInfo = new KeyInfo();
-            // Thêm SubjectName (Tên chủ thể)
             var keyInfoData = new KeyInfoX509Data(signingCert);
-            keyInfoData.AddSubjectName(signingCert.SubjectName.Name); // Thêm dòng này
+            keyInfoData.AddSubjectName(signingCert.SubjectName.Name);
             keyInfo.AddClause(keyInfoData);
             signedXml.KeyInfo = keyInfo;
 
-            // Reference (Giữ nguyên Enveloped Signature)
+            // 3. Reference (Transforms)
             var reference = new Reference { Uri = "" };
             reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
             reference.AddTransform(new XmlDsigC14NTransform());
             signedXml.AddReference(reference);
 
-            // --- BƯỚC 4: SỬA SIGNATURE PROPERTY (Target trỏ về SignatureId) ---
-            var signatureProperty = xmlDoc.CreateElement("SignatureProperty");
-            // QUAN TRỌNG: Target phải có dấu '#' + SignatureId
+            // 4. Object & SignatureProperties (Có Namespace chuẩn để tránh lỗi validate thuế)
+            var signatureProperties = xmlDoc.CreateElement("SignatureProperties", dsigNs);
+            var signatureProperty = xmlDoc.CreateElement("SignatureProperty", dsigNs);
             signatureProperty.SetAttribute("Target", "#" + signatureId);
-            // Có thể thêm Id cho chính Property này nếu cần (như mẫu eInvoice: Id="proid")
-            // signatureProperty.SetAttribute("Id", "proid"); 
 
-            var signingTimeElement = xmlDoc.CreateElement("SigningTime");
-            signingTimeElement.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-            signatureProperty.AppendChild(signingTimeElement);
+            var signingTime = xmlDoc.CreateElement("SigningTime", dsigNs);
+            signingTime.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
 
-            var signatureProperties = xmlDoc.CreateElement("SignatureProperties");
+            signatureProperty.AppendChild(signingTime);
             signatureProperties.AppendChild(signatureProperty);
-            var xmlObject = xmlDoc.CreateElement("Object");
-            xmlObject.AppendChild(signatureProperties);
-            signedXml.AddObject(new DataObject { Data = xmlObject.ChildNodes });
 
-            // 5. Ký
+            var dataObject = new DataObject();
+            dataObject.Data = signatureProperties.SelectNodes("."); // Hack để add node có namespace
+            signedXml.AddObject(dataObject);
+
+            // 5. Tính toán chữ ký
             signedXml.ComputeSignature();
             byte[] signatureBytes = signedXml.Signature.SignatureValue;
             string signatureBase64 = Convert.ToBase64String(signatureBytes);
 
-            // --- BƯỚC 5: CHÈN VÀO ĐÚNG CẤU TRÚC <DSCKS><NBan> ---
+            // 6. Chèn vào XML (Xử lý vị trí chèn)
             var signatureElement = signedXml.GetXml();
+            var dscksNode = xmlDoc.CreateElement("DSCKS"); // Thẻ DSCKS không cần namespace dsig
 
-            // Tạo thẻ bao DSCKS
-            var dscksNode = xmlDoc.CreateElement("DSCKS");
+            if (useNBanWrapper)
+            {
+                // Trường hợp Hóa đơn, Bảng kê: DSCKS -> NBan -> Signature
+                var nbanNode = xmlDoc.CreateElement("NBan");
+                nbanNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
+                dscksNode.AppendChild(nbanNode);
 
-            // Tạo thẻ bao NBan (Người bán) bên trong DSCKS
-            var nbanNode = xmlDoc.CreateElement("NBan");
+                // Luôn chèn vào cuối thẻ gốc (DocumentElement)
+                xmlDoc.DocumentElement.AppendChild(dscksNode);
+            }
+            else
+            {
+                // Trường hợp TB04: DSCKS -> Signature
+                // TB04 thường chèn vào thẻ TBao chứ không phải thẻ gốc TDiep
+                var targetNode = xmlDoc.SelectSingleNode("//*[local-name()='TBao']") ?? xmlDoc.DocumentElement;
 
-            // Nhét Signature vào NBan
-            nbanNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
-
-            // Nhét NBan vào DSCKS
-            dscksNode.AppendChild(nbanNode);
-
-            // (Tùy chọn: Thêm các thẻ rỗng khác như NMua, CCKSKhac nếu mẫu yêu cầu)
-            // var nmuaNode = xmlDoc.CreateElement("NMua"); dscksNode.AppendChild(nmuaNode);
-            // var cqtNode = xmlDoc.CreateElement("CQT"); dscksNode.AppendChild(cqtNode);
-
-            // Chèn DSCKS vào cuối HDon
-            xmlDoc.DocumentElement.AppendChild(dscksNode);
+                // Với TB04, thẻ DSCKS thường cần namespace của thẻ cha
+                var dscksNodeTb04 = xmlDoc.CreateElement("DSCKS", targetNode.NamespaceURI);
+                dscksNodeTb04.AppendChild(xmlDoc.ImportNode(signatureElement, true));
+                targetNode.AppendChild(dscksNodeTb04);
+            }
 
             return new InvoiceSigningResult
             {
@@ -393,79 +392,6 @@ namespace EIMS.Application.Commons.Helpers
             // - Tính toán lại Hash của XML và so sánh với Hash trong chữ ký.
             // - Decrypt chữ ký bằng Public Key xem có khớp không.
             return signedXml.CheckSignature();
-        }
-        /// <summary>
-        /// Ký số cho Thông báo sai sót (Mẫu 04/SS-HĐĐT)
-        /// Cấu trúc: TDiep -> DLieu -> TBao -> DSCKS -> Signature
-        /// </summary>
-        public static InvoiceSigningResult SignTB04Xml(string rawXml, X509Certificate2 signingCert)
-        {
-            var xmlDoc = new XmlDocument();
-            xmlDoc.PreserveWhitespace = true;
-            xmlDoc.LoadXml(rawXml);
-
-            var signedXml = new SignedXml(xmlDoc);
-            signedXml.SigningKey = signingCert.GetRSAPrivateKey();
-            string signatureId = "Signature_" + Guid.NewGuid().ToString("N");
-            signedXml.Signature.Id = signatureId;
-            var keyInfo = new KeyInfo();
-            keyInfo.AddClause(new KeyInfoX509Data(signingCert));
-            signedXml.KeyInfo = keyInfo;
-
-            var reference = new Reference { Uri = "" };
-            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
-            reference.AddTransform(new XmlDsigC14NTransform());
-            signedXml.AddReference(reference);
-
-            // Thêm Metadata (SigningTime)
-            var dataObject = new DataObject();
-
-            // Namespace chuẩn của XMLDSig
-            string dsigNs = SignedXml.XmlDsigNamespaceUrl; // "http://www.w3.org/2000/09/xmldsig#"
-
-            // Tạo SignatureProperties có Namespace
-            var signatureProperties = xmlDoc.CreateElement("SignatureProperties", dsigNs);
-
-            // Tạo SignatureProperty có Namespace
-            var signatureProperty = xmlDoc.CreateElement("SignatureProperty", dsigNs);
-            // Target phải trỏ về ID của chữ ký
-            signatureProperty.SetAttribute("Target", "#" + signatureId);
-
-            // Tạo SigningTime có Namespace
-            var signingTime = xmlDoc.CreateElement("SigningTime", dsigNs);
-            signingTime.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-
-            // Ghép các thẻ lại
-            signatureProperty.AppendChild(signingTime);
-            signatureProperties.AppendChild(signatureProperty);
-
-            // Đưa vào DataObject
-            dataObject.Data = signatureProperties.SelectNodes(".");
-            signedXml.AddObject(dataObject);
-
-            // Compute Signature
-            signedXml.ComputeSignature();
-
-            byte[] signatureBytes = signedXml.Signature.SignatureValue;
-            string signatureBase64 = Convert.ToBase64String(signatureBytes);
-            var signatureElement = signedXml.GetXml();
-            var tBaoNode = xmlDoc.SelectSingleNode("//*[local-name()='TBao']");
-
-            if (tBaoNode != null)
-            {
-                var dscksNode = xmlDoc.CreateElement("DSCKS", tBaoNode.NamespaceURI);
-                dscksNode.AppendChild(xmlDoc.ImportNode(signatureElement, true));
-                tBaoNode.AppendChild(dscksNode);
-            }
-            else
-            {
-                throw new Exception("Không tìm thấy thẻ <TBao> trong XML để chèn chữ ký.");
-            }
-            return new InvoiceSigningResult
-            {
-                SignedXml = xmlDoc.OuterXml,
-                SignatureValue = signatureBase64
-            };
         }
         public static string CreateDigest(string xmlContent)
         {

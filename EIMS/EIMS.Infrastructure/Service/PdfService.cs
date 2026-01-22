@@ -29,6 +29,9 @@ using GraphicMode = Spire.Pdf.Security.GraphicMode;
 using System.Drawing.Drawing2D;
 using DocumentFormat.OpenXml.ExtendedProperties;
 using DocumentFormat.OpenXml.Vml.Office;
+using System.Xml.Linq;
+using System.Text;
+using System.Globalization;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -112,9 +115,17 @@ namespace EIMS.Infrastructure.Service
             var config = JsonSerializer.Deserialize<TemplateConfig>(
                 invoice.Template.LayoutDefinition ?? "{}"
             ) ?? new TemplateConfig();
-            var xsltArgs = PrepareXsltArguments(config, invoice);
-            string xsltPath = System.IO.Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
-            return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
+                var xsltArgs = PrepareXsltArguments(config, invoice);
+                string xsltPath = System.IO.Path.Combine(rootPath, "Templates", "InvoiceTemplate.xsl");
+
+                if (!System.IO.File.Exists(xsltPath))
+                {
+                    throw new Exception("Không tìm thấy file mẫu XSLT cũ: " + xsltPath);
+                }
+
+                // Gọi hàm Transform XSLT cũ của bạn
+                return TransformXmlToHtml(xmlContent, xsltPath, xsltArgs);
+            //}
         }
 
         public async Task<string> PreviewInvoiceHtmlAsync(BaseInvoiceCommand request, string rootPath)
@@ -513,6 +524,7 @@ namespace EIMS.Infrastructure.Service
                 }
             }
         }
+
         private string GetCommonName(string subject)
         {
             if (string.IsNullOrEmpty(subject)) return null;
@@ -523,6 +535,170 @@ namespace EIMS.Infrastructure.Service
                     return part.Trim().Substring(3);
             }
             return subject;
+        }
+        public string MergeXmlToHtml(string htmlTemplate, string xmlContent)
+        {
+            // 1. Parse XML (Bỏ qua Namespace để dễ query)
+            var xDoc = XDocument.Parse(xmlContent);
+
+            // Helper: Lấy giá trị của thẻ bất kỳ theo tên (bỏ qua namespace)
+            string GetVal(string tag) => xDoc.Descendants()
+                                             .FirstOrDefault(x => x.Name.LocalName == tag)?.Value ?? "";
+
+            // Helper: Lấy giá trị bên trong một node cha cụ thể
+            string GetChildVal(XElement parent, string tag) => parent?.Elements()
+                                             .FirstOrDefault(x => x.Name.LocalName == tag)?.Value ?? "";
+
+            StringBuilder sb = new StringBuilder(htmlTemplate);
+
+            // --- A. THÔNG TIN CHUNG (HEADER) ---
+            sb.Replace("{{invoiceNumber}}", GetVal("SHDon"));
+            sb.Replace("{{invoiceSymbol}}", GetVal("KHHDon"));
+            sb.Replace("{{templateCode}}", GetVal("KHMSHDon"));
+
+            // Format ngày: 2026-01-19 -> 19/01/2026
+            string dateRaw = GetVal("NLap");
+            if (DateTime.TryParse(dateRaw, out DateTime dateVal))
+                sb.Replace("{{createdDate}}", dateVal.ToString("dd/MM/yyyy"));
+            else
+                sb.Replace("{{createdDate}}", dateRaw);
+
+            sb.Replace("{{currency}}", GetVal("DVTTe"));
+            // Tỷ giá (nếu có)
+            string tyGia = GetVal("TGia");
+            sb.Replace("{{exchangeRate}}", !string.IsNullOrEmpty(tyGia) ? $"Tỷ giá: {tyGia}" : "");
+
+            // --- B. NGƯỜI BÁN (NBan) ---
+            var nBan = xDoc.Descendants().FirstOrDefault(x => x.Name.LocalName == "NBan");
+            sb.Replace("{{providerName}}", GetChildVal(nBan, "Ten"));
+            sb.Replace("{{providerTaxCode}}", GetChildVal(nBan, "MST"));
+            sb.Replace("{{providerAddress}}", GetChildVal(nBan, "DChi"));
+            sb.Replace("{{providerPhone}}", GetChildVal(nBan, "SDThoai"));
+            sb.Replace("{{providerEmail}}", GetChildVal(nBan, "DCTDTu"));
+            sb.Replace("{{providerBankAccount}}", GetChildVal(nBan, "STKNHang"));
+            sb.Replace("{{providerBankName}}", GetChildVal(nBan, "TNHang"));
+
+            // --- C. NGƯỜI MUA (NMua) ---
+            var nMua = xDoc.Descendants().FirstOrDefault(x => x.Name.LocalName == "NMua");
+            sb.Replace("{{customerName}}", GetChildVal(nMua, "Ten"));
+            sb.Replace("{{customerTaxCode}}", GetChildVal(nMua, "MST"));
+            sb.Replace("{{customerAddress}}", GetChildVal(nMua, "DChi"));
+            sb.Replace("{{customerPhone}}", GetChildVal(nMua, "SDThoai"));
+            sb.Replace("{{paymentMethod}}", GetVal("HTTToan")); // Hình thức thanh toán
+
+            // --- D. DANH SÁCH HÀNG HÓA (QUAN TRỌNG) ---
+            // Tìm tất cả thẻ HHDVu
+            var productNodes = xDoc.Descendants().Where(x => x.Name.LocalName == "HHDVu");
+            string productRowsHtml = GenerateProductRowsFromXml(productNodes);
+            sb.Replace("{{productRows}}", productRowsHtml);
+
+            // --- E. TỔNG TIỀN (TToan) ---
+            var tToan = xDoc.Descendants().FirstOrDefault(x => x.Name.LocalName == "TToan");
+
+            // Format tiền tệ (VD: 1000000 -> 1.000.000)
+            string FmtMoney(string val)
+            {
+                if (decimal.TryParse(val, out decimal d))
+                    return d.ToString("#,##0", new CultureInfo("vi-VN"));
+                return val;
+            }
+
+            sb.Replace("{{totalBeforeTax}}", FmtMoney(GetChildVal(tToan, "TgTCThue"))); // Tổng tiền chưa thuế
+            sb.Replace("{{totalVat}}", FmtMoney(GetChildVal(tToan, "TgTThue")));       // Tổng tiền thuế
+            sb.Replace("{{totalAmount}}", FmtMoney(GetChildVal(tToan, "TgTTTBSo")));   // Tổng tiền thanh toán
+            sb.Replace("{{amountInWords}}", GetChildVal(tToan, "TgTTTBChu"));          // Số tiền bằng chữ
+
+            // --- F. CHỮ KÝ SỐ ---
+            // Kiểm tra xem đã có chữ ký chưa (thẻ SignatureValue)
+            bool isSigned = xDoc.Descendants().Any(x => x.Name.LocalName == "SignatureValue");
+            string signatureHtml = "";
+
+            if (isSigned)
+            {
+                string signerName = GetChildVal(nBan, "Ten"); // Người ký là người bán
+                string signDateStr = GetVal("NLap"); // Mặc định lấy ngày lập, hoặc parse SigningTime nếu muốn chuẩn hơn
+
+                // Nếu muốn lấy SigningTime từ Signature (nếu có)
+                var signingTime = xDoc.Descendants().FirstOrDefault(x => x.Name.LocalName == "SigningTime")?.Value;
+                if (!string.IsNullOrEmpty(signingTime) && DateTime.TryParse(signingTime, out DateTime sTime))
+                {
+                    signDateStr = sTime.ToString("dd/MM/yyyy");
+                }
+
+                // HTML khung chữ ký (Khớp style với template static)
+                signatureHtml = $@"
+            <div class='signature-box' style='margin-top: 10px; border: 2px solid #2979ff; color: #2979ff; padding: 10px; border-radius: 4px; display: inline-block; text-align: left;'>
+                <div style='font-size: 11px; font-weight: bold; text-transform: uppercase;'>Signature Valid</div>
+                <div style='font-size: 11px;'>Ký bởi: <b>{signerName}</b></div>
+                <div style='font-size: 11px;'>Ngày ký: {signDateStr}</div>
+            </div>";
+            }
+
+            sb.Replace("{{sellerSignature}}", signatureHtml);
+
+            return sb.ToString();
+        }
+        private string GenerateProductRowsFromXml(IEnumerable<XElement> items)
+        {
+            if (items == null || !items.Any()) return "";
+
+            StringBuilder rows = new StringBuilder();
+
+            // Helper lấy giá trị trong thẻ Item
+            string GetItemVal(XElement item, string tag) =>
+                item.Elements().FirstOrDefault(e => e.Name.LocalName == tag)?.Value ?? "";
+
+            // Helper format số lượng/tiền
+            string Fmt(string val)
+            {
+                if (decimal.TryParse(val, out decimal d)) return d.ToString("#,##0", new CultureInfo("vi-VN"));
+                return val;
+            }
+
+            foreach (var item in items)
+            {
+                // 1. Lấy dữ liệu thô từ XML
+                string stt = GetItemVal(item, "STT");
+                string name = GetItemVal(item, "THHDVu"); 
+                string unit = GetItemVal(item, "DVTinh"); 
+                string qty = GetItemVal(item, "SLuong");
+                string price = GetItemVal(item, "DGia");
+                string amount = GetItemVal(item, "ThTien"); 
+                string vatRate = GetItemVal(item, "TSuat");
+                string vatAmount = GetItemVal(item, "TGTGT"); 
+
+                // Tính tổng sau thuế (nếu XML không có sẵn trong từng dòng thì cộng tay)
+                // Trong mẫu XML của bạn, thường dòng hàng chỉ có Thành tiền chưa thuế.
+                // Cột cuối cùng trong template là "Thành tiền" (Total) hay "Tổng cộng"? 
+                // Dựa vào template: Cột cuối là "Thành tiền (Amount)" thường là tiền chưa thuế, 
+                // nhưng nếu template yêu cầu "Tổng sau thuế" thì:
+                decimal.TryParse(amount, out decimal amtDec);
+                decimal.TryParse(vatAmount, out decimal vatDec);
+                string totalRow = (amtDec + vatDec).ToString("#,##0", new CultureInfo("vi-VN"));
+                string vatDisplay = vatRate.StartsWith("K") ? vatRate : vatRate + "%";
+                string row = $@"
+        <tr class='table-row'>
+            <td class='table-cell text-center'>{stt}</td>
+            <td class='table-cell text-left' style='font-weight: 500;'>{name}</td>
+            <td class='table-cell text-center'>{unit}</td>
+            <td class='table-cell text-right'>{Fmt(qty)}</td>
+            <td class='table-cell text-right'>{Fmt(price)}</td>
+            <td class='table-cell text-right'>{Fmt(amount)}</td>
+            <td class='table-cell text-center'>{vatDisplay}</td>
+            <td class='table-cell text-right'>{Fmt(vatAmount)}</td>
+            <td class='table-cell text-right' style='font-weight: bold;'>{totalRow}</td>
+        </tr>";
+
+                rows.Append(row);
+            }
+
+            return rows.ToString();
+        }
+        // Helper format tiền
+        private string FormatMoney(string val)
+        {
+            if (decimal.TryParse(val, out decimal d)) return d.ToString("N0");
+            return val;
         }
     }
 }
