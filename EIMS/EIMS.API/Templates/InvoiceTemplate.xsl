@@ -166,19 +166,24 @@
 
 		<table class="header-table">
 			<tr>
-				<td style="width: 20%; margin-top: -20px;">
+				<td style="width: 20%; margin-top: -40px;">
 					<xsl:if test="$ShowLogo = 'true' and $LogoUrl != ''">
 						<img src="{$LogoUrl}" style="max-width: 100%; height: auto;" />
 					</xsl:if>
 				</td>
 				<td style="width: 55%; text-align: center;">
-					<div class="invoice-title" style="margin-top: 40px;">HÓA ĐƠN GIÁ TRỊ GIA TĂNG</div>
-					<xsl:if test="$IsBilingual = 'true'">
-						<div class="italic" style="font-size: 16px; margin-top: 5px;">(VAT INVOICE)</div>
-					</xsl:if>
+						<div class="invoice-title" style="margin-top: 40px; color: #005088; text-align: center; font-weight: bold;">
+							HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+						</div>
+    
+						<xsl:if test="$IsBilingual = 'true'">
+							<div class="italic" style="font-size: 16px; margin-top: 5px; color: #005088; text-align: center; font-weight: bold;">
+								(VAT INVOICE)
+							</div>
+						</xsl:if>
 					<xsl:if test="count(//*[local-name()='MCCQT' and string-length(text()) > 0]) > 0">
 						<div style="margin-top: 2px; font-weight: bold;">
-							Mã CQT <xsl:if test="$IsBilingual = 'true'"><span class="en-label">(Tax Authority Code)</span></xsl:if>: <xsl:value-of select="(//*[local-name()='MCCQT' and string-length(text()) > 0])[1]"/>
+							Mã CQT <xsl:if test="$IsBilingual = 'true'"><span class="en-label">(Tax Code)</span></xsl:if>: <xsl:value-of select="(//*[local-name()='MCCQT' and string-length(text()) > 0])[1]"/>
 						</div>
 					</xsl:if>
 					<div style="margin-top: 2px;">
