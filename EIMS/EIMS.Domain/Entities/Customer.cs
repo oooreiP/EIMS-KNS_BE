@@ -12,6 +12,7 @@ namespace EIMS.Domain.Entities
     {
         [Key]
         public int CustomerID { get; set; }
+        public int? SaleID { get; set; }
         [Required]
         [StringLength(255)]
         public string CustomerName { get; set; } = string.Empty;
@@ -38,5 +39,7 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<User> Users { get; set; } = new List<User>();
         [InverseProperty("Customer")]
         public virtual ICollection<InvoiceRequest> InvoiceRequests { get; set; }
+        [ForeignKey(nameof(SaleID))]
+        public virtual User? Sale { get; set; }
     }
 }

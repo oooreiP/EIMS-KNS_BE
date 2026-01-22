@@ -45,7 +45,7 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         [JsonPropertyName("showQrCode")]
         public bool ShowQrCode { get; set; } = true;
         [JsonPropertyName("isBilingual")]
-        public bool IsBilingual { get; set; } = false;
+        public bool IsBilingual { get; set; } = true;
     }
 
     public class CustomerSettings
@@ -75,6 +75,6 @@ namespace EIMS.Application.DTOs.InvoiceTemplate
         [JsonPropertyName("colorTheme")]
         public string ColorTheme { get; set; } = "#004aad";
         [JsonPropertyName("fontFamily")]
-        public string FontFamily { get; set; } = "Times New Roman";
+        public string FontFamily { get; set; } = "Arial";
     }
 }

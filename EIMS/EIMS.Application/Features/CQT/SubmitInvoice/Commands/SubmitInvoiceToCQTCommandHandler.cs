@@ -6,6 +6,7 @@ using EIMS.Application.DTOs.XMLModels;
 using EIMS.Application.DTOs.XMLModels.ThongDiep;
 using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -97,7 +98,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             await _uow.SaveChanges();
             var taxResponse = await _taxClient.SendTaxMessageAsync(xmlPayload, referenceId);
             string apiStatusCode = taxResponse.MLTDiep == "202" ? "KQ01" :
-                       taxResponse.MLTDiep == "204" ? "TBxx" :
+                       taxResponse.MLTDiep == "204" ? "KQ02" :
                        "TB01"; 
             log.ResponsePayload = taxResponse.RawResponse;
             await _uow.TaxApiLogRepository.UpdateAsync(log);
@@ -127,16 +128,12 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
-            if (responseLog.TaxApiStatusID == 2) 
-            {
-                invoice.InvoiceStatusID = 3; 
-            }
-            else if (responseLog.TaxApiStatusID == 30) 
+            if (responseLog.TaxApiStatusID == 30) 
             {
                 invoice.TaxAuthorityCode = taxResponse.MCCQT;
                 invoice.InvoiceStatusID = 12; 
             }
-            else if (responseLog.TaxApiStatusID == 3) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
+            else if (responseLog.TaxApiStatusID == 31) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
                 invoice.InvoiceStatusID = 8;
                 if (original != null)

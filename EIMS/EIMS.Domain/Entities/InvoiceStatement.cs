@@ -16,6 +16,17 @@ namespace EIMS.Domain.Entities
         public DateTime DueDate { get; set; }
         // [ForeignKey("CreatedBy")]
         public int CreatedBy { get; set; }
+        // 2. Số dư đầu kỳ (Nợ cũ chuyển sang)
+        public int PeriodMonth { get; set; }
+        public int PeriodYear { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal OpeningBalance { get; set; } = 0;
+
+        // 3. Phát sinh trong kỳ (Tổng các hóa đơn mới)
+
+        [Column(TypeName = "decimal(18, 2)")]
+
+        public decimal NewCharges { get; set; } = 0;
         // [ForeignKey("CustomerID")]
         public int CustomerID { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
