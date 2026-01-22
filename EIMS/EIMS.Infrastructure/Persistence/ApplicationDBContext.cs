@@ -790,6 +790,173 @@ namespace EIMS.Infrastructure.Persistence
         </div>"
     }
   );
+            modelBuilder.Entity<EmailTemplate>().HasData(
+    // 1. Mẫu Tiếng Việt
+    new EmailTemplate
+    {
+        EmailTemplateID = 9, // ID tiếp theo
+        TemplateCode = "STATEMENT_SEND", // Mã code để gọi trong code C#
+        LanguageCode = "vi",
+        Category = "statement",
+        Name = "Mẫu gửi bảng kê cước (Tiếng Việt)",
+        Subject = "TB Cước Dịch vụ Tháng {{Month}}/{{Year}} - {{CustomerName}}",
+        IsSystemTemplate = true,
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow,
+        BodyContent = @"<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .email-header { background-color: #28a745; padding: 30px; text-align: center; color: #ffffff; } /* Màu xanh lá cho Statement khác với Invoice */
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+        .info-label { font-weight: bold; color: #555555; width: 50%; }
+        .info-value { text-align: right; color: #333333; }
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 20px; }
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+        .attachment-list li { margin-bottom: 8px; }
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+        .note-text { font-size: 13px; font-style: italic; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class='email-container'>
+        <div class='email-content'>
+            <div class='email-header'>
+                <h1>Thông Báo Cước Dịch Vụ</h1>
+            </div>
+
+            <div class='email-body'>
+                <p><strong>Kính gửi Quý khách hàng {{CustomerName}},</strong></p>
+                
+                <p><strong>{{CompanyName}}</strong> trân trọng thông báo tổng cước dịch vụ sử dụng trong tháng <strong>{{Month}}/{{Year}}</strong> và nợ tồn đọng (nếu có) như sau:</p>
+
+                <table class='info-table'>
+                    <tr>
+                        <td class='info-label'>Kỳ cước:</td>
+                        <td class='info-value'>Tháng {{Month}}/{{Year}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Hạn thanh toán:</td>
+                        <td class='info-value'><strong>{{DueDate}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>TỔNG TIỀN PHẢI THANH TOÁN:</td>
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VNĐ</td>
+                    </tr>
+                </table>
+
+                <p>Quý khách vui lòng kiểm tra file <strong>Bảng kê chi tiết</strong> (đính kèm) và sắp xếp thanh toán đúng hạn để dịch vụ không bị gián đoạn.</p>
+                
+                <p class='note-text'>(Thông tin tài khoản ngân hàng xem chi tiết trong file đính kèm).</p>
+
+                <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+                <ul class='attachment-list'>
+                     {{AttachmentList}}
+                </ul>
+
+                <p style='margin-top: 30px;'>Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ.</p>
+                <p>Trân trọng,<br><strong>Phòng Kế toán {{CompanyName}}</strong></p>
+            </div>
+
+            <div class='email-footer'>
+                <p>&copy; {{Year}} {{CompanyName}}. All rights reserved.</p>
+                <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"
+    },
+
+    // 2. Mẫu Tiếng Anh
+    new EmailTemplate
+    {
+        EmailTemplateID = 10,
+        TemplateCode = "STATEMENT_SEND", // Dùng chung Code, chỉ khác LanguageCode
+        LanguageCode = "en",
+        Category = "statement",
+        Name = "Statement Notification Template (English)",
+        Subject = "Service Charge Notification {{Month}}/{{Year}} - {{CustomerName}}",
+        IsSystemTemplate = true,
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow,
+        BodyContent = @"<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .email-header { background-color: #28a745; padding: 30px; text-align: center; color: #ffffff; }
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+        .info-label { font-weight: bold; color: #555555; width: 50%; }
+        .info-value { text-align: right; color: #333333; }
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 20px; }
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+        .attachment-list li { margin-bottom: 8px; }
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+        .note-text { font-size: 13px; font-style: italic; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class='email-container'>
+        <div class='email-content'>
+            <div class='email-header'>
+                <h1>Service Charge Notification</h1>
+            </div>
+
+            <div class='email-body'>
+                <p><strong>Dear Valued Customer {{CustomerName}},</strong></p>
+                
+                <p><strong>{{CompanyName}}</strong> would like to inform you of the total service charges for <strong>{{Month}}/{{Year}}</strong> regarding the following details:</p>
+
+                <table class='info-table'>
+                    <tr>
+                        <td class='info-label'>Billing Period:</td>
+                        <td class='info-value'>{{Month}}/{{Year}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Payment Due Date:</td>
+                        <td class='info-value'><strong>{{DueDate}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>TOTAL AMOUNT DUE:</td>
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>
+                    </tr>
+                </table>
+
+                <p>Please review the attached <strong>Detailed Statement</strong> and arrange payment before the due date to ensure uninterrupted service.</p>
+                
+                <p class='note-text'>(Bank account details can be found in the attached file).</p>
+
+                <p>📂 <strong>Attachments:</strong></p>
+                <ul class='attachment-list'>
+                     {{AttachmentList}}
+                </ul>
+
+                <p style='margin-top: 30px;'>Thank you for trusting and using our services.</p>
+                <p>Sincerely,<br><strong>Accounting Department {{CompanyName}}</strong></p>
+            </div>
+
+            <div class='email-footer'>
+                <p>&copy; {{Year}} {{CompanyName}}. All rights reserved.</p>
+                <p>This email is generated automatically, please do not reply.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"
+    }
+);
             modelBuilder.Entity<TaxMessageCode>().HasData(
     // ---- Đăng ký ----
     new TaxMessageCode { Id = 1, MessageCode = "100", MessageName = "Thông điệp gửi tờ khai đăng ký/thay đổi thông tin sử dụng hóa đơn điện tử", Category = "Đăng ký", FlowType = 1 },

@@ -28,19 +28,20 @@ namespace EIMS.Infrastructure.Service
 
             // 2. Group & Calculate (Logic y hệt bên PDF)
             var summary = allItems
-                .GroupBy(item => new {
+                .GroupBy(item => new
+                {
                     ProductID = item.ProductID,
-                    ProductName = item.Product?.Name  ?? "Khác",
-                    Unit = item.Product?.Unit  ?? ""
+                    ProductName = item.Product?.Name ?? "Khác",
+                    Unit = item.Product?.Unit ?? ""
                 })
                 .Select(g =>
                 {
-                    double totalQty = g.Sum(x => x.Quantity );
+                    double totalQty = g.Sum(x => x.Quantity);
                     decimal totalAmt = g.Sum(x => x.Amount);
                     decimal totalVat = g.Sum(x => x.VATAmount);
                     if (totalQty == 0 && totalAmt != 0) totalQty = 1;
 
-                    decimal avgPrice = totalQty != 0 ? totalAmt /(decimal) totalQty : 0;
+                    decimal avgPrice = totalQty != 0 ? totalAmt / (decimal)totalQty : 0;
 
                     return new StatementProductDto
                     {
@@ -63,6 +64,12 @@ namespace EIMS.Infrastructure.Service
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(1);
             if (company == null) throw new Exception("Company not found");
             if (statementEntity == null) throw new Exception("Statement not found");
+
+            // 1. FIX THỜI GIAN: Dùng PeriodMonth/Year thay vì StatementDate
+            var startOfStatementPeriod = new DateTime(statementEntity.PeriodYear, statementEntity.PeriodMonth, 1);
+            // Ngày đầu tháng sau (để giới hạn phạm vi)
+            var startOfNextMonth = startOfStatementPeriod.AddMonths(1);
+
             var xmlDto = new PaymentStatementDTO
             {
                 ProviderInfo = new ProviderInfoDTO
@@ -71,151 +78,150 @@ namespace EIMS.Infrastructure.Service
                     Address = company.Address,
                     Phone = company.ContactPhone
                 },
-
-                // B. Thông tin Header
                 HeaderInfo = new HeaderInfoDTO
                 {
-                    AccountantName = statementEntity.Creator.FullName,
+                    AccountantName = statementEntity.Creator?.FullName ?? "Admin",
                     StatementDate = statementEntity.StatementDate.ToString("dd/MM/yyyy"),
-                    StatementMonth = statementEntity.StatementDate.ToString("MM/yyyy"),
+                    // Hiển thị kỳ báo cáo đúng theo tháng được chọn
+                    StatementMonth = $"{statementEntity.PeriodMonth:D2}/{statementEntity.PeriodYear}",
                     CustomerName = statementEntity.Customer?.CustomerName ?? "Unknown Customer",
                     CustomerCode = $"KHACVT_{statementEntity.Customer?.CustomerID}",
                     ContactEmail = "support@einvoice.vn"
                 },
                 Items = new List<StatementItemDTO>()
             };
-            var startOfStatementPeriod = new DateTime(statementEntity.StatementDate.Year, statementEntity.StatementDate.Month, 1);
+
             var allDetails = statementEntity.StatementDetails.ToList();
-            var oldDetails = allDetails
-                .Where(d => (d.Invoice.IssuedDate ?? DateTime.MinValue) < startOfStatementPeriod)
-                .ToList();
 
-            if (oldDetails.Any())
+            // --- PHẦN A: NỢ CŨ (Trước tháng báo cáo) ---
+            // Điều kiện: Ngày hóa đơn < Ngày 1 của tháng báo cáo
+            if (statementEntity.OpeningBalance > 0)
             {
-                var oldItemsSummary = oldDetails
-                    .GroupBy(d => new {
-                        Month = d.Invoice.IssuedDate?.Month ?? 0,
-                        Year = d.Invoice.IssuedDate?.Year ?? 0
-                    })
-                    .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-                    .Select(g => new StatementItemDTO
-                    {
-                        // Diễn giải gom nhóm: "Dư nợ quá hạn tháng 09/2025"
-                        Description = $"Dư nợ quá hạn tháng {g.Key.Month.ToString("00")}/{g.Key.Year}",
+                var openingItem = new StatementItemDTO
+                {
+                    // Diễn giải chung
+                    Description = "Số dư nợ đầu kỳ (Opening Balance)",
 
-                        // Thời gian
-                        PeriodFrom = $"{g.Key.Month.ToString("00")}/{g.Key.Year}",
-                        PeriodTo = $"{g.Key.Month.ToString("00")}/{g.Key.Year}",
+                    // Thời gian: Là thời điểm trước ngày bắt đầu kỳ báo cáo
+                    PeriodFrom = startOfStatementPeriod.AddDays(-1).ToString("dd/MM/yyyy"),
+                    PeriodTo = startOfStatementPeriod.AddDays(-1).ToString("dd/MM/yyyy"),
 
-                        IndicatorOld = "0",
-                        IndicatorNew = "0",
-                        Quantity = 1,
+                    IndicatorOld = "1",
+                    Quantity = 1,
 
-                        // --- LOGIC QUAN TRỌNG CHO NỢ CŨ ---
-                        // Chỉ lấy OutstandingAmount (Số tiền còn lại phải trả)
-                        // Không hiển thị VAT hay Doanh thu gốc vì đã kê khai ở tháng trước rồi
+                    // Lấy trực tiếp từ field OpeningBalance đã lưu
+                    UnitPrice = statementEntity.OpeningBalance,
+                    Amount = statementEntity.OpeningBalance,
 
-                        UnitPrice = g.Sum(x => x.OutstandingAmount),
-                        Amount = g.Sum(x => x.OutstandingAmount),
+                    VATRate = 0,
+                    VATAmount = 0,
+                    TotalCurrent = 0,
 
-                        VATRate = 0, // Để trống
-                        VATAmount = 0, // Coi như bằng 0 để không cộng dồn thuế sai kỳ
+                    // Map vào cột nợ cũ
+                    PreviousDebt = statementEntity.OpeningBalance,
+                    TotalPayable = statementEntity.OpeningBalance
+                };
 
-                        TotalCurrent = 0, // Không phải phát sinh kỳ này
-                        PreviousDebt = g.Sum(x => x.OutstandingAmount), // Đưa vào cột Nợ cũ (nếu template có cột này)
-
-                        TotalPayable = g.Sum(x => x.OutstandingAmount) // Tổng phải trả = Tổng số dư nợ
-                    });
-
-                xmlDto.Items.AddRange(oldItemsSummary);
+                xmlDto.Items.Add(openingItem);
             }
 
-            // --- PHẦN B: XỬ LÝ PHÁT SINH TRONG KỲ (Tháng hiện tại) ---
-            // Điều kiện: Ngày hóa đơn >= Ngày đầu tháng này
+            // --- PHẦN B: PHÁT SINH TRONG KỲ (Hóa đơn thuộc tháng báo cáo) ---
+            // Điều kiện: >= Ngày 1 tháng báo cáo VÀ < Ngày 1 tháng sau
             var currentInvoices = allDetails
-         .Where(d => (d.Invoice.IssuedDate ?? DateTime.MinValue) >= startOfStatementPeriod)
-         .Select(d => d.Invoice)
-         .Where(i => i != null) // Safety check
-         .ToList();
+                .Where(d => (d.Invoice.IssuedDate ?? DateTime.MinValue) >= startOfStatementPeriod
+                         && (d.Invoice.IssuedDate ?? DateTime.MinValue) < startOfNextMonth)
+                .Select(d => d.Invoice)
+                .Where(i => i != null)
+                .ToList();
 
             if (currentInvoices.Any())
             {
-                // 2. Gom tất cả InvoiceItems từ các hóa đơn này lại thành 1 danh sách lớn
-                var allProductItems = currentInvoices
-                    .SelectMany(inv => inv.InvoiceItems) // Flatten: Trải phẳng list trong list
-                    .ToList();
+                var allProductItems = currentInvoices.SelectMany(inv => inv.InvoiceItems).ToList();
 
-                // 3. Group theo ProductID (hoặc ProductName nếu muốn gộp theo tên)
                 var groupedProducts = allProductItems
-                    .GroupBy(item => new {
+                    .GroupBy(item => new
+                    {
                         item.ProductID,
                         ProductName = item.Product?.Name ?? "Sản phẩm khác",
                         Unit = item.Product?.Unit ?? ""
                     })
                     .Select(g =>
                     {
-                        // Tính toán tổng số lượng và thành tiền
                         double totalQuantity = g.Sum(x => x.Quantity);
                         decimal totalAmountBeforeTax = g.Sum(x => x.Amount);
                         decimal totalVATAmount = g.Sum(x => x.VATAmount);
                         decimal totalAmountAfterTax = totalAmountBeforeTax + totalVATAmount;
 
-                        // Tính đơn giá trung bình (để hiển thị cho hợp lý nếu các hóa đơn có giá khác nhau)
-                        // Nếu Quantity = 0 thì tránh chia cho 0
-                        decimal averageUnitPrice = totalQuantity != 0
-                            ? totalAmountBeforeTax / (decimal)totalQuantity
-                            : 0;
+                        // 2. FIX DIVIDE BY ZERO
+                        decimal averageUnitPrice = totalQuantity != 0 ? totalAmountBeforeTax / (decimal)totalQuantity : 0;
+                        // Tính VAT Rate tương đối (hoặc lấy từ item đầu tiên nếu chắc chắn giống nhau)
+                        double vatRate = (totalAmountBeforeTax != 0)
+                                        ? (double)Math.Round((totalVATAmount / totalAmountBeforeTax) * 100, 0) // Làm tròn VAT
+                                        : 0;
 
                         return new StatementItemDTO
                         {
-                            // Hiển thị tên sản phẩm
                             Description = g.Key.ProductName,
-
-                            // Thời gian: Lấy tháng hiện tại
                             PeriodFrom = startOfStatementPeriod.ToString("dd/MM/yyyy"),
                             PeriodTo = startOfStatementPeriod.AddMonths(1).AddDays(-1).ToString("dd/MM/yyyy"),
+                            IndicatorOld = "0", // Đánh dấu là mới
 
-                            IndicatorOld = "0",
-                            IndicatorNew = "0",
-
-                            // Các con số tổng hợp
                             Quantity = (decimal)totalQuantity,
-                            UnitPrice = averageUnitPrice, // Đơn giá trung bình
-                            Amount = totalAmountBeforeTax, // Tổng tiền trước thuế
+                            UnitPrice = averageUnitPrice,
+                            Amount = totalAmountBeforeTax,
 
-                            // Thuế
-                            VATRate = Math.Round((g.First().VATAmount / g.First().Amount) * 100, 2), // Khó để hiển thị 1 mức thuế nếu gộp nhiều dòng, hoặc bạn có thể lấy g.First().VATRate
+                            VATRate = vatRate,
                             VATAmount = totalVATAmount,
 
-                            // Tổng tiền thanh toán
+                            // Đây là tổng tiền phát sinh MỚI
                             TotalCurrent = totalAmountAfterTax,
                             PreviousDebt = 0,
+
+                            // Lưu ý: Ở dòng chi tiết sản phẩm, ta vẫn hiện TotalPayable là full giá trị
+                            // Việc trừ tiền đã trả sẽ nằm ở phần Summary tổng
                             TotalPayable = totalAmountAfterTax
                         };
                     })
-                    .OrderBy(x => x.Description) // Sắp xếp theo tên cho đẹp
+                    .OrderBy(x => x.Description)
                     .ToList();
 
                 xmlDto.Items.AddRange(groupedProducts);
             }
+            if (statementEntity.PaidAmount > 0)
+            {
+                var paymentItem = new StatementItemDTO
+                {
+                    // 1. Diễn giải
+                    Description = $"Số tiền trả tháng này ({statementEntity.PeriodMonth:00}/{statementEntity.PeriodYear})",
+                    TotalPayable = -statementEntity.PaidAmount
+                };
 
-            // --- PHẦN C: TỔNG HỢP CUỐI CÙNG (Cập nhật lại công thức tính) ---
+                xmlDto.Items.Add(paymentItem);
+            }
+            // --- PHẦN C: TỔNG HỢP (QUAN TRỌNG) ---
+
+            // Tính tổng phát sinh (Full giá trị hóa đơn mới)
+            decimal totalCurrentPeriodFull = xmlDto.Items.Where(x => x.PreviousDebt == 0 && x.Amount > 0).Sum(x => x.TotalCurrent);
+            // Tính tổng nợ cũ
+            decimal totalPreviousDebt = xmlDto.Items.Sum(x => x.PreviousDebt);
+
+            // Lấy số tiền đã thanh toán trong kỳ (Từ Entity đã lưu ở bước Handle)
+            decimal paidAmount = statementEntity.PaidAmount;
+
             xmlDto.Summary = new StatementSummaryDTO
             {
-                // Tổng tiền hàng (trước thuế) của các item trong danh sách
-                TotalAmount = xmlDto.Items.Sum(x => x.Amount),
+                TotalAmount = xmlDto.Items.Where(x => x.Amount > 0).Sum(x => x.Amount), // Tổng tiền hàng
+                TotalVAT = xmlDto.Items.Sum(x => x.VATAmount), // Tổng tiền thuế
 
-                // Tổng tiền thuế
-                TotalVAT = xmlDto.Items.Sum(x => x.VATAmount),
+                TotalCurrentPeriod = totalCurrentPeriodFull,   // Tổng cộng phát sinh
+                TotalPreviousDebt = totalPreviousDebt,         // Tổng nợ cũ
 
-                // Tổng phát sinh kỳ này (chỉ lấy những dòng không phải nợ cũ)
-                TotalCurrentPeriod = xmlDto.Items.Where(x => x.PreviousDebt == 0).Sum(x => x.TotalCurrent),
+                // Cần thêm trường này vào DTO nếu chưa có để hiển thị trên PDF: "Đã thanh toán"
+                // PaidAmount = paidAmount, 
 
-                // Tổng nợ cũ
-                TotalPreviousDebt = xmlDto.Items.Sum(x => x.PreviousDebt),
-
-                // Tổng cộng phải thanh toán = Phát sinh kỳ này + Nợ cũ
-                GrandTotal = xmlDto.Items.Sum(x => x.TotalPayable)
+                // 3. FIX CÔNG THỨC FINAL:
+                // Phải thu cuối kỳ = (Nợ cũ + Phát sinh mới) - Đã trả
+                GrandTotal = (totalPreviousDebt + totalCurrentPeriodFull) - paidAmount
             };
 
             return xmlDto;

@@ -22,7 +22,6 @@ namespace EIMS.Domain.Entities
         [Column(TypeName = "jsonb")]
         public string? LayoutDefinition { get; set; }
         [MaxLength]
-        public string? RenderedHtml { get; set; }
         public bool IsActive { get; set; } = true;
         [ForeignKey("CreatedByUserID")]
         public int CreatedByUserID { get; set; }

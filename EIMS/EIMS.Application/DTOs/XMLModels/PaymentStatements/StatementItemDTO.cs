@@ -18,7 +18,7 @@ namespace EIMS.Application.DTOs.XMLModels.PaymentStatements
         public decimal UnitPrice { get; set; }
         public decimal Amount { get; set; } 
 
-        public decimal VATRate { get; set; } 
+        public double VATRate { get; set; } 
         public decimal VATAmount { get; set; }
 
         public decimal TotalCurrent { get; set; } 
