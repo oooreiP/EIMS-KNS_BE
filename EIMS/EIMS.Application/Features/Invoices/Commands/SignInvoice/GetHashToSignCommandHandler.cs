@@ -26,12 +26,20 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         public async Task<Result<string>> Handle(GetHashToSignCommand request, CancellationToken cancellationToken)
         {
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.InvoiceId, "Customer,Company,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus");
+            if (invoice == null)
+            {
+                return Result.Fail("Không tìm thấy hóa đơn.");
+            }
             var template = await _uow.InvoiceTemplateRepository.GetByIdAsync(invoice.TemplateID);
+            if (template == null)
+            {
+                return Result.Fail(new Error("Không tìm thấy mẫu hóa đơn.").WithMetadata("ErrorCode", "Invoice.Sign.Failed"));
+            }
             var serial = await _uow.SerialRepository.GetByIdAndLockAsync(template.SerialID);
             if (serial == null)
-                return Result.Fail(new Error($"Template {serial.SerialID} not found").WithMetadata("ErrorCode", "Invoice.Sign.Failed"));
-            if (invoice == null)
-                if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
+            {
+                return Result.Fail(new Error($"Không tìm thấy dải ký hiệu (Serial) với ID: {template.SerialID}").WithMetadata("ErrorCode", "Invoice.Sign.Failed"));
+            }
             try
             {
                 invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(serial.SerialID);
@@ -51,16 +59,15 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             xmlDoc.PreserveWhitespace = true;
             xmlDoc.LoadXml(xmlContent);
 
-            // 3. Tính toán Hash (Digest)
-            // Hàm này sẽ thực hiện Canonicalization (C14N) rồi mới Hash
+            // 3. Tạo SignedInfo để client ký (RSA-SHA256)
             try
             {
-                string hashBase64 = XmlHelpers.CalculateDigest(xmlDoc);
-                return Result.Ok(hashBase64);
+                string signedInfoToSign = XmlHelpers.BuildSignedInfoToSign(xmlDoc);
+                return Result.Ok(signedInfoToSign);
             }
             catch (Exception ex)
             {
-                return Result.Fail($"Lỗi khi tạo Hash ký số: {ex.Message}");
+                return Result.Fail($"Lỗi khi tạo dữ liệu ký số: {ex.Message}");
             }
         }
         private async Task<long?> GenerateInvoiceNumberAsync(int serialId)

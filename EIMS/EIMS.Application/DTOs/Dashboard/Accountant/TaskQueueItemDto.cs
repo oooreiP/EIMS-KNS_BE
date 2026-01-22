@@ -8,13 +8,16 @@ namespace EIMS.Application.DTOs.Dashboard.Accountant
     public class TaskQueueItemDto
     {
         public int InvoiceId { get; set; }
-        public string InvoiceNumber { get; set; }
+        public string? InvoiceNumber { get; set; }
         public string CustomerName { get; set; }
         public decimal Amount { get; set; }
         public string Status { get; set; }
         public string Priority { get; set; } // "High", "Medium", "Low"
         public string TaskType { get; set; } // "Rejected", "Draft", "Overdue"
         public DateTime TaskDate { get; set; } // Ngày dùng để sort
-        public string? Reason { get; set; }    // Chỉ cho Priority High
+        public string? Reason { get; set; } 
+        public int InvoiceType { get; set; }
+        public string InvoiceTypeName { get; set; }
+        public int? DaysOld { get; set; }
     }
 }

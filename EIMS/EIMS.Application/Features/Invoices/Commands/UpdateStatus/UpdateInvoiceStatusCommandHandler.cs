@@ -14,10 +14,12 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateStatus
     public class UpdateInvoiceStatusCommandHandler : IRequestHandler<UpdateInvoiceStatusCommand, Result>
     {
         private readonly IUnitOfWork _uow;
-
-        public UpdateInvoiceStatusCommandHandler(IUnitOfWork uow)
+        private readonly IInvoiceRealtimeService _invoiceRealtimeService;
+        public UpdateInvoiceStatusCommandHandler(IUnitOfWork uow, IInvoiceRealtimeService invoiceRealtimeService)
         {
             _uow = uow;
+            _invoiceRealtimeService = invoiceRealtimeService;
+
         }
 
         public async Task<Result> Handle(UpdateInvoiceStatusCommand request, CancellationToken cancellationToken)
@@ -35,13 +37,21 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateStatus
             var history = new InvoiceHistory
             {
                 InvoiceID = invoice.InvoiceID,
-                ActionType = "Manual Status Update", 
+                ActionType = "Manual Status Update",
                 Date = DateTime.UtcNow,
                 // PerformedBy = ... (Lấy từ UserID trong Claims)
             };
             await _uow.InvoiceHistoryRepository.CreateAsync(history);
             await _uow.InvoicesRepository.UpdateAsync(invoice);
-
+            await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
+            {
+                InvoiceId = invoice.InvoiceID,
+                ChangeType = "StatusChanged",
+                CompanyId = invoice.CompanyId,
+                CustomerId = invoice.CustomerID,
+                StatusId = invoice.InvoiceStatusID,
+                Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+            }, cancellationToken);
             await _uow.SaveChanges();
 
             return Result.Ok();

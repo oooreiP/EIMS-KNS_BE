@@ -16,5 +16,6 @@ namespace EIMS.Application.Features.Company.Commands
         public string? ContactPhone { get; set; }
         public string? AccountNumber { get; set; }
         public string? BankName { get; set; }
+        public string? LogoUrl { get; set; }
     }
 }

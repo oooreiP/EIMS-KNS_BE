@@ -14,5 +14,6 @@ namespace EIMS.Application.DTOs.Company
         public string? ContactPhone { get; set; }
         public string? AccountNumber { get; set; }
         public string? BankName { get; set; }
+        public string? LogoUrl { get; set; }
     }
 }

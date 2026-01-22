@@ -46,6 +46,9 @@ namespace EIMS.Infrastructure
             services.AddScoped<IMinutesGenerator, MinutesGenerator>();
             services.AddScoped<IPdfService, PdfService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IInvoiceRealtimeService, InvoiceRealtimeService>();
+            services.AddScoped<IUserRealtimeService, UserRealtimeService>();
+            services.AddScoped<IDashboardRealtimeService, DashboardRealtimeService>();
             services.AddScoped<IEncryptionService, AesEncryptionService>();
             services.AddScoped<SendGridService>();
             // 3. Map IEmailSenderService (Used by Invoices) to SendGrid

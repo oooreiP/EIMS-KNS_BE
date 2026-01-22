@@ -23,8 +23,10 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
         private readonly INotificationService _notiService;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUser;
+        private readonly IInvoiceRealtimeService _invoiceRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService, ICurrentUserService currentUser)
+        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService, ICurrentUserService currentUser, IInvoiceRealtimeService invoiceRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -34,6 +36,8 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
             _notiService = notiService;
             _pdfService = pdfService;
             _currentUser = currentUser;
+            _invoiceRealtimeService = invoiceRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -215,6 +219,22 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     Status = fullInvoice.InvoiceStatus.StatusName,
                     XMLPath = fullInvoice.XMLPath
                 };
+                await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
+                {
+                    InvoiceId = fullInvoice.InvoiceID,
+                    ChangeType = "Created",
+                    CompanyId = fullInvoice.CompanyId,
+                    CustomerId = fullInvoice.CustomerID,
+                    StatusId = fullInvoice.InvoiceStatusID,
+                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                }, cancellationToken);
+                await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+                {
+                    Scope = "Invoices",
+                    ChangeType = "Created",
+                    EntityId = fullInvoice.InvoiceID,
+                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                }, cancellationToken);
                 // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
                 return Result.Ok(response);
 

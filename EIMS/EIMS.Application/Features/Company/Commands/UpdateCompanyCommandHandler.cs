@@ -30,6 +30,7 @@ namespace EIMS.Application.Features.Company.Commands
             company.ContactPhone = request.ContactPhone;
             company.AccountNumber = request.AccountNumber;
             company.BankName = request.BankName;
+            company.LogoUrl = request.LogoUrl;
             await _unitOfWork.CompanyRepository.UpdateAsync(company);
             await _unitOfWork.SaveChanges();
 

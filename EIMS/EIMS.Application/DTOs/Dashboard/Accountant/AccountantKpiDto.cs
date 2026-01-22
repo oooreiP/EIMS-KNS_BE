@@ -11,5 +11,7 @@ namespace EIMS.Application.DTOs.Dashboard.Accountant
         public int DraftsCount { get; set; }     // 30 ngày qua
         public int SentToday { get; set; }       // Update hôm nay
         public int CustomersToCall { get; set; } // Khách nợ xấu
+        public int PendingApproval { get; set; } // HĐ chờ duyệt
+        public int UrgentTasks { get; set; }     // Task > 24h
     }
 }

@@ -24,6 +24,7 @@ namespace EIMS.Infrastructure.Security
             var claims = new List<Claim>
             {
               new(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
+                            new(ClaimTypes.NameIdentifier, user.UserID.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email),
                 new(JwtRegisteredClaimNames.Name, user.FullName),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),

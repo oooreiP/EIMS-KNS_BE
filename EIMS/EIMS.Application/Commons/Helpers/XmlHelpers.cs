@@ -298,24 +298,8 @@ namespace EIMS.Application.Commons.Helpers
         /// </summary>
         public static XmlDocument EmbedSignatureToXml(XmlDocument xmlDoc, string signatureBase64, string certificateBase64)
         {
-            // 1. TÌM HOẶC TẠO THẺ BAO (Khác code của bạn một chút để an toàn hơn)
-            XmlElement dscksNode = (XmlElement)xmlDoc.GetElementsByTagName("DSCKS")[0];
-            if (dscksNode == null)
-            {
-                dscksNode = xmlDoc.CreateElement("DSCKS");
-                xmlDoc.DocumentElement.AppendChild(dscksNode);
-            }
-
-            XmlElement nbanNode = (XmlElement)dscksNode.GetElementsByTagName("NBan")[0];
-            if (nbanNode == null)
-            {
-                nbanNode = xmlDoc.CreateElement("NBan");
-                dscksNode.AppendChild(nbanNode);
-            }
-            else
-            {
-                nbanNode.RemoveAll();
-            }
+            // 1. TÌM HOẶC TẠO THẺ BAO
+            XmlElement nbanNode = EnsureSignatureContainer(xmlDoc);
 
             // 2. KHỞI TẠO SIGNED XML
             var signedXml = new SignedXml(xmlDoc);
@@ -517,6 +501,65 @@ namespace EIMS.Application.Commons.Helpers
                 return Convert.ToBase64String(hashBytes);
             }
         }
+
+            /// <summary>
+            /// Tạo SignedInfo (chuẩn C14N) để client ký bằng RSA-SHA256.
+            /// </summary>
+            public static string BuildSignedInfoToSign(XmlDocument xmlDoc)
+            {
+                EnsureSignatureContainer(xmlDoc);
+                var signedXml = new SignedXml(xmlDoc);
+                signedXml.Signature.Id = "NBan";
+
+                var reference = new Reference { Uri = "" };
+                reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
+                reference.AddTransform(new XmlDsigC14NTransform());
+                signedXml.AddReference(reference);
+
+                signedXml.SignedInfo.SignatureMethod = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+
+                using (RSA rsa = RSA.Create())
+                {
+                    signedXml.SigningKey = rsa;
+                    signedXml.ComputeSignature();
+                }
+
+                var signedInfoElement = signedXml.SignedInfo.GetXml();
+                var signedInfoDoc = new XmlDocument();
+                signedInfoDoc.PreserveWhitespace = true;
+                signedInfoDoc.LoadXml(signedInfoElement.OuterXml);
+
+                var c14n = new XmlDsigC14NTransform();
+                c14n.LoadInput(signedInfoDoc);
+
+                using var stream = (Stream)c14n.GetOutput(typeof(Stream));
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                return reader.ReadToEnd();
+            }
+
+        private static XmlElement EnsureSignatureContainer(XmlDocument xmlDoc)
+        {
+            XmlElement dscksNode = (XmlElement)xmlDoc.GetElementsByTagName("DSCKS")[0];
+            if (dscksNode == null)
+            {
+                dscksNode = xmlDoc.CreateElement("DSCKS");
+                xmlDoc.DocumentElement.AppendChild(dscksNode);
+            }
+
+            XmlElement nbanNode = (XmlElement)dscksNode.GetElementsByTagName("NBan")[0];
+            if (nbanNode == null)
+            {
+                nbanNode = xmlDoc.CreateElement("NBan");
+                dscksNode.AppendChild(nbanNode);
+            }
+            else
+            {
+                nbanNode.RemoveAll();
+            }
+
+            return nbanNode;
+        }
+        
         private static bool IsNumericRate(decimal rate)
         {
             // Kiểm tra xem có phải là các mã đặc biệt không

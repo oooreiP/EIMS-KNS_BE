@@ -25,7 +25,31 @@ namespace EIMS.Application.Commons.Behaviors
                 {
                     // 1. Populate UserID (You likely already have this)
                     var userIdString = _httpContextAccessor.HttpContext?
-                    .User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        .User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (string.IsNullOrWhiteSpace(userIdString))
+                    {
+                        userIdString = _httpContextAccessor.HttpContext?
+                            .User?.FindFirst("sub")?.Value;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(userIdString))
+                    {
+                        userIdString = _httpContextAccessor.HttpContext?
+                            .User?.FindFirst("nameid")?.Value;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(userIdString))
+                    {
+                        userIdString = _httpContextAccessor.HttpContext?
+                            .User?.FindFirst("UserId")?.Value;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(userIdString))
+                    {
+                        userIdString = _httpContextAccessor.HttpContext?
+                            .User?.FindFirst("userid")?.Value;
+                    }
 
                     if (!int.TryParse(userIdString, out int userId))
                     {

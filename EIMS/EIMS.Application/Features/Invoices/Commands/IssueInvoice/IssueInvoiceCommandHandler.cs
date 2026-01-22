@@ -21,8 +21,10 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
         private readonly IMediator _mediator;
         private readonly ILookupCodeGenerator _codeGenerator;
         private readonly IEmailSenderService _emailSender;
+        private readonly IInvoiceRealtimeService _invoiceRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
 
-        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator, ILookupCodeGenerator codeGenerator, IEmailSenderService emailSender)
+        public IssueInvoiceCommandHandler(IUnitOfWork uow, IInvoiceXMLService xmlService, IEmailService emailService, IMediator mediator, ILookupCodeGenerator codeGenerator, IEmailSenderService emailSender, IInvoiceRealtimeService invoiceRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _uow = uow;
             _xmlService = xmlService;
@@ -30,6 +32,8 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             _mediator = mediator;
             _codeGenerator = codeGenerator;
             _emailSender = emailSender;
+            _invoiceRealtimeService = invoiceRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
 
         public async Task<Result> Handle(IssueInvoiceCommand request, CancellationToken cancellationToken)
@@ -158,10 +162,42 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                         {
                             msg += $" Khách đưa {request.PaymentAmount.Value:N0}, thu {realPayAmount:N0}, trả lại {changeAmount:N0}.";
                         }
+                        await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
+                        {
+                            InvoiceId = invoice.InvoiceID,
+                            ChangeType = "Issued",
+                            CompanyId = invoice.CompanyId,
+                            CustomerId = invoice.CustomerID,
+                            StatusId = invoice.InvoiceStatusID,
+                            Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                        }, cancellationToken);
+                        await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+                        {
+                            Scope = "Invoices",
+                            ChangeType = "Issued",
+                            EntityId = invoice.InvoiceID,
+                            Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                        }, cancellationToken);
                         return Result.Ok().WithSuccess(msg);
                     }
                 }
             }
+            await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
+            {
+                InvoiceId = invoice.InvoiceID,
+                ChangeType = "Issued",
+                CompanyId = invoice.CompanyId,
+                CustomerId = invoice.CustomerID,
+                StatusId = invoice.InvoiceStatusID,
+                Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+            }, cancellationToken);
+            await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+            {
+                Scope = "Invoices",
+                ChangeType = "Issued",
+                EntityId = invoice.InvoiceID,
+                Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+            }, cancellationToken);
             return Result.Ok();
         }
     }

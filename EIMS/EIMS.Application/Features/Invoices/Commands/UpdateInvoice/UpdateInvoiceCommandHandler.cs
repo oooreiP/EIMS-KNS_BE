@@ -19,13 +19,17 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
         private readonly IFileStorageService _fileStorageService;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateInvoiceCommandHandler> _logger;
+        private readonly IInvoiceRealtimeService _invoiceRealtimeService;
+        private readonly IDashboardRealtimeService _dashboardRealtimeService;
 
-        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper, ILogger<UpdateInvoiceCommandHandler> logger)
+        public UpdateInvoiceCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorageService, IMapper mapper, ILogger<UpdateInvoiceCommandHandler> logger, IInvoiceRealtimeService invoiceRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
         {
             _unitOfWork = unitOfWork;
             _fileStorageService = fileStorageService;
             _mapper = mapper;
             _logger = logger;
+            _invoiceRealtimeService = invoiceRealtimeService;
+            _dashboardRealtimeService = dashboardRealtimeService;
         }
 
         public async Task<Result<int>> Handle(UpdateInvoiceCommand request, CancellationToken cancellationToken)
@@ -253,6 +257,24 @@ namespace EIMS.Application.Features.Invoices.Commands.UpdateInvoice
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
                 _logger.LogInformation("SUCCESS: Invoice {InvoiceId} updated. Total Amount: {Total}", invoice.InvoiceID, totalAmount);
+
+                await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
+                {
+                    InvoiceId = invoice.InvoiceID,
+                    ChangeType = "Updated",
+                    CompanyId = invoice.CompanyId,
+                    CustomerId = invoice.CustomerID,
+                    StatusId = invoice.InvoiceStatusID,
+                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                }, cancellationToken);
+
+                await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
+                {
+                    Scope = "Invoices",
+                    ChangeType = "Updated",
+                    EntityId = invoice.InvoiceID,
+                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
+                }, cancellationToken);
 
                 return Result.Ok(invoice.InvoiceID);
             }

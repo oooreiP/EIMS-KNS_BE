@@ -22,6 +22,8 @@
             public string? AccountNumber { get; set; }
             [StringLength(255)]
             public string? BankName { get; set; }
+            [StringLength(500)]
+            public string? LogoUrl { get; set; }
             public byte[]? DigitalSignature { get; set; }
             public string? DigitalSignaturePassword { get; set; }
             // --- Navigation Properties ---

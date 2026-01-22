@@ -295,51 +295,81 @@ namespace EIMS.Infrastructure.Repositories
         }
         public async Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken)
         {
-            decimal targetRevenue = _config.GetValue<decimal>("SalesSettings:GlobalTargetRevenue");
             double commissionRate = _config.GetValue<double>("SalesSettings:GlobalCommissionRate");
             var now = DateTime.UtcNow;
-            // Fix for PostgreSQL: Specify UTC Kind explicitly
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
             var startOfLastMonth = startOfMonth.AddMonths(-1);
-            var sixMonthsAgo = now.AddMonths(-6);
-            // 1. Base Query: Filter ONLY invoices belonging to this Sales Person
+            var sixMonthsAgo = startOfMonth.AddMonths(-5);
+
+            const int invoiceStatusDraft = 1;
+            const int invoiceStatusIssued = 2;
+            const int invoiceStatusPendingApproval = 6;
+            const int invoiceStatusPendingSign = 7;
+            const int invoiceStatusRejected = 16;
+            const int paymentStatusPaid = 3;
+            const int paymentStatusUnpaid = 1;
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == salesPersonId, cancellationToken);
+
             var query = _context.Invoices
                 .AsNoTracking()
                 .Where(i => i.SalesID == salesPersonId);
 
-            // 2. Calculate Aggregates (Single DB Trip)
-            // Status IDs: 1=Unpaid, 2=Partially Paid, 3=Paid, 4=Overdue
-            var stats = await query
-                .GroupBy(x => 1)
-                .Select(g => new
-                {
-                    // All Time
-                    TotalCount = g.Count(),
-                    TotalRev = g.Sum(i => i.TotalAmount),
-                    TotalPaid = g.Sum(i => i.PaidAmount),
-                    TotalPending = g.Sum(i => i.RemainingAmount),
+            var currentRevenue = await query
+                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= startOfMonth
+                            && (i.IssuedDate ?? i.CreatedAt) < startOfNextMonth
+                            && (i.PaymentStatusID == paymentStatusPaid
+                                || i.InvoiceStatusID == invoiceStatusIssued
+                                || i.InvoiceStatusID == invoiceStatusPendingApproval
+                                || i.InvoiceStatusID == invoiceStatusPendingSign))
+                .SumAsync(i => i.TotalAmount, cancellationToken);
 
-                    // This Month
-                    MonthRev = g.Where(i => i.CreatedAt >= startOfMonth).Sum(i => i.TotalAmount),
-                    MonthCount = g.Count(i => i.CreatedAt >= startOfMonth),
+            var lastMonthRevenue = await query
+                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= startOfLastMonth
+                            && (i.IssuedDate ?? i.CreatedAt) < startOfMonth
+                            && (i.PaymentStatusID == paymentStatusPaid
+                                || i.InvoiceStatusID == invoiceStatusIssued
+                                || i.InvoiceStatusID == invoiceStatusPendingApproval
+                                || i.InvoiceStatusID == invoiceStatusPendingSign))
+                .SumAsync(i => i.TotalAmount, cancellationToken);
 
-                    // last month
-                    LastMonthRev = g.Where(i => i.CreatedAt >= startOfLastMonth && i.CreatedAt < startOfMonth).Sum(i => i.TotalAmount),
+            double growthPercent = 0;
+            if (lastMonthRevenue > 0)
+            {
+                growthPercent = (double)((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+            }
+            else if (currentRevenue > 0)
+            {
+                growthPercent = 100;
+            }
 
-                    // Status Counts
-                    PaidCount = g.Count(i => i.PaymentStatusID == 3),
-                    UnpaidCount = g.Count(i => i.PaymentStatusID == 1 || i.PaymentStatusID == 2),
-                    OverdueCount = g.Count(i => i.PaymentStatusID == 4 || (i.PaymentStatusID != 3 && i.PaymentDueDate < now))
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-            var newCustomersCount = await query
+            var estimatedCommission = currentRevenue * (decimal)(commissionRate / 100.0);
+
+            var newCustomersThisMonth = await query
                 .GroupBy(i => i.CustomerID)
-                .Where(g => g.Min(x => x.CreatedAt) >= startOfMonth)
+                .Where(g => g.Min(x => (x.IssuedDate ?? x.CreatedAt)) >= startOfMonth)
                 .CountAsync(cancellationToken);
 
+            var openInvoicesCount = await query
+                .CountAsync(i => i.PaymentStatusID == paymentStatusUnpaid, cancellationToken);
+
+            decimal targetRevenue = _config.GetValue<decimal>("SalesSettings:GlobalTargetRevenue");
+
+            double completionRate = 0;
+            if (targetRevenue > 0)
+            {
+                completionRate = (double)(currentRevenue / targetRevenue) * 100;
+            }
+            var remainingAmount = targetRevenue > currentRevenue ? targetRevenue - currentRevenue : 0;
+            var daysLeftInMonth = (startOfNextMonth.Date - now.Date).Days;
+
             var rawTrend = await query
-                .Where(i => i.CreatedAt >= sixMonthsAgo)
-                .GroupBy(i => new { i.CreatedAt.Year, i.CreatedAt.Month })
+                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= sixMonthsAgo)
+                .GroupBy(i => new { Year = (i.IssuedDate ?? i.CreatedAt).Year, Month = (i.IssuedDate ?? i.CreatedAt).Month })
                 .Select(g => new
                 {
                     g.Key.Year,
@@ -350,114 +380,142 @@ namespace EIMS.Infrastructure.Repositories
                 .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .ToListAsync(cancellationToken);
 
-            var salesTrend = rawTrend.Select(t => new SalesTrendDto
-            {
-                Year = t.Year,
-                MonthNumber = t.Month,
-                Month = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(t.Month) + " " + t.Year,
-                Revenue = t.Revenue,
-                InvoiceCount = t.Count,
-                CommissionEarned = t.Revenue * (decimal)(commissionRate / 100.0)
-            }).ToList();
+            var salesTrend = rawTrend
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .TakeLast(6)
+                .Select(t => new SalesTrendDto
+                {
+                    Year = t.Year,
+                    MonthNumber = t.Month,
+                    Month = $"T{t.Month:D2}/{t.Year}",
+                    Revenue = t.Revenue,
+                    InvoiceCount = t.Count,
+                    CommissionEarned = t.Revenue * (decimal)(commissionRate / 100.0)
+                })
+                .ToList();
 
-            // 5. Debt Watchlist (Top 10 Overdue)
-            // Logic: Unpaid and DueDate < Now
             var debtWatchlist = await query
                 .Include(i => i.Customer)
-                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate != null && i.PaymentDueDate < now)
+                .Where(i => i.PaymentStatusID == paymentStatusUnpaid && i.PaymentDueDate != null && i.PaymentDueDate < now)
                 .Select(i => new
                 {
                     i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : string.Empty,
                     i.Customer.CustomerName,
                     i.Customer.ContactPhone,
                     i.Customer.ContactEmail,
                     i.RemainingAmount,
                     DueDate = i.PaymentDueDate.Value
                 })
-                .ToListAsync(cancellationToken); // Client-side processing for complex date math if LINQ fails
+                .ToListAsync(cancellationToken);
 
             var debtWatchlistMapped = debtWatchlist
                 .Select(i =>
                 {
                     int overdueDays = (now - i.DueDate).Days;
-                    return new DebtWatchlistDto
+                    int urgencyOrder = overdueDays >= 30 ? 3 : (overdueDays >= 15 ? 2 : 1);
+                    string urgency = overdueDays >= 30 ? "Critical" : (overdueDays >= 15 ? "High" : "Medium");
+
+                    return new
                     {
-                        InvoiceId = i.InvoiceID,
-                        InvoiceNumber = i.InvoiceNumber,
-                        CustomerName = i.CustomerName,
-                        Phone = i.ContactPhone ?? "",
-                        Email = i.ContactEmail ?? "",
-                        AmountPending = i.RemainingAmount,
-                        OverdueDays = overdueDays,
-                        UrgencyLevel = overdueDays > 30 ? "Critical" : (overdueDays > 15 ? "High" : "Medium")
+                        Dto = new DebtWatchlistDto
+                        {
+                            InvoiceId = i.InvoiceID,
+                            InvoiceNumber = i.InvoiceNumber,
+                            CustomerName = i.CustomerName,
+                            Phone = i.ContactPhone ?? "",
+                            Email = i.ContactEmail ?? "",
+                            AmountPending = i.RemainingAmount,
+                            OverdueDays = overdueDays,
+                            UrgencyLevel = urgency
+                        },
+                        UrgencyOrder = urgencyOrder,
+                        OverdueDays = overdueDays
                     };
                 })
-                .OrderByDescending(x => x.OverdueDays)
-                .Take(10)
+                .OrderByDescending(x => x.UrgencyOrder)
+                .ThenByDescending(x => x.OverdueDays)
+                .Take(15)
+                .Select(x => x.Dto)
                 .ToList();
-            // 6. Recent Sales (Top 10) - With IsPriority Logic
-            var recent = await query
+
+            var overdue7Days = now.AddDays(-7);
+
+            var recentInvoicesRaw = await query
                 .Include(i => i.Customer)
                 .Include(i => i.PaymentStatus)
                 .Include(i => i.InvoiceStatus)
-                .OrderByDescending(i => i.CreatedAt)
+                .Select(i => new
+                {
+                    i.InvoiceID,
+                    i.InvoiceNumber,
+                    i.InvoiceStatusID,
+                    i.PaymentStatusID,
+                    i.Customer.CustomerName,
+                    i.CreatedAt,
+                    i.IssuedDate,
+                    i.PaymentDueDate,
+                    i.TotalAmount,
+                    StatusName = i.PaymentStatus.StatusName
+                })
+                .OrderByDescending(i => i.InvoiceStatusID == invoiceStatusRejected
+                                        || (i.PaymentStatusID == paymentStatusUnpaid
+                                            && i.PaymentDueDate != null
+                                            && i.PaymentDueDate < overdue7Days))
+                .ThenByDescending(i => i.IssuedDate ?? i.CreatedAt)
                 .Take(10)
+                .ToListAsync(cancellationToken);
+
+            var recentInvoices = recentInvoicesRaw
                 .Select(i => new SalesInvoiceSimpleDto
                 {
                     InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber ?? 0,
-                    CustomerName = i.Customer.CustomerName,
+                    InvoiceNumber = i.InvoiceStatusID == invoiceStatusDraft ? null : i.InvoiceNumber,
+                    CustomerName = i.CustomerName,
                     CreatedDate = i.CreatedAt,
                     IssueDate = i.IssuedDate,
                     DueDate = i.PaymentDueDate,
                     TotalAmount = i.TotalAmount,
-                    Status = i.PaymentStatus.StatusName ?? "Unknown",
-                    // Assuming StatusID 3 is Cancelled/Rejected.
-                    IsPriority = (i.InvoiceStatusID == 3) ||
-                                 (i.PaymentStatusID != 3 && i.PaymentDueDate != null && i.PaymentDueDate < now)
+                    Status = i.StatusName ?? "Unknown",
+                    IsPriority = (i.InvoiceStatusID == invoiceStatusRejected)
+                                 || (i.PaymentStatusID == paymentStatusUnpaid
+                                     && i.PaymentDueDate != null
+                                     && i.PaymentDueDate < overdue7Days)
                 })
-                .ToListAsync(cancellationToken);
+                .ToList();
 
-            // 4. Map to DTO
-            var result = new SalesDashboardDto
+            return new SalesDashboardDto
             {
-                // Stats
-                TotalInvoicesGenerated = stats?.TotalCount ?? 0,
-                TotalRevenue = stats?.TotalRev ?? 0,
-                TotalCollected = stats?.TotalPaid ?? 0,
-                TotalDebt = stats?.TotalPending ?? 0,
-                PaidCount = stats?.PaidCount ?? 0,
-                UnpaidCount = stats?.UnpaidCount ?? 0,
-                OverdueCount = stats?.OverdueCount ?? 0,
-
-                // Growth KPIs
-                ThisMonthRevenue = stats?.MonthRev ?? 0,
-                LastMonthRevenue = stats?.LastMonthRev ?? 0,
-                ThisMonthInvoiceCount = stats?.MonthCount ?? 0,
-                NewCustomersThisMonth = newCustomersCount,
-                TargetRevenue = targetRevenue,
-                CommissionRate = commissionRate,
-
-                // Lists
+                CurrentUser = new SalesCurrentUserDto
+                {
+                    UserId = user?.UserID ?? 0,
+                    UserName = user?.FullName ?? user?.Email ?? "Unknown",
+                    FullName = user?.FullName ?? "",
+                    Role = user?.Role?.RoleName ?? string.Empty,
+                    Email = user?.Email ?? string.Empty,
+                    SalesId = salesPersonId
+                },
+                SalesKPIs = new SalesKpiDto
+                {
+                    CurrentRevenue = currentRevenue,
+                    LastMonthRevenue = lastMonthRevenue,
+                    RevenueGrowthPercent = Math.Round(growthPercent, 2),
+                    EstimatedCommission = estimatedCommission,
+                    CommissionRate = commissionRate,
+                    NewCustomersThisMonth = newCustomersThisMonth,
+                    OpenInvoicesCount = openInvoicesCount
+                },
+                TargetProgress = new SalesTargetProgressDto
+                {
+                    TargetRevenue = targetRevenue,
+                    CompletionRate = Math.Round(completionRate, 2),
+                    RemainingAmount = remainingAmount,
+                    DaysLeftInMonth = daysLeftInMonth
+                },
                 SalesTrend = salesTrend,
                 DebtWatchlist = debtWatchlistMapped,
-                RecentSales = recent
+                RecentInvoices = recentInvoices
             };
-
-            // Calculate Growth %
-            double growth = 0;
-            if (result.LastMonthRevenue > 0)
-            {
-                growth = (double)((result.ThisMonthRevenue - result.LastMonthRevenue) / result.LastMonthRevenue) * 100;
-            }
-            else if (result.ThisMonthRevenue > 0)
-            {
-                growth = 100;
-            }
-            result.RevenueGrowthPercentage = Math.Round(growth, 2);
-
-            return result;
         }
         public async Task<HodDashboardDto> GetHodDashboardStatsAsync(CancellationToken cancellationToken)
         {
@@ -747,6 +805,18 @@ namespace EIMS.Infrastructure.Repositories
             var thirtyDaysAgo = now.AddDays(-30);
             var oneDayAgo = now.AddDays(-1);
 
+            string? NormalizeInvoiceNumber(long? invoiceNumber) => invoiceNumber.HasValue ? invoiceNumber.Value.ToString() : null;
+            string? NormalizeReason(string? reason) => string.IsNullOrWhiteSpace(reason) ? null : reason;
+            string GetInvoiceTypeName(int id) => id switch
+            {
+                1 => "Gốc",
+                2 => "Điều chỉnh",
+                3 => "Thay thế",
+                4 => "Hủy",
+                5 => "Giải trình",
+                _ => "Khác"
+            };
+
             var user = await _context.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
 
@@ -757,6 +827,7 @@ namespace EIMS.Infrastructure.Repositories
             int statusDraft = 1;
             int statusRejected = 16; 
             int statusSent = 9;
+            int statusPendingApproval = 6;
 
             var kpiData = await baseQuery
                 .GroupBy(x => 1)
@@ -765,6 +836,7 @@ namespace EIMS.Infrastructure.Repositories
                     Rejected = g.Count(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo),
                     Drafts = g.Count(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo),
                     SentToday = g.Count(i => i.InvoiceStatusID == statusSent && i.LastModified >= todayStart),
+                    PendingApproval = g.Count(i => i.InvoiceStatusID == statusPendingApproval),
                     // Khách nợ: Unpaid (PaymentStatus != 3) và Quá hạn > 30 ngày
                     Debtors = g.Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
                                .Select(i => i.CustomerID)
@@ -776,72 +848,123 @@ namespace EIMS.Infrastructure.Repositories
             // C. TASK QUEUE (Ghép 3 nguồn)
 
             // 1. Priority High: Rejected 7 ngày qua
-            var highPriority = await baseQuery
+            var highPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.InvoiceStatusID == statusRejected && i.LastModified >= sevenDaysAgo)
                 .OrderByDescending(i => i.LastModified)
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
+                    i.TotalAmount,
                     Status = i.InvoiceStatus.StatusName,
-                    Priority = "High",
-                    TaskType = "Rejected",
                     TaskDate = i.LastModified ?? i.CreatedAt,
-                    Reason = i.Notes 
+                    i.Notes,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
 
+            var highPriority = highPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = i.Status,
+                Priority = "High",
+                TaskType = "Rejected",
+                TaskDate = i.TaskDate,
+                Reason = NormalizeReason(i.Notes),
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = null
+            }).ToList();
+
             // 2. Priority Medium: Draft cũ tồn đọng (tạo > 1 ngày trước)
-            var mediumPriority = await baseQuery
+            var mediumPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.InvoiceStatusID == statusDraft && i.CreatedAt >= thirtyDaysAgo && i.CreatedAt < oneDayAgo)
                 .OrderBy(i => i.CreatedAt)
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = "Draft",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
+                    i.TotalAmount,
                     Status = i.InvoiceStatus.StatusName,
-                    Priority = "Medium",
-                    TaskType = "Old Draft",
-                    TaskDate = i.CreatedAt,
-                    Reason = i.Notes
+                    i.CreatedAt,
+                    i.Notes,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
 
+            var mediumPriority = mediumPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = i.Status,
+                Priority = "Medium",
+                TaskType = "Old Draft",
+                TaskDate = i.CreatedAt,
+                Reason = NormalizeReason(i.Notes),
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = (int)(now - i.CreatedAt).TotalDays
+            }).ToList();
+
             // 3. Priority Low: Quá hạn > 30 ngày (Max 20)
-            var lowPriority = await baseQuery
+            var lowPriorityTotal = await baseQuery
+                .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
+                .CountAsync(cancellationToken);
+
+            var lowPriorityRaw = await baseQuery
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
                 .OrderBy(i => i.PaymentDueDate) 
                 .Take(20) 
-                .Select(i => new TaskQueueItemDto
+                .Select(i => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "N/A",
+                    i.InvoiceID,
+                    i.InvoiceNumber,
                     CustomerName = i.Customer.CustomerName,
-                    Amount = i.TotalAmount,
-                    Status = "Overdue",
-                    Priority = "Low",
-                    TaskType = "Debt Collection",
+                    i.TotalAmount,
                     TaskDate = i.PaymentDueDate ?? i.CreatedAt,
-                    Reason = $"Quá hạn {(now - i.PaymentDueDate.Value).Days} ngày"
+                    i.PaymentDueDate,
+                    i.InvoiceType
                 })
                 .ToListAsync(cancellationToken);
+
+            var lowPriority = lowPriorityRaw.Select(i => new TaskQueueItemDto
+            {
+                InvoiceId = i.InvoiceID,
+                InvoiceNumber = NormalizeInvoiceNumber(i.InvoiceNumber),
+                CustomerName = i.CustomerName,
+                Amount = i.TotalAmount,
+                Status = "Overdue",
+                Priority = "Low",
+                TaskType = "Debt Collection",
+                TaskDate = i.TaskDate,
+                Reason = $"Quá hạn {(now - i.PaymentDueDate!.Value).Days} ngày",
+                InvoiceType = i.InvoiceType,
+                InvoiceTypeName = GetInvoiceTypeName(i.InvoiceType),
+                DaysOld = null
+            }).ToList();
 
             // Gộp List: High -> Medium -> Low
             var taskQueue = new List<TaskQueueItemDto>();
             taskQueue.AddRange(highPriority);
             taskQueue.AddRange(mediumPriority);
             taskQueue.AddRange(lowPriority);
+            var taskQueueTotal = highPriority.Count + mediumPriority.Count + lowPriorityTotal;
             taskQueue = taskQueue.Take(50).ToList(); 
+
+            var urgentTasks = taskQueue.Count(t => (now - t.TaskDate).TotalHours > 24);
 
             // D. RECENT INVOICES (Lịch sử làm việc)
             var recentWork = await baseQuery
@@ -853,13 +976,17 @@ namespace EIMS.Infrastructure.Repositories
                 .Select(i => new RecentWorkDto
                 {
                     InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceNumber != null ? i.InvoiceNumber.ToString() : "Draft",
+                    InvoiceNumber = i.InvoiceNumber.HasValue ? i.InvoiceNumber.Value.ToString() : null,
                     CustomerName = i.Customer.CustomerName,
                     Status = i.InvoiceStatus.StatusName,
                     TotalAmount = i.TotalAmount,
                     CreatedAt = i.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
+
+            var recentInvoicesTotal = await baseQuery
+                .Where(i => i.CreatedAt >= sevenDaysAgo)
+                .CountAsync(cancellationToken);
 
             // E. ASSEMBLE
             return new AccountantDashboardDto
@@ -876,10 +1003,14 @@ namespace EIMS.Infrastructure.Repositories
                     RejectedCount = kpiData?.Rejected ?? 0,
                     DraftsCount = kpiData?.Drafts ?? 0,
                     SentToday = kpiData?.SentToday ?? 0,
-                    CustomersToCall = kpiData?.Debtors ?? 0
+                    CustomersToCall = kpiData?.Debtors ?? 0,
+                    PendingApproval = kpiData?.PendingApproval ?? 0,
+                    UrgentTasks = urgentTasks
                 },
                 TaskQueue = taskQueue,
                 RecentInvoices = recentWork,
+                TaskQueueTotal = taskQueueTotal,
+                RecentInvoicesTotal = recentInvoicesTotal,
                 GeneratedAt = now
             };
         }
