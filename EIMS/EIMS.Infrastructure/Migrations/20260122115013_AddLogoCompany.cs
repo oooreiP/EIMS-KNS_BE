@@ -148,17 +148,18 @@ namespace EIMS.Infrastructure.Migrations
                 columns: new[] { "CreatedAt", "PasswordHash" },
                 values: new object[] { new DateTime(2026, 1, 22, 11, 50, 11, 987, DateTimeKind.Utc).AddTicks(8199), "$2a$11$KRG7L13W.kM3q9Cv3id48efPYQNjHc8Q9OsoVNnC.ItgyIvcAgUM6" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_InvoiceRequests_SaleID",
-                table: "InvoiceRequests",
-                column: "SaleID");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_InvoiceRequests_Users_SaleID",
-                table: "InvoiceRequests",
-                column: "SaleID",
-                principalTable: "Users",
-                principalColumn: "UserID");
+            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_InvoiceRequests_SaleID\" ON \"InvoiceRequests\" (\"SaleID\");");
+            migrationBuilder.Sql(@"DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'FK_InvoiceRequests_Users_SaleID'
+    ) THEN
+       ALTER TABLE ""InvoiceRequests""
+        ADD CONSTRAINT ""FK_InvoiceRequests_Users_SaleID""
+        FOREIGN KEY (""SaleID"") REFERENCES ""Users""(""UserID"");
+    END IF;
+END $$;");
         }
 
         /// <inheritdoc />
