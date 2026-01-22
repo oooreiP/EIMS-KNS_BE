@@ -32,7 +32,8 @@ namespace EIMS.Application.Features.Company.Queries
                 TaxCode = company.TaxCode,
                 ContactPhone = company.ContactPhone,
                 AccountNumber = company.AccountNumber,
-                BankName = company.BankName
+                BankName = company.BankName,
+                LogoUrl = company.LogoUrl
             };
 
             return Result.Ok(response);

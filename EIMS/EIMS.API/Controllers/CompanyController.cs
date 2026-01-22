@@ -62,8 +62,22 @@ namespace EIMS.API.Controllers
 
             if (result.IsSuccess)
             {
-                return Ok(result.Value); 
+                return Ok(result.Value);
             }
+            return BadRequest(result.Errors);
+        }
+        [HttpPost("{id}/logo")]
+        public async Task<IActionResult> UploadCompanyLogo(int id, [FromForm] UploadCompanyLogoCommand command)
+        {
+            command.CompanyId = id;
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { Url = result.Value });
+            }
+
             return BadRequest(result.Errors);
         }
     }
