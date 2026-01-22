@@ -6,6 +6,7 @@ using AutoMapper;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.InvoicePayment;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 
@@ -22,9 +23,11 @@ namespace EIMS.Application.Features.InvoicePayment.Queries
         }
         public async Task<Result<PaginatedList<InvoicePaymentDTO>>> Handle(GetInvoicePayments request, CancellationToken cancellationToken)
         {
-            //get Queryable
+            
             var query = _uow.InvoicePaymentRepository.GetAllQueryable(includeProperties: "Invoice,Invoice.Customer,Invoice.Payments");
             //Filter
+            query = query.Where(x => x.Invoice.InvoiceStatusID == (int)EInvoiceStatus.Issued
+                      || x.Invoice.InvoiceStatusID == (int)EInvoiceStatus.Adjusted);
             if (request.InvoiceId.HasValue)
             {
                 query = query.Where(x => x.InvoiceID == request.InvoiceId.Value);
