@@ -709,6 +709,8 @@ namespace EIMS.Infrastructure.Persistence
                     <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
                     <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
                 </table>
+                <p><strong>Lookup code:</strong> {{LookupCode}}</p>
+                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>
                 <p>📂 <strong>Attachments:</strong></p>
                 <ul>{{AttachmentList}}</ul>
                 <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
@@ -721,6 +723,8 @@ namespace EIMS.Infrastructure.Persistence
                     <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
                     <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
                 </table>
+                <p><strong>Lookup code:</strong> {{LookupCode}}</p>
+                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>
                 <p>📂 <strong>Attachments:</strong></p>
                 <ul>{{AttachmentList}}</ul>
                 <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
@@ -822,6 +826,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
@@ -898,6 +905,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
