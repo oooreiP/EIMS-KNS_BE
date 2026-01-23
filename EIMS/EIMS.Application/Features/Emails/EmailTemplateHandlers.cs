@@ -4,6 +4,7 @@ using EIMS.Application.Features.Emails.Commands;
 using EIMS.Application.Features.Emails.Queries;
 using EIMS.Domain.Entities;
 using FluentResults;
+using Humanizer;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,9 +19,8 @@ namespace EIMS.Application.Features.Emails
     public class EmailTemplateHandlers :
         IRequestHandler<GetEmailTemplatesQuery, Result<IEnumerable<EmailTemplateDto>>>,
         IRequestHandler<GetEmailTemplateByIdQuery, Result<EmailTemplateDto>>,
-        IRequestHandler<CreateEmailTemplateCommand, Result<int>>,
         IRequestHandler<UpdateEmailTemplateCommand, Result>,
-        IRequestHandler<DeleteEmailTemplateCommand, Result>,
+        IRequestHandler<ResetEmailTemplateCommand, Result<bool>>,
         IRequestHandler<GetEmailTemplateVariablesQuery, Result<List<string>>>,
         IRequestHandler<GetBaseContentByCodeQuery, Result<string>>
     {
@@ -99,68 +99,33 @@ namespace EIMS.Application.Features.Emails
                 UpdatedAt = entity.UpdatedAt
             });
         }
-        public async Task<Result<int>> Handle(CreateEmailTemplateCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(ResetEmailTemplateCommand request, CancellationToken cancellationToken)
         {
-            var exists = await _uow.EmailTemplateRepository.GetAllQueryable()
-            .AnyAsync(x => x.TemplateCode == request.TemplateCode && x.LanguageCode == request.LanguageCode);
+            var template = await _uow.EmailTemplateRepository.GetByIdAsync(request.EmailTemplateID);
 
-            if (exists)
-                return Result.Fail($"Mẫu email '{request.TemplateCode}' ngôn ngữ '{request.LanguageCode}' đã tồn tại.");
-
-            var entity = new EmailTemplate
+            // 2. Kiểm tra tồn tại
+            if (template == null)
             {
-                TemplateCode = request.TemplateCode.ToUpper(),
-                LanguageCode = request.LanguageCode.ToLower(),
-                Category = request.Category,  
-                Name = request.Name,              
-                Subject = request.Subject,
-                BodyContent = request.BodyContent,
-                IsSystemTemplate = false,         
-                IsActive = request.IsActive,
-                CreatedAt = DateTime.UtcNow        
-            };
-
-            await _uow.EmailTemplateRepository.CreateAsync(entity);
+                return Result.Fail<bool>($"Không tìm thấy mẫu email có ID: {request.EmailTemplateID}");
+            }
+            if (string.IsNullOrEmpty(template.OriginalBodyContent))
+            {
+                return Result.Fail<bool>("Mẫu này không có nội dung gốc (Original Content) để khôi phục.");
+            }
+            template.BodyContent = template.OriginalBodyContent; 
+            template.UpdatedAt = DateTime.UtcNow;
             await _uow.SaveChanges();
-
-            return Result.Ok(entity.EmailTemplateID);
+                return Result.Ok(true);
         }
         public async Task<Result> Handle(UpdateEmailTemplateCommand request, CancellationToken cancellationToken)
         {
             var entity = await _uow.EmailTemplateRepository.GetByIdAsync(request.EmailTemplateID);
             if (entity == null) return Result.Fail("Không tìm thấy mẫu email.");
-            if (entity.IsSystemTemplate)
-            {
-                entity.Subject = request.Subject;
-                entity.BodyContent = request.BodyContent;
-                entity.Name = request.Name;
-                entity.IsActive = request.IsActive;
-            }
-            else
-            {
-                entity.Category = request.Category;
-                entity.Name = request.Name;
-                entity.Subject = request.Subject;
-                entity.BodyContent = request.BodyContent;
-                entity.IsActive = request.IsActive;
-            }
+            entity.Subject = request.Subject;
+            entity.BodyContent = request.BodyContent;
             entity.UpdatedAt = DateTime.UtcNow; 
 
             await _uow.EmailTemplateRepository.UpdateAsync(entity);
-            await _uow.SaveChanges();
-
-            return Result.Ok();
-        }
-        public async Task<Result> Handle(DeleteEmailTemplateCommand request, CancellationToken cancellationToken)
-        {
-            var entity = await _uow.EmailTemplateRepository.GetByIdAsync(request.Id);
-            if (entity == null) return Result.Fail("Không tìm thấy mẫu email.");
-            if (entity.IsSystemTemplate)
-            {
-                return Result.Fail("Không thể xóa mẫu email mặc định của hệ thống.");
-            }
-
-            await _uow.EmailTemplateRepository.DeleteAsync(entity);
             await _uow.SaveChanges();
 
             return Result.Ok();

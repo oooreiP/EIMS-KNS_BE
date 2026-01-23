@@ -64,5 +64,18 @@ namespace EIMS.API.Controllers
             if (result.IsFailed) return BadRequest(result.Errors);
             return Ok(new { message = "Cập nhật thành công" });
         }
+        [HttpPut("{id}/reset")]
+        public async Task<IActionResult> ResetTemplateToDefault(int id)
+        {
+            // Tạo command
+            var command = new ResetEmailTemplateCommand(id);
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { message = "Đã khôi phục nội dung mẫu email về mặc định." });
+            }
+            return BadRequest(new { error = result.Errors });
+        }
     }
 }

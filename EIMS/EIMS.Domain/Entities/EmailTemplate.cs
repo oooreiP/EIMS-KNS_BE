@@ -31,6 +31,7 @@ namespace EIMS.Domain.Entities
 
         [Required]
         public string BodyContent { get; set; } // Nội dung HTML (có chứa placeholder)
+        public string OriginalBodyContent { get; set; } // Nội dung HTML (có chứa placeholder)
 
         public bool IsSystemTemplate { get; set; } = false; // [cite: 8] Mặc định false
 
