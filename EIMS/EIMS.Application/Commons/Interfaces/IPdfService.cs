@@ -20,7 +20,7 @@ namespace EIMS.Application.Commons.Interfaces
         Task<byte[]> ConvertNotificationToPdfAsync(int notificationId, string rootPath);
         string TransformXmlToHtml(string xmlContent, string xsltPath, XsltArgumentList? args = null);
         Task<string> GetBlankInvoicePreviewAsync(int templateId, int companyId, string rootPath);
-        byte[] SignPdfUsingSpire(byte[] pdfBytes, X509Certificate2 signingCert);
+        byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText);
         string SerializeInvoiceToXml(Invoice invoice);
     }
 }

@@ -16,22 +16,18 @@ using System.Xml.Serialization;
 using EIMS.Application.Features.Invoices.Commands;
 using EIMS.Application.Commons.Mapping;
 using EIMS.Application.DTOs.XMLModels;
-using Spire.Pdf.Security;
-using Spire.Pdf;
-using System.Drawing;
-using FluentResults;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Cryptography.X509Certificates;
-using Spire.Pdf.Graphics;
-using Spire.Pdf.Interactive.DigitalSignatures;
-using PdfSignature = Spire.Pdf.Security.PdfSignature;
-using GraphicMode = Spire.Pdf.Security.GraphicMode;
-using System.Drawing.Drawing2D;
-using DocumentFormat.OpenXml.ExtendedProperties;
-using DocumentFormat.OpenXml.Vml.Office;
 using System.Xml.Linq;
 using System.Text;
 using System.Globalization;
+using iText.Kernel.Pdf;
+using iText.Signatures;
+using iText.Commons.Bouncycastle.Cert;
+using Org.BouncyCastle.X509;
+using EIMS.Infrastructure.Security;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using iText.Kernel.Pdf.Canvas.Parser;
+using Rectangle = iText.Kernel.Geom.Rectangle;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -278,65 +274,39 @@ namespace EIMS.Infrastructure.Service
             // 2. Gọi lại hàm GeneratePdfBytesAsync (Puppeteer) có sẵn của bạn
             return await GeneratePdfBytesAsync(htmlContent);
         }
-        public byte[] SignPdfUsingSpire(byte[] pdfBytes, X509Certificate2 signingCert)
+
+        public byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText)
         {
-            if (!signingCert.HasPrivateKey)
-            {
-                throw new Exception("Certificate không chứa Private Key. Không thể ký số.");
-            }
+            var location = FindText(pdfBytes, searchText);
+            if (location == null) throw new Exception($"Không tìm thấy dòng chữ '{searchText}'");
 
-            using (MemoryStream pdfStream = new MemoryStream(pdfBytes))
+            using (var msInput = new MemoryStream(pdfBytes))
+            using (var msOutput = new MemoryStream())
             {
-                PdfDocument doc = new PdfDocument(pdfStream);
-                PdfCertificate cert = new PdfCertificate(signingCert);
-                PdfPageBase page = doc.Pages[doc.Pages.Count - 1];
-                PdfSignature signature = new PdfSignature(doc, page, cert, "Signature_HSM");
-                float x = 350;
-                float y = 600;
-                float width = 180;
-                float height = 100;
-                signature.Bounds = new RectangleF(new PointF(x, y), new SizeF(width, height));
-                using (Bitmap bitmap = new Bitmap((int)width, (int)height))
-                using (Graphics g = Graphics.FromImage(bitmap))
-                {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    g.Clear(Color.Transparent); 
-                    Pen borderPen = new Pen(Color.Red, 3); 
-                    g.DrawRectangle(borderPen, 1, 1, width - 2, height - 2);
-                    Font fontTitle = new Font("Arial", 10, FontStyle.Bold);
-                    Brush brushTitle = Brushes.Red;
-                    string title = "ĐÃ KÝ ĐIỆN TỬ BỞI";
-                    SizeF titleSize = g.MeasureString(title, fontTitle);
-                    float titleX = (width - titleSize.Width) / 2;
-                    g.DrawString(title, fontTitle, brushTitle, titleX, 10);
-                    string companyName = GetCommonName(cert.Subject) ?? "CÔNG TY CỔ PHẦN EIMS";
-                    Font fontCompany = new Font("Arial", 9, FontStyle.Bold);
-                    RectangleF rectCompany = new RectangleF(5, 35, width - 10, 40);
-                    StringFormat format = new StringFormat();
-                    format.Alignment = StringAlignment.Center;
-                    format.LineAlignment = StringAlignment.Center;
-                    g.DrawString(companyName.ToUpper(), fontCompany, brushTitle, rectCompany, format);
-                    string dateStr = $"Ngày ký: {DateTime.Now:dd/MM/yyyy}";
-                    Font fontDate = new Font("Arial", 8, FontStyle.Regular);
+                PdfReader reader = new PdfReader(msInput);
+                PdfSigner signer = new PdfSigner(reader, msOutput, new StampingProperties());
+                float width = 150;
+                float height = 70;
+                Rectangle signatureRect = new Rectangle(
+                    location.Rect.GetLeft(),
+                    location.Rect.GetBottom() - height - 5,
+                    width,
+                    height);
 
-                    SizeF dateSize = g.MeasureString(dateStr, fontDate);
-                    float dateX = (width - dateSize.Width) / 2;
-                    g.DrawString(dateStr, fontDate, brushTitle, dateX, 75);
-                    using (MemoryStream msImg = new MemoryStream())
-                    {
-                        bitmap.Save(msImg, System.Drawing.Imaging.ImageFormat.Png);
-                        msImg.Position = 0;
-                        PdfImage pdfImage = PdfImage.FromStream(msImg);
-                        signature.GraphicsMode = Spire.Pdf.Security.GraphicMode.SignImageOnly;
-                        signature.SignImageSource = pdfImage;
-                    }
-                }
-                using (MemoryStream outStream = new MemoryStream())
-                {
-                    doc.SaveToStream(outStream, FileFormat.PDF);
-                    return outStream.ToArray();
-                }
+
+                signer.SetPageNumber(location.PageNumber);
+                signer.SetPageRect(signatureRect);
+                X509CertificateParser parser = new X509CertificateParser();
+                var bcCert = parser.ReadCertificate(signingCert.RawData);
+                var chain = new IX509Certificate[] {
+            new iText.Bouncycastle.X509.X509CertificateBC(bcCert)
+        };
+
+                IExternalSignature externalSignature = new X509Certificate2Signature(signingCert, "SHA-256");
+
+                signer.SignDetached(externalSignature, chain, null, null, null, 0, PdfSigner.CryptoStandard.CMS);
+
+                return msOutput.ToArray();
             }
         }
         public async Task<string> GetBlankInvoicePreviewAsync(int templateId, int companyId, string rootPath)
@@ -486,6 +456,31 @@ namespace EIMS.Infrastructure.Service
             args.AddParam("IsDraft", "", isDraft ? "true" : "false");
             return args;
         }
+        private TextLocation FindText(byte[] pdfBytes, string searchText)
+        {
+            using (var ms = new MemoryStream(pdfBytes))
+            using (var reader = new PdfReader(ms))
+            using (var pdfDoc = new iText.Kernel.Pdf.PdfDocument(reader))
+            {
+                for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
+                {
+                    var strategy = new RegexBasedLocationExtractionStrategy(searchText);
+                    PdfCanvasProcessor processor = new PdfCanvasProcessor(strategy);
+                    processor.ProcessPageContent(pdfDoc.GetPage(i));
+
+                    var occurrences = strategy.GetResultantLocations();
+                    if (occurrences.Count > 0)
+                    {
+                        return new TextLocation
+                        {
+                            PageNumber = i,
+                            Rect = occurrences.First().GetRectangle()
+                        };
+                    }
+                }
+            }
+            return null;
+        }
         public string TransformXmlToHtml(string xmlContent, string xsltPath, XsltArgumentList? args = null)
         {
             if (!File.Exists(xsltPath))
@@ -523,18 +518,6 @@ namespace EIMS.Infrastructure.Service
                     return stringWriter.ToString();
                 }
             }
-        }
-
-        private string GetCommonName(string subject)
-        {
-            if (string.IsNullOrEmpty(subject)) return null;
-            var parts = subject.Split(',');
-            foreach (var part in parts)
-            {
-                if (part.Trim().StartsWith("CN="))
-                    return part.Trim().Substring(3);
-            }
-            return subject;
         }
         public string MergeXmlToHtml(string htmlTemplate, string xmlContent)
         {
