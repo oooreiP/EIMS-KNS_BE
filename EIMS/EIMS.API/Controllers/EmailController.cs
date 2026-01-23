@@ -1,5 +1,7 @@
 ﻿using EIMS.Application.Features.Emails.Commands;
 using EIMS.Application.Features.Emails.Queries;
+using EIMS.Application.Features.Minutes.Queries;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -12,10 +14,11 @@ namespace EIMS.API.Controllers
     public class EmailController : ControllerBase
     {
         private readonly IMediator _mediator;
-
-        public EmailController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public EmailController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
+            _env = env;
         }
 
         /// <summary>
@@ -38,6 +41,21 @@ namespace EIMS.API.Controllers
                 sentAt = DateTime.UtcNow
             });
         }
+        [HttpGet("preview-minutes-template")]
+        public async Task<IActionResult> PreviewMinutesTemplate(MinutesType type)
+        {
+            var query = new PreviewMinutesTemplateQuery() { Type = type, RootPath = _env.ContentRootPath };
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+
+            return File(
+                result.Value.FileContent,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                result.Value.FileName
+            );
+        }
         [HttpPost("{invoiceId}/send-minutes")]
         public async Task<IActionResult> SendMinutes(int invoiceId, [FromBody] SendInvoiceMinutesCommand command)
         {
@@ -48,6 +66,7 @@ namespace EIMS.API.Controllers
         [HttpPost("preview-minutes")]
         public async Task<IActionResult> PreviewMinutes([FromBody] PreviewInvoiceMinutesQuery query)
         {
+
             var result = await _mediator.Send(query);
 
             if (result.IsFailed)
