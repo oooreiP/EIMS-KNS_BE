@@ -20,6 +20,7 @@ using EIMS.API.Extensions;
 using EIMS.Application.Features.Invoices.Commands.ViewInvoices;
 using FluentResults;
 using EIMS.Application.Commons.Models;
+using EIMS.Application.Features.Invoices.Commands.DeleteInvoice;
 namespace EIMS.API.Controllers
 {
     [Route("api/[controller]")]
@@ -67,6 +68,22 @@ namespace EIMS.API.Controllers
             }
 
             return Content(result.Value, "text/html", Encoding.UTF8);
+        }
+        // DELETE api/invoices/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInvoice(int id)
+        {
+            var command = new DeleteInvoiceCommand(id);
+            var result = await _mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                // Trả về 204 No Content (chuẩn cho Delete thành công) hoặc 200 OK kèm message
+                return Ok(new { message = "Đã xóa hóa đơn nháp thành công." });
+            }
+
+            // Trả về 400 Bad Request kèm lý do (VD: Hóa đơn đã ký không được xóa)
+            return BadRequest(result);
         }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] GetAllInvoicesQuery query)

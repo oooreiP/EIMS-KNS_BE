@@ -52,14 +52,6 @@ namespace EIMS.API.Controllers
                 return NotFound(result.Errors);
             return Content(result.Value, "text/html", Encoding.UTF8);
         }
-        // POST: api/email-templates
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateEmailTemplateCommand command)
-        {
-            var result = await _mediator.Send(command);
-            if (result.IsFailed) return BadRequest(result.Errors);
-            return Ok(new { id = result.Value, message = "Tạo mẫu email thành công" });
-        }
 
         // PUT: api/email-templates/5
         // PUT: api/email-templates/5
@@ -71,15 +63,6 @@ namespace EIMS.API.Controllers
             var result = await _mediator.Send(command);
             if (result.IsFailed) return BadRequest(result.Errors);
             return Ok(new { message = "Cập nhật thành công" });
-        }
-
-        // DELETE: api/email-templates/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var result = await _mediator.Send(new DeleteEmailTemplateCommand { Id = id });
-            if (result.IsFailed) return BadRequest(result.Errors);
-            return Ok(new { message = "Xóa thành công" });
         }
     }
 }
