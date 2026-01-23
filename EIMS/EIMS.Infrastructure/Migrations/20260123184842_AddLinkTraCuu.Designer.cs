@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260123184842_AddLinkTraCuu")]
+    partial class AddLinkTraCuu
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -109,7 +112,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 1,
                             CategoryType = "Goods",
                             Code = "HH",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1868),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8320),
                             Description = "Mặt hàng vật lý chịu thuế GTGT 10%",
                             IsActive = true,
                             IsTaxable = true,
@@ -121,7 +124,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 2,
                             CategoryType = "Service",
                             Code = "DV",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1876),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8330),
                             Description = "Dịch vụ lưu trữ, cho thuê máy chủ",
                             IsActive = true,
                             IsTaxable = true,
@@ -133,7 +136,7 @@ namespace EIMS.Infrastructure.Migrations
                             CategoryID = 3,
                             CategoryType = "Software",
                             Code = "SW",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1879),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8333),
                             Description = "Sản phẩm phần mềm và bản quyền",
                             IsActive = true,
                             IsTaxable = false,
@@ -319,7 +322,7 @@ namespace EIMS.Infrastructure.Migrations
                             EmailTemplateID = 1,
                             BodyContent = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <style>\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n        .info-label { font-weight: bold; color: #555555; width: 40%; }\r\n        .info-value { text-align: right; color: #333333; }\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }\r\n        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }\r\n        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n        .attachment-list li { margin-bottom: 8px; }\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class='email-container'>\r\n        <div class='email-content'>\r\n            <div class='email-header'>\r\n                <h1>Hóa Đơn Điện Tử</h1>\r\n            </div>\r\n\r\n            <div class='email-body'>\r\n                <p><strong>Xin chào {{CustomerName}},</strong></p>\r\n                <p>{{Message}}</p>\r\n                \r\n                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>\r\n\r\n                <table class='info-table'>\r\n                    <tr>\r\n                        <td class='info-label'>Số hóa đơn:</td>\r\n                        <td class='info-value'>#{{InvoiceNumber}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ký hiệu (Serial):</td>\r\n                        <td class='info-value'>{{Serial}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ngày phát hành:</td>\r\n                        <td class='info-value'>{{IssuedDate}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Tổng thanh toán:</td>\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>\r\n                    </tr>\r\n                </table>\r\n\r\n                <div class='lookup-box'>\r\n                    <span>Mã tra cứu hóa đơn</span>\r\n                    <span class='lookup-code'>{{LookupCode}}</span>\r\n                    <div style='margin-top:10px;'>\r\n                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>\r\n                    </div>\r\n                </div>\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n                <ul class='attachment-list'>\r\n                    {{AttachmentList}}\r\n                </ul>\r\n\r\n                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>\r\n                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>\r\n            </div>\r\n\r\n            <div class='email-footer'>\r\n                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>",
                             Category = "invoice",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6826),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5101),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "vi",
@@ -331,14 +334,14 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             EmailTemplateID = 2,
-                            BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>We are pleased to inform you that your e-invoice has been issued:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p><strong>Lookup code:</strong> {{LookupCode}}</p>\r\n                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>\r\n                <p>📂 <strong>Attachments:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>\r\n            </div>",
+                            BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>We are pleased to inform you that your e-invoice has been issued:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p>📂 <strong>Attachments:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>\r\n            </div>",
                             Category = "invoice",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6831),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5107),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "en",
                             Name = "Standard Invoice Email (English)",
-                            OriginalBodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>We are pleased to inform you that your e-invoice has been issued:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p><strong>Lookup code:</strong> {{LookupCode}}</p>\r\n                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>\r\n                <p>📂 <strong>Attachments:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>\r\n            </div>",
+                            OriginalBodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>\r\n                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>\r\n                <p>We are pleased to inform you that your e-invoice has been issued:</p>\r\n                <table style='width:100%; margin:15px 0;'>\r\n                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>\r\n                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>\r\n                </table>\r\n                <p>📂 <strong>Attachments:</strong></p>\r\n                <ul>{{AttachmentList}}</ul>\r\n                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>\r\n            </div>",
                             Subject = "🧾 [Invoice] #{{InvoiceNumber}} - Issued Notification",
                             TemplateCode = "INVOICE_SEND"
                         },
@@ -347,7 +350,7 @@ namespace EIMS.Infrastructure.Migrations
                             EmailTemplateID = 3,
                             BodyContent = "<div style='font-family:Arial, sans-serif; border: 2px solid #dc3545; padding: 20px; max-width: 600px; margin: 0 auto;'>\r\n                <h2 style='color:#dc3545;'>⚠️ Thông báo Nhắc thanh toán</h2>\r\n                <p>Kính gửi {{CustomerName}},</p>\r\n                <div style='background:#fff3cd; color:#856404; padding:10px; margin:10px 0;'>\r\n                    <strong>Lời nhắn:</strong> {{Message}}\r\n                </div>\r\n                <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>\r\n                <ul>{{AttachmentList}}</ul>\r\n            </div>",
                             Category = "payment",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6834),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5109),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "vi",
@@ -359,14 +362,14 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             EmailTemplateID = 4,
-                            BodyContent = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <style>\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n        .info-label { font-weight: bold; color: #555555; width: 40%; }\r\n        .info-value { text-align: right; color: #333333; }\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }\r\n        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }\r\n        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n        .attachment-list li { margin-bottom: 8px; }\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class='email-container'>\r\n        <div class='email-content'>\r\n            <div class='email-header'>\r\n                <h1>Hóa Đơn Điện Tử</h1>\r\n            </div>\r\n\r\n            <div class='email-body'>\r\n                <p><strong>Xin chào {{CustomerName}},</strong></p>\r\n                <p>{{Message}}</p>\r\n                \r\n                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>\r\n\r\n                <table class='info-table'>\r\n                    <tr>\r\n                        <td class='info-label'>Số hóa đơn:</td>\r\n                        <td class='info-value'>#{{InvoiceNumber}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ký hiệu (Serial):</td>\r\n                        <td class='info-value'>{{Serial}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ngày phát hành:</td>\r\n                        <td class='info-value'>{{IssuedDate}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Tổng thanh toán:</td>\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>\r\n                    </tr>\r\n                </table>\r\n\r\n                <div class='lookup-box'>\r\n                    <span>Mã tra cứu hóa đơn</span>\r\n                    <span class='lookup-code'>{{LookupCode}}</span>\r\n                    <div style='margin-top:10px;'>\r\n                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>\r\n                    </div>\r\n                </div>\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n                <ul class='attachment-list'>\r\n                    {{AttachmentList}}\r\n                </ul>\r\n\r\n                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>\r\n                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>\r\n            </div>\r\n\r\n            <div class='email-footer'>\r\n                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>",
+                            BodyContent = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <style>\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n        .info-label { font-weight: bold; color: #555555; width: 40%; }\r\n        .info-value { text-align: right; color: #333333; }\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }\r\n        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }\r\n        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n        .attachment-list li { margin-bottom: 8px; }\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class='email-container'>\r\n        <div class='email-content'>\r\n            <div class='email-header'>\r\n                <h1>Hóa Đơn Điện Tử</h1>\r\n            </div>\r\n\r\n            <div class='email-body'>\r\n                <p><strong>Xin chào {{CustomerName}},</strong></p>\r\n                <p>{{Message}}</p>\r\n                \r\n                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>\r\n\r\n                <table class='info-table'>\r\n                    <tr>\r\n                        <td class='info-label'>Số hóa đơn:</td>\r\n                        <td class='info-value'>#{{InvoiceNumber}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ký hiệu (Serial):</td>\r\n                        <td class='info-value'>{{Serial}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ngày phát hành:</td>\r\n                        <td class='info-value'>{{IssuedDate}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Tổng thanh toán:</td>\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>\r\n                    </tr>\r\n                </table>\r\n\r\n                <div class='lookup-box'>\r\n                    <span>Mã tra cứu hóa đơn</span>\r\n                    <span class='lookup-code'>{{LookupCode}}</span>\r\n                </div>\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n                <ul class='attachment-list'>\r\n                    {{AttachmentList}}\r\n                </ul>\r\n\r\n                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>\r\n                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>\r\n            </div>\r\n\r\n            <div class='email-footer'>\r\n                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>",
                             Category = "invoice",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6836),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5111),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "vi",
                             Name = "Mẫu gửi hóa đơn (Giao diện bảng chi tiết)",
-                            OriginalBodyContent = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <style>\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n        .info-label { font-weight: bold; color: #555555; width: 40%; }\r\n        .info-value { text-align: right; color: #333333; }\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }\r\n        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }\r\n        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n        .attachment-list li { margin-bottom: 8px; }\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class='email-container'>\r\n        <div class='email-content'>\r\n            <div class='email-header'>\r\n                <h1>Hóa Đơn Điện Tử</h1>\r\n            </div>\r\n\r\n            <div class='email-body'>\r\n                <p><strong>Xin chào {{CustomerName}},</strong></p>\r\n                <p>{{Message}}</p>\r\n                \r\n                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>\r\n\r\n                <table class='info-table'>\r\n                    <tr>\r\n                        <td class='info-label'>Số hóa đơn:</td>\r\n                        <td class='info-value'>#{{InvoiceNumber}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ký hiệu (Serial):</td>\r\n                        <td class='info-value'>{{Serial}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ngày phát hành:</td>\r\n                        <td class='info-value'>{{IssuedDate}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Tổng thanh toán:</td>\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>\r\n                    </tr>\r\n                </table>\r\n\r\n                <div class='lookup-box'>\r\n                    <span>Mã tra cứu hóa đơn</span>\r\n                    <span class='lookup-code'>{{LookupCode}}</span>\r\n                    <div style='margin-top:10px;'>\r\n                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>\r\n                    </div>\r\n                </div>\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n                <ul class='attachment-list'>\r\n                    {{AttachmentList}}\r\n                </ul>\r\n\r\n                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>\r\n                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>\r\n            </div>\r\n\r\n            <div class='email-footer'>\r\n                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>",
+                            OriginalBodyContent = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <style>\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n        .info-label { font-weight: bold; color: #555555; width: 40%; }\r\n        .info-value { text-align: right; color: #333333; }\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }\r\n        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }\r\n        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n        .attachment-list li { margin-bottom: 8px; }\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class='email-container'>\r\n        <div class='email-content'>\r\n            <div class='email-header'>\r\n                <h1>Hóa Đơn Điện Tử</h1>\r\n            </div>\r\n\r\n            <div class='email-body'>\r\n                <p><strong>Xin chào {{CustomerName}},</strong></p>\r\n                <p>{{Message}}</p>\r\n                \r\n                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>\r\n\r\n                <table class='info-table'>\r\n                    <tr>\r\n                        <td class='info-label'>Số hóa đơn:</td>\r\n                        <td class='info-value'>#{{InvoiceNumber}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ký hiệu (Serial):</td>\r\n                        <td class='info-value'>{{Serial}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Ngày phát hành:</td>\r\n                        <td class='info-value'>{{IssuedDate}}</td>\r\n                    </tr>\r\n                    <tr>\r\n                        <td class='info-label'>Tổng thanh toán:</td>\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>\r\n                    </tr>\r\n                </table>\r\n\r\n                <div class='lookup-box'>\r\n                    <span>Mã tra cứu hóa đơn</span>\r\n                    <span class='lookup-code'>{{LookupCode}}</span>\r\n                </div>\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n                <ul class='attachment-list'>\r\n                    {{AttachmentList}}\r\n                </ul>\r\n\r\n                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>\r\n                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>\r\n            </div>\r\n\r\n            <div class='email-footer'>\r\n                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>",
                             Subject = "🔔 [Hóa đơn] #{{InvoiceNumber}} - Thông báo phát hành",
                             TemplateCode = "INVOICE_SEND_2"
                         },
@@ -375,7 +378,7 @@ namespace EIMS.Infrastructure.Migrations
                             EmailTemplateID = 7,
                             BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>\r\n            <p>Do có sự sai sót về thông tin trên hóa đơn số <strong>#{{InvoiceNumber}}</strong> (Ngày lập: {{IssuedDate}}), chúng tôi đã lập biên bản thu hồi/thay thế hóa đơn này.</p>\r\n            \r\n            <div style='background:#fff3cd; color:#856404; padding:10px; margin:15px 0;'>\r\n                <strong>Lý do sai sót:</strong> {{Reason}}\r\n            </div>\r\n\r\n            <p>Kính đề nghị Quý khách xem xét, <strong>ký xác nhận</strong> vào biên bản đính kèm và phản hồi lại email này để chúng tôi tiến hành xuất hóa đơn thay thế mới.</p>\r\n            \r\n            <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n            <ul>{{AttachmentList}}</ul>\r\n            \r\n            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>\r\n        </div>",
                             Category = "minutes",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6839),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5113),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "vi",
@@ -389,7 +392,7 @@ namespace EIMS.Infrastructure.Migrations
                             EmailTemplateID = 8,
                             BodyContent = "<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>\r\n            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>\r\n            <p>Chúng tôi gửi đến Quý khách biên bản thỏa thuận điều chỉnh cho hóa đơn số <strong>#{{InvoiceNumber}}</strong>.</p>\r\n            \r\n            <div style='background:#e2e3e5; color:#383d41; padding:10px; margin:15px 0;'>\r\n                <strong>Nội dung điều chỉnh:</strong> {{Reason}}\r\n            </div>\r\n\r\n            <p>Quý khách vui lòng kiểm tra, <strong>ký số (hoặc ký tươi)</strong> vào biên bản đính kèm và gửi lại cho chúng tôi.</p>\r\n            \r\n            <ul>{{AttachmentList}}</ul>\r\n            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>\r\n        </div>",
                             Category = "minutes",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6841),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5115),
                             IsActive = true,
                             IsSystemTemplate = true,
                             LanguageCode = "vi",
@@ -403,7 +406,7 @@ namespace EIMS.Infrastructure.Migrations
                             EmailTemplateID = 9,
                             BodyContent = "<!DOCTYPE html>\r\n\r\n<html>\r\n\r\n<head>\r\n\r\n    <style>\r\n\r\n        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }\r\n\r\n        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }\r\n\r\n        .email-header { background-color: #28a745; padding: 30px; text-align: center; color: #ffffff; } /* Màu xanh lá cho Statement khác với Invoice */\r\n\r\n        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }\r\n\r\n        .email-body { padding: 30px; color: #333333; line-height: 1.6; }\r\n\r\n        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\r\n\r\n        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }\r\n\r\n        .info-label { font-weight: bold; color: #555555; width: 50%; }\r\n\r\n        .info-value { text-align: right; color: #333333; }\r\n\r\n        .highlight-amount { color: #D63384; font-weight: bold; font-size: 20px; }\r\n\r\n        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }\r\n\r\n        .attachment-list { list-style: none; padding: 0; margin: 0; }\r\n\r\n        .attachment-list li { margin-bottom: 8px; }\r\n\r\n        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }\r\n\r\n        .note-text { font-size: 13px; font-style: italic; color: #666; margin-top: 10px; }\r\n\r\n    </style>\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n    <div class='email-container'>\r\n\r\n        <div class='email-content'>\r\n\r\n            <div class='email-header'>\r\n\r\n                <h1>Thông Báo Cước Dịch Vụ</h1>\r\n\r\n            </div>\r\n\r\n\r\n\r\n            <div class='email-body'>\r\n\r\n                <p><strong>Kính gửi Quý khách hàng {{CustomerName}},</strong></p>\r\n\r\n                \r\n\r\n                <p><strong>{{CompanyName}}</strong> trân trọng thông báo tổng cước dịch vụ sử dụng trong tháng <strong>{{Month}}/{{Year}}</strong> và nợ tồn đọng (nếu có) như sau:</p>\r\n\r\n\r\n\r\n                <table class='info-table'>\r\n\r\n                    <tr>\r\n\r\n                        <td class='info-label'>Kỳ cước:</td>\r\n\r\n                        <td class='info-value'>Tháng {{Month}}/{{Year}}</td>\r\n\r\n                    </tr>\r\n\r\n                    <tr>\r\n\r\n                        <td class='info-label'>Hạn thanh toán:</td>\r\n\r\n                        <td class='info-value'><strong>{{DueDate}}</strong></td>\r\n\r\n                    </tr>\r\n\r\n                    <tr>\r\n\r\n                        <td class='info-label'>TỔNG TIỀN PHẢI THANH TOÁN:</td>\r\n\r\n                        <td class='info-value highlight-amount'>{{TotalAmount}} VNĐ</td>\r\n\r\n                    </tr>\r\n\r\n                </table>\r\n\r\n\r\n\r\n                <p>Quý khách vui lòng kiểm tra file <strong>Bảng kê chi tiết</strong> (đính kèm) và sắp xếp thanh toán đúng hạn để dịch vụ không bị gián đoạn.</p>\r\n\r\n                \r\n\r\n                <p class='note-text'>(Thông tin tài khoản ngân hàng xem chi tiết trong file đính kèm).</p>\r\n\r\n\r\n\r\n                <p>📂 <strong>Tài liệu đính kèm:</strong></p>\r\n\r\n                <ul class='attachment-list'>\r\n\r\n                     {{AttachmentList}}\r\n\r\n                </ul>\r\n\r\n\r\n\r\n                <p style='margin-top: 30px;'>Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ.</p>\r\n\r\n                <p>Trân trọng,<br><strong>Phòng Kế toán {{CompanyName}}</strong></p>\r\n\r\n            </div>\r\n\r\n\r\n\r\n            <div class='email-footer'>\r\n\r\n                <p>&copy; {{Year}} {{CompanyName}}. All rights reserved.</p>\r\n\r\n                <p>Email này được gửi tự động, vui lòng không trả lời.</p>\r\n\r\n            </div>\r\n\r\n        </div>\r\n\r\n    </div>\r\n\r\n</body>\r\n\r\n</html>",
                             Category = "payment",
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(6844),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(5118),
                             IsActive = true,
                             IsSystemTemplate = false,
                             LanguageCode = "vi",
@@ -1333,62 +1336,6 @@ namespace EIMS.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.MinuteInvoice", b =>
-                {
-                    b.Property<int>("MinutesInvoiceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MinutesInvoiceId"));
-
-                    b.Property<DateTime?>("BuyerSignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("InvoiceId")
-                        .IsRequired()
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsBuyerSigned")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSellerSigned")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MinuteCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("MinutesType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("SellerSignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MinutesInvoiceId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.ToTable("MinuteInvoices");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.Notification", b =>
                 {
                     b.Property<int>("NotificationID")
@@ -1675,7 +1622,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 23000m,
                             CategoryID = 1,
                             Code = "HH0001",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1962),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8382),
                             Description = "Xăng RON95 chịu thuế GTGT 10%",
                             IsActive = true,
                             Name = "Xăng RON95",
@@ -1688,7 +1635,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 500000m,
                             CategoryID = 2,
                             Code = "DV001",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1966),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8387),
                             Description = "Dịch vụ hosting thuế suất 8%",
                             IsActive = true,
                             Name = "Dịch vụ cho thuê máy chủ (Hosting)",
@@ -1701,7 +1648,7 @@ namespace EIMS.Infrastructure.Migrations
                             BasePrice = 10000000m,
                             CategoryID = 3,
                             Code = "SW001",
-                            CreatedDate = new DateTime(2026, 1, 23, 19, 48, 7, 920, DateTimeKind.Utc).AddTicks(1969),
+                            CreatedDate = new DateTime(2026, 1, 23, 18, 48, 40, 709, DateTimeKind.Utc).AddTicks(8390),
                             Description = "Phần mềm không chịu thuế GTGT",
                             IsActive = true,
                             Name = "Phần mềm kế toán bản quyền",
@@ -2899,12 +2846,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 1,
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 74, DateTimeKind.Utc).AddTicks(2640),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 40, 863, DateTimeKind.Utc).AddTicks(6567),
                             Email = "admin@eims.local",
                             FullName = "Admin User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$bQsDV79SFDM4lb6lyBoZVukQrja.x1tvR5owPLbpVi11q97nTtwby",
+                            PasswordHash = "$2a$11$mj1gleiOEY8hL7LB170zh.I8WvolcLH0k6Xuk8nrMhZU4Ty9EzI1O",
                             PhoneNumber = "0101010101",
                             RoleID = 1,
                             Status = 2
@@ -2912,12 +2859,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 2,
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 227, DateTimeKind.Utc).AddTicks(3561),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 17, DateTimeKind.Utc).AddTicks(3809),
                             Email = "accountant@eims.local",
                             FullName = "Accountant User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$jhexrJObLtmQVzmVSGvuG.D38fV4s/PAqsI2gGKUQL8iqdWKuM0di",
+                            PasswordHash = "$2a$11$fmvUkGgeFiVjyCTTr2vBdelS273PTL/PZe9SaGWWGZWykG1TEQSMu",
                             PhoneNumber = "0202020202",
                             RoleID = 2,
                             Status = 2
@@ -2925,12 +2872,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 3,
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 381, DateTimeKind.Utc).AddTicks(6144),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 170, DateTimeKind.Utc).AddTicks(6324),
                             Email = "sale@eims.local",
                             FullName = "Sales User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$OMyR10Ckoxc.whJz03gy1ukQi7NoLLZZk/4p1kOZQf28muwjOawOW",
+                            PasswordHash = "$2a$11$nq.nwqPzs4LVFDfNATXumuWc24mIOJfcu8DBOwxfCD26DIm3bjl1S",
                             PhoneNumber = "0303030303",
                             RoleID = 3,
                             Status = 2
@@ -2938,12 +2885,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 4,
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 534, DateTimeKind.Utc).AddTicks(6446),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 323, DateTimeKind.Utc).AddTicks(6681),
                             Email = "hod@eims.local",
                             FullName = "Head Dept User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$4egIZNVCEbqDXDQEnYhbSuNc8IQxz8CY4U6gctO9k9uOF1JJ5jtn.",
+                            PasswordHash = "$2a$11$5YKbdwOvOF1xOjB03MQKd.3rMb9k9lhFxfslvMXzC.MY7Hggg3u2a",
                             PhoneNumber = "0404040404",
                             RoleID = 4,
                             Status = 2
@@ -2951,12 +2898,12 @@ namespace EIMS.Infrastructure.Migrations
                         new
                         {
                             UserID = 5,
-                            CreatedAt = new DateTime(2026, 1, 23, 19, 48, 8, 691, DateTimeKind.Utc).AddTicks(5113),
+                            CreatedAt = new DateTime(2026, 1, 23, 18, 48, 41, 477, DateTimeKind.Utc).AddTicks(3311),
                             Email = "customer@eims.local",
                             FullName = "Customer User",
                             IsActive = true,
                             IsPasswordChangeRequired = false,
-                            PasswordHash = "$2a$11$pQ55II7yll.YVXFQk.ZDA.k8XExjggNqffGnfzMesI0RY3XHwpZP2",
+                            PasswordHash = "$2a$11$oDuB7sqpBa1ddTlscS.Uj.WpcArN5CndrHM1fscS32NceL51ukNbW",
                             PhoneNumber = "0505050505",
                             RoleID = 5,
                             Status = 2
@@ -3259,25 +3206,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("TemplateType");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.MinuteInvoice", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.User", "Creator")
-                        .WithMany("CreatedMinutes")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
-                        .WithMany("MinuteInvoices")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("Invoice");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.NotificationStatus", "NotificationStatus")
@@ -3436,8 +3364,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Navigation("InvoiceItems");
 
-                    b.Navigation("MinuteInvoices");
-
                     b.Navigation("OriginRequest");
 
                     b.Navigation("Payments");
@@ -3556,8 +3482,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("CreatedInvoices");
-
-                    b.Navigation("CreatedMinutes");
 
                     b.Navigation("CreatedStatements");
 

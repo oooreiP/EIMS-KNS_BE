@@ -325,16 +325,16 @@ namespace EIMS.Infrastructure.Persistence
                 new Prefix { PrefixID = 2, PrefixName = "Hóa đơn điện tử bán hàng" },
                 new Prefix { PrefixID = 3, PrefixName = "Hóa đơn điện tử bán tài sản công" },
                 new Prefix { PrefixID = 4, PrefixName = "Hóa đơn điện tử bán hàng dự trữ quốc gia" },
-                new Prefix { PrefixID = 5, PrefixName = "Hóa đơn điện tử khác là tem điện tử, vé điện tử, thẻ điện tử, phiếu thu điện tử hoặc các chứng từ điện tử có tên gọi khác nhưng có nội dung của hóa đơn điện tử theo quy định tại Nghị định số 123/2020/NĐ-CP" },
-                new Prefix { PrefixID = 6, PrefixName = "Chứng từ điện tử được sử dụng và quản lý như hóa đơn gồm phiếu xuất kho kiêm vận chuyển nội bộ điện tử, phiếu xuất kho hàng gửi bán đại lý điện tử" },
+                new Prefix { PrefixID = 5, PrefixName = "Hóa đơn điện tử khác là tem điện tử, vé điện tử" },
+                new Prefix { PrefixID = 6, PrefixName = "Chứng từ điện tử được sử dụng và quản lý" },
                 new Prefix { PrefixID = 7, PrefixName = "Hóa đơn thương mại điện tử" },
                 new Prefix { PrefixID = 8, PrefixName = "Hóa đơn giá trị gia tăng tích hợp biên lai thu thuế, phí, lệ phí" },
                 new Prefix { PrefixID = 9, PrefixName = "Hóa đơn bán hàng tích hợp biên lai thu thuế, phí, lệ phí" }
             );
             modelBuilder.Entity<InvoiceType>().HasData(
                 new InvoiceType { InvoiceTypeID = -1, Symbol = "0", TypeName = "Hóa đơn hệ thống không có ký hiệu" },
-                new InvoiceType { InvoiceTypeID = 1, Symbol = "T", TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân kinh doanh đăng ký sử dụng" },
-                new InvoiceType { InvoiceTypeID = 2, Symbol = "D", TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia hoặc hóa đơn điện tử đặc thù không nhất thiết phải có một số tiêu thức do các doanh nghiệp, tổ chức đăng ký sử dụng" },
+                new InvoiceType { InvoiceTypeID = 1, Symbol = "T", TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân" },
+                new InvoiceType { InvoiceTypeID = 2, Symbol = "D", TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia" },
                 new InvoiceType { InvoiceTypeID = 3, Symbol = "L", TypeName = "Hóa đơn Cơ quan thuế cấp theo từng lần phát sinh" },
                 new InvoiceType { InvoiceTypeID = 4, Symbol = "M", TypeName = "Hóa đơn khởi tạo từ máy tính tiền" },
                 new InvoiceType { InvoiceTypeID = 5, Symbol = "N", TypeName = "Phiếu xuất kho kiêm vận chuyển nội bộ" },
@@ -443,7 +443,7 @@ namespace EIMS.Infrastructure.Persistence
             modelBuilder.Entity<StatementStatus>().HasData(
                 new StatementStatus { StatusID = 1, StatusName = "Draft" },          // Editing phase, not visible to client
                 new StatementStatus { StatusID = 2, StatusName = "Published" },      // Finalized/Approved, ready to send (Locked)
-                new StatementStatus { StatusID = 3, StatusName = "Sent" },           // Emailed/Delivered to client
+                new StatementStatus { StatusID = 3, StatusName = "Wait for payment" },           // Emailed/Delivered to client
                 new StatementStatus { StatusID = 4, StatusName = "Partially Paid" }, // Client paid 50%, 50% remaining
                 new StatementStatus { StatusID = 5, StatusName = "Paid" },           // Fully settled
                 new StatementStatus { StatusID = 6, StatusName = "Cancelled" },           // Cancelled (Mistake/Invalid) - Never delete!
@@ -590,6 +590,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
@@ -666,6 +669,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
@@ -704,6 +710,8 @@ namespace EIMS.Infrastructure.Persistence
                     <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
                     <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
                 </table>
+                <p><strong>Lookup code:</strong> {{LookupCode}}</p>
+                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>
                 <p>📂 <strong>Attachments:</strong></p>
                 <ul>{{AttachmentList}}</ul>
                 <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
@@ -716,6 +724,8 @@ namespace EIMS.Infrastructure.Persistence
                     <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
                     <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
                 </table>
+                <p><strong>Lookup code:</strong> {{LookupCode}}</p>
+                <p><a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>View invoice</a></p>
                 <p>📂 <strong>Attachments:</strong></p>
                 <ul>{{AttachmentList}}</ul>
                 <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
@@ -817,6 +827,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
@@ -893,6 +906,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>

@@ -3,6 +3,7 @@ using System;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EIMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260123194809_ShortenSeedData")]
+    partial class ShortenSeedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1331,62 +1334,6 @@ namespace EIMS.Infrastructure.Migrations
                             Symbol = "X",
                             TypeName = "Hóa đơn thương mại điện tử"
                         });
-                });
-
-            modelBuilder.Entity("EIMS.Domain.Entities.MinuteInvoice", b =>
-                {
-                    b.Property<int>("MinutesInvoiceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MinutesInvoiceId"));
-
-                    b.Property<DateTime?>("BuyerSignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("InvoiceId")
-                        .IsRequired()
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsBuyerSigned")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSellerSigned")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MinuteCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("MinutesType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("SellerSignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MinutesInvoiceId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.ToTable("MinuteInvoices");
                 });
 
             modelBuilder.Entity("EIMS.Domain.Entities.Notification", b =>
@@ -3259,25 +3206,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("TemplateType");
                 });
 
-            modelBuilder.Entity("EIMS.Domain.Entities.MinuteInvoice", b =>
-                {
-                    b.HasOne("EIMS.Domain.Entities.User", "Creator")
-                        .WithMany("CreatedMinutes")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EIMS.Domain.Entities.Invoice", "Invoice")
-                        .WithMany("MinuteInvoices")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("Invoice");
-                });
-
             modelBuilder.Entity("EIMS.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("EIMS.Domain.Entities.NotificationStatus", "NotificationStatus")
@@ -3436,8 +3364,6 @@ namespace EIMS.Infrastructure.Migrations
 
                     b.Navigation("InvoiceItems");
 
-                    b.Navigation("MinuteInvoices");
-
                     b.Navigation("OriginRequest");
 
                     b.Navigation("Payments");
@@ -3556,8 +3482,6 @@ namespace EIMS.Infrastructure.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("CreatedInvoices");
-
-                    b.Navigation("CreatedMinutes");
 
                     b.Navigation("CreatedStatements");
 

@@ -4,49 +4,55 @@ using EIMS.Application.Features.InvoiceStatements.Queries;
 using FluentResults;
 using MediatR;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.InvoiceStatements.Commands
 {
-    public class SendStatementEmailCommandHandler : IRequestHandler<SendStatementEmailCommand, Result>
+    public class SendDebtReminderEmailCommandHandler : IRequestHandler<SendDebtReminderEmailCommand, Result>
     {
         private readonly IUnitOfWork _uow;
         private readonly IEmailSenderService _emailSender;
         private readonly ISender _sender;
 
-        public SendStatementEmailCommandHandler(IUnitOfWork uow, IEmailSenderService emailSender, ISender sender)
+        public SendDebtReminderEmailCommandHandler(IUnitOfWork uow, IEmailSenderService emailSender, ISender sender)
         {
             _uow = uow;
             _emailSender = emailSender;
             _sender = sender;
         }
 
-        public async Task<Result> Handle(SendStatementEmailCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(SendDebtReminderEmailCommand request, CancellationToken cancellationToken)
         {
             var statement = await _uow.InvoiceStatementRepository.GetByIdWithInvoicesAsync(request.StatementId);
             if (statement == null)
                 return Result.Fail($"Statement with id {request.StatementId} not found.");
 
-            var toEmail = !string.IsNullOrWhiteSpace(request.RecipientEmail)
-                ? request.RecipientEmail
-                : statement.Customer?.ContactEmail;
+            if (statement.StatusID != 3 && statement.StatusID != 4)
+                return Result.Fail("Statement must be in 'Wait for payment' or 'Partially Paid' status to send a debt reminder.");
 
+            if (statement.PaidAmount >= statement.TotalAmount)
+                return Result.Fail("Statement is already fully paid.");
+
+            var toEmail = statement.Customer?.ContactEmail;
             if (string.IsNullOrWhiteSpace(toEmail))
                 return Result.Fail("No recipient email found for this statement.");
 
+            var balanceDue = statement.TotalAmount - statement.PaidAmount;
+
             var subject = string.IsNullOrWhiteSpace(request.Subject)
-                ? $"Statement {statement.StatementCode}"
+                ? $"Nhắc nợ: Bảng kê công nợ {statement.StatementCode}"
                 : request.Subject;
 
             var message = string.IsNullOrWhiteSpace(request.Message)
                 ? $@"Kính gửi Quý khách,
 
-Vui lòng xem đính kèm bảng kê công nợ {statement.StatementCode} để Quý khách đối chiếu.
-Nếu cần hỗ trợ thêm, vui lòng liên hệ bộ phận chăm sóc khách hàng của chúng tôi.
+Chúng tôi xin thông báo bảng kê công nợ {statement.StatementCode} đang chờ thanh toán.
+Số tiền còn lại: {balanceDue:N0}đ.
+Hạn thanh toán: {statement.DueDate:dd/MM/yyyy}.
 
-Trân trọng cảm ơn Quý khách.
+Vui lòng xem bảng kê đính kèm để đối chiếu và thực hiện thanh toán.
+Nếu cần hỗ trợ thêm, xin liên hệ bộ phận chăm sóc khách hàng.
 
 Trân trọng,
 EIMS Support Team"
@@ -56,9 +62,7 @@ EIMS Support Team"
             {
                 ToEmail = toEmail,
                 Subject = subject,
-                EmailBody = message,
-                CcEmails = request.CcEmails ?? new(),
-                BccEmails = request.BccEmails ?? new()
+                EmailBody = message
             };
 
             if (request.IncludePdf)
@@ -79,11 +83,6 @@ EIMS Support Team"
             if (sendResult.IsFailed)
                 return sendResult;
 
-            if (statement.StatusID != 1)
-                return Result.Fail(new Error("Statement must be draft to be wait for payment"));                                          
-            statement.StatusID = 3; // Sent
-            await _uow.InvoiceStatementRepository.UpdateAsync(statement);
-            await _uow.SaveChanges();
             return Result.Ok();
         }
     }
