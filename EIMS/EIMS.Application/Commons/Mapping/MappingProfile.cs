@@ -36,9 +36,15 @@ namespace EIMS.Application.Common.Mapping
                         .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src =>
                             src.PaymentStatus != null ? src.PaymentStatus.StatusName : "Unknown"))
                         // Ensure PaidAmount is calculated from the Payments collection (which we now include)
-                        .ForMember(dest => dest.PaidAmount, opt => opt.MapFrom(src => src.PaidAmount))
+                        .ForMember(dest => dest.PaidAmount, opt => opt.MapFrom(src =>
+                            src.Payments != null && src.Payments.Any()
+                                ? src.Payments.Sum(p => p.AmountPaid)
+                                : src.PaidAmount))
                         // Ensure RemainingAmount is calculated
-                        .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.RemainingAmount))
+                        .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src =>
+                            src.Payments != null && src.Payments.Any()
+                                ? src.TotalAmount - src.Payments.Sum(p => p.AmountPaid)
+                                : src.RemainingAmount))
                         .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
         src.InvoiceCustomerName ?? (src.Customer != null ? src.Customer.CustomerName : "")))
                         .ForMember(dest => dest.OriginalInvoiceSignDate, opt => opt.MapFrom(src => 

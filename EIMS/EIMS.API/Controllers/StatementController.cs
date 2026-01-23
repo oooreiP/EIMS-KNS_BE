@@ -58,6 +58,26 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+
+        [HttpGet("{id}/payments")]
+        public async Task<IActionResult> GetStatementPayments(int id)
+        {
+            var query = new GetStatementPaymentsQuery(id);
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Get Statement Payments Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+
+            return Ok(result.Value);
+        }
         [HttpGet]
         public async Task<IActionResult> GetStatements([FromQuery] GetInvoiceStatementsQuery query)
         {
