@@ -8,8 +8,13 @@ using System.Threading.Tasks;
 
 namespace EIMS.Application.Features.Emails.Commands
 {
-    public class DeleteEmailTemplateCommand : IRequest<Result>
+    public class ResetEmailTemplateCommand : IRequest<Result<bool>>
     {
-        public int Id { get; set; }
+        public int EmailTemplateID { get; set; }
+
+        public ResetEmailTemplateCommand(int id)
+        {
+            EmailTemplateID = id;
+        }
     }
 }

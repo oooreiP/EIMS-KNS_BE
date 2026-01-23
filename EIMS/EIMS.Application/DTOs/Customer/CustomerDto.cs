@@ -9,6 +9,7 @@ namespace EIMS.Application.DTOs.Customer
     public class CustomerDto
     {
         public int CustomerID { get; set; }
+        public int SaleID { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string TaxCode { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;

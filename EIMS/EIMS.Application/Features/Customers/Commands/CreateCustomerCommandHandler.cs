@@ -37,6 +37,7 @@ namespace EIMS.Application.Features.Customers.Commands
                 CustomerName = request.CustomerName,
                 TaxCode = request.TaxCode ?? string.Empty,
                 Address = request.Address,
+                SaleID = request.SaleID,
                 ContactEmail = request.ContactEmail,
                 ContactPerson = request.ContactPerson,
                 ContactPhone = request.ContactPhone,

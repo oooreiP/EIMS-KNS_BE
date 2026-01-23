@@ -391,7 +391,7 @@
       </xsl:if>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
         <tr>
-          <td style="vertical-align: top; width: 50%; padding: 0;">
+          <td style="vertical-align: top; width: 43%; padding: 0;">
             <xsl:if test="$ShowCusTaxCode = 'true'">
               <div>
                 <span style="font-size: 12px;">
@@ -407,7 +407,7 @@
             </xsl:if>
           </td>
 
-          <td style="vertical-align: top; width: 50%; padding-left: 10px;">
+          <td style="vertical-align: top; width: 57%; padding-left: -50px;">
             <xsl:if test="$ShowCusPhone = 'true'">
               <div>
                 <span style="font-size: 12px;">

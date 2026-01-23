@@ -52,6 +52,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<InvoiceRequest> InvoiceRequests { get; set; }
         public DbSet<InvoiceRequestItem> InvoiceRequestItems { get; set; }
         public DbSet<InvoiceRequestStatus> InvoiceRequestStatuses { get; set; }
+        public DbSet<EmailTemplate> EmailTemplate { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.AddInterceptors(_auditableEntityInterceptor);
@@ -606,6 +607,82 @@ namespace EIMS.Infrastructure.Persistence
         </div>
     </div>
 </body>
+</html>",
+            OriginalBodyContent = @"<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+        .info-label { font-weight: bold; color: #555555; width: 40%; }
+        .info-value { text-align: right; color: #333333; }
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }
+        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }
+        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+        .attachment-list li { margin-bottom: 8px; }
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class='email-container'>
+        <div class='email-content'>
+            <div class='email-header'>
+                <h1>Hóa Đơn Điện Tử</h1>
+            </div>
+
+            <div class='email-body'>
+                <p><strong>Xin chào {{CustomerName}},</strong></p>
+                <p>{{Message}}</p>
+                
+                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>
+
+                <table class='info-table'>
+                    <tr>
+                        <td class='info-label'>Số hóa đơn:</td>
+                        <td class='info-value'>#{{InvoiceNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Ký hiệu (Serial):</td>
+                        <td class='info-value'>{{Serial}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Ngày phát hành:</td>
+                        <td class='info-value'>{{IssuedDate}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Tổng thanh toán:</td>
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>
+                    </tr>
+                </table>
+
+                <div class='lookup-box'>
+                    <span>Mã tra cứu hóa đơn</span>
+                    <span class='lookup-code'>{{LookupCode}}</span>
+                </div>
+
+                <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+                <ul class='attachment-list'>
+                    {{AttachmentList}}
+                </ul>
+
+                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>
+                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>
+            </div>
+
+            <div class='email-footer'>
+                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>
+                <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            </div>
+        </div>
+    </div>
+</body>
 </html>"
         },
         new EmailTemplate
@@ -619,6 +696,18 @@ namespace EIMS.Infrastructure.Persistence
             Name = "Standard Invoice Email (English)",
             IsActive = true,
             BodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>
+                <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>
+                <p>We are pleased to inform you that your e-invoice has been issued:</p>
+                <table style='width:100%; margin:15px 0;'>
+                    <tr><td><strong>Invoice No:</strong></td><td>#{{InvoiceNumber}}</td></tr>
+                    <tr><td><strong>Total Amount:</strong></td><td style='color:#D63384; font-weight:bold;'>{{TotalAmount}} VND</td></tr>
+                </table>
+                <p>📂 <strong>Attachments:</strong></p>
+                <ul>{{AttachmentList}}</ul>
+                <p style='color:#777; font-size:12px;'>Best Regards,<br>EIMS Team</p>
+            </div>",
+            OriginalBodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
                 <h2 style='color:#007BFF;'>Hello {{CustomerName}},</h2>
                 <p style='background:#f0f8ff; padding:10px; border-left:4px solid #007BFF; font-style:italic;'>{{Message}}</p>
                 <p>We are pleased to inform you that your e-invoice has been issued:</p>
@@ -649,6 +738,15 @@ namespace EIMS.Infrastructure.Persistence
                 </div>
                 <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>
                 <ul>{{AttachmentList}}</ul>
+            </div>",
+            OriginalBodyContent = @"<div style='font-family:Arial, sans-serif; border: 2px solid #dc3545; padding: 20px; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color:#dc3545;'>⚠️ Thông báo Nhắc thanh toán</h2>
+                <p>Kính gửi {{CustomerName}},</p>
+                <div style='background:#fff3cd; color:#856404; padding:10px; margin:10px 0;'>
+                    <strong>Lời nhắn:</strong> {{Message}}
+                </div>
+                <p>Hóa đơn <strong>#{{InvoiceNumber}}</strong> ({{TotalAmount}} VND) hiện chưa được thanh toán.</p>
+                <ul>{{AttachmentList}}</ul>
             </div>"
         },
         new EmailTemplate
@@ -662,6 +760,82 @@ namespace EIMS.Infrastructure.Persistence
             Name = "Mẫu gửi hóa đơn (Giao diện bảng chi tiết)",
             IsActive = true,
             BodyContent = @"<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .email-header { background-color: #007BFF; padding: 30px; text-align: center; color: #ffffff; }
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+        .info-label { font-weight: bold; color: #555555; width: 40%; }
+        .info-value { text-align: right; color: #333333; }
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 18px; }
+        .lookup-box { background-color: #f8f9fa; border: 2px dashed #007BFF; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0; }
+        .lookup-code { display: block; font-size: 24px; letter-spacing: 2px; font-weight: bold; color: #007BFF; margin-top: 5px; }
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+        .attachment-list li { margin-bottom: 8px; }
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class='email-container'>
+        <div class='email-content'>
+            <div class='email-header'>
+                <h1>Hóa Đơn Điện Tử</h1>
+            </div>
+
+            <div class='email-body'>
+                <p><strong>Xin chào {{CustomerName}},</strong></p>
+                <p>{{Message}}</p>
+                
+                <p>Hệ thống xin thông báo hóa đơn của quý khách đã được phát hành với thông tin chi tiết như sau:</p>
+
+                <table class='info-table'>
+                    <tr>
+                        <td class='info-label'>Số hóa đơn:</td>
+                        <td class='info-value'>#{{InvoiceNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Ký hiệu (Serial):</td>
+                        <td class='info-value'>{{Serial}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Ngày phát hành:</td>
+                        <td class='info-value'>{{IssuedDate}}</td>
+                    </tr>
+                    <tr>
+                        <td class='info-label'>Tổng thanh toán:</td>
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VND</td>
+                    </tr>
+                </table>
+
+                <div class='lookup-box'>
+                    <span>Mã tra cứu hóa đơn</span>
+                    <span class='lookup-code'>{{LookupCode}}</span>
+                </div>
+
+                <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+                <ul class='attachment-list'>
+                    {{AttachmentList}}
+                </ul>
+
+                <p style='margin-top: 30px;'>Nếu quý khách có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>
+                <p>Trân trọng,<br><strong>Đội ngũ EIMS</strong></p>
+            </div>
+
+            <div class='email-footer'>
+                <p>&copy; 2026 EIMS KNS Solutions. All rights reserved.</p>
+                <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>",
+            OriginalBodyContent = @"<!DOCTYPE html>
 <html>
 <head>
     <style>
@@ -762,6 +936,21 @@ namespace EIMS.Infrastructure.Persistence
             <ul>{{AttachmentList}}</ul>
             
             <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
+        </div>",
+        OriginalBodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>
+            <p>Do có sự sai sót về thông tin trên hóa đơn số <strong>#{{InvoiceNumber}}</strong> (Ngày lập: {{IssuedDate}}), chúng tôi đã lập biên bản thu hồi/thay thế hóa đơn này.</p>
+            
+            <div style='background:#fff3cd; color:#856404; padding:10px; margin:15px 0;'>
+                <strong>Lý do sai sót:</strong> {{Reason}}
+            </div>
+
+            <p>Kính đề nghị Quý khách xem xét, <strong>ký xác nhận</strong> vào biên bản đính kèm và phản hồi lại email này để chúng tôi tiến hành xuất hóa đơn thay thế mới.</p>
+            
+            <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+            <ul>{{AttachmentList}}</ul>
+            
+            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
         </div>"
     },
 
@@ -788,9 +977,318 @@ namespace EIMS.Infrastructure.Persistence
             
             <ul>{{AttachmentList}}</ul>
             <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
+        </div>",
+        OriginalBodyContent = @"<div style='font-family:Arial, sans-serif; padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color:#007BFF;'>Kính gửi {{CustomerName}},</h2>
+            <p>Chúng tôi gửi đến Quý khách biên bản thỏa thuận điều chỉnh cho hóa đơn số <strong>#{{InvoiceNumber}}</strong>.</p>
+            
+            <div style='background:#e2e3e5; color:#383d41; padding:10px; margin:15px 0;'>
+                <strong>Nội dung điều chỉnh:</strong> {{Reason}}
+            </div>
+
+            <p>Quý khách vui lòng kiểm tra, <strong>ký số (hoặc ký tươi)</strong> vào biên bản đính kèm và gửi lại cho chúng tôi.</p>
+            
+            <ul>{{AttachmentList}}</ul>
+            <p style='color:#777; font-size:12px;'>Trân trọng,<br><strong>Đội ngũ Kế toán EIMS</strong></p>
         </div>"
-    }
-  );
+    },
+     new EmailTemplate
+
+     {
+
+         EmailTemplateID = 9,
+
+         TemplateCode = "STATEMENT_SEND",
+
+         LanguageCode = "vi",
+
+         Category = "payment",
+
+         Name = "Mẫu gửi bảng kê cước (Tiếng Việt)",
+
+         Subject = "TB Cước Dịch vụ Tháng {{Month}}/{{Year}} - {{CustomerName}}",
+
+         IsActive = true,
+
+         CreatedAt = DateTime.UtcNow,
+
+         BodyContent = @"<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <style>
+
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+
+        .email-header { background-color: #28a745; padding: 30px; text-align: center; color: #ffffff; } /* Màu xanh lá cho Statement khác với Invoice */
+
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+
+        .info-label { font-weight: bold; color: #555555; width: 50%; }
+
+        .info-value { text-align: right; color: #333333; }
+
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 20px; }
+
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+
+        .attachment-list li { margin-bottom: 8px; }
+
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+
+        .note-text { font-size: 13px; font-style: italic; color: #666; margin-top: 10px; }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class='email-container'>
+
+        <div class='email-content'>
+
+            <div class='email-header'>
+
+                <h1>Thông Báo Cước Dịch Vụ</h1>
+
+            </div>
+
+
+
+            <div class='email-body'>
+
+                <p><strong>Kính gửi Quý khách hàng {{CustomerName}},</strong></p>
+
+                
+
+                <p><strong>{{CompanyName}}</strong> trân trọng thông báo tổng cước dịch vụ sử dụng trong tháng <strong>{{Month}}/{{Year}}</strong> và nợ tồn đọng (nếu có) như sau:</p>
+
+
+
+                <table class='info-table'>
+
+                    <tr>
+
+                        <td class='info-label'>Kỳ cước:</td>
+
+                        <td class='info-value'>Tháng {{Month}}/{{Year}}</td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class='info-label'>Hạn thanh toán:</td>
+
+                        <td class='info-value'><strong>{{DueDate}}</strong></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class='info-label'>TỔNG TIỀN PHẢI THANH TOÁN:</td>
+
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VNĐ</td>
+
+                    </tr>
+
+                </table>
+
+
+
+                <p>Quý khách vui lòng kiểm tra file <strong>Bảng kê chi tiết</strong> (đính kèm) và sắp xếp thanh toán đúng hạn để dịch vụ không bị gián đoạn.</p>
+
+                
+
+                <p class='note-text'>(Thông tin tài khoản ngân hàng xem chi tiết trong file đính kèm).</p>
+
+
+
+                <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+
+                <ul class='attachment-list'>
+
+                     {{AttachmentList}}
+
+                </ul>
+
+
+
+                <p style='margin-top: 30px;'>Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ.</p>
+
+                <p>Trân trọng,<br><strong>Phòng Kế toán {{CompanyName}}</strong></p>
+
+            </div>
+
+
+
+            <div class='email-footer'>
+
+                <p>&copy; {{Year}} {{CompanyName}}. All rights reserved.</p>
+
+                <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>",
+
+         OriginalBodyContent = @"<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <style>
+
+        .email-container { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 40px 20px; }
+
+        .email-content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+
+        .email-header { background-color: #28a745; padding: 30px; text-align: center; color: #ffffff; } /* Màu xanh lá cho Statement khác với Invoice */
+
+        .email-header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+
+        .email-body { padding: 30px; color: #333333; line-height: 1.6; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #eeeeee; }
+
+        .info-label { font-weight: bold; color: #555555; width: 50%; }
+
+        .info-value { text-align: right; color: #333333; }
+
+        .highlight-amount { color: #D63384; font-weight: bold; font-size: 20px; }
+
+        .email-footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
+
+        .attachment-list { list-style: none; padding: 0; margin: 0; }
+
+        .attachment-list li { margin-bottom: 8px; }
+
+        .attachment-list a { color: #007BFF; text-decoration: none; font-weight: bold; }
+
+        .note-text { font-size: 13px; font-style: italic; color: #666; margin-top: 10px; }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class='email-container'>
+
+        <div class='email-content'>
+
+            <div class='email-header'>
+
+                <h1>Thông Báo Cước Dịch Vụ</h1>
+
+            </div>
+
+
+
+            <div class='email-body'>
+
+                <p><strong>Kính gửi Quý khách hàng {{CustomerName}},</strong></p>
+
+                
+
+                <p><strong>{{CompanyName}}</strong> trân trọng thông báo tổng cước dịch vụ sử dụng trong tháng <strong>{{Month}}/{{Year}}</strong> và nợ tồn đọng (nếu có) như sau:</p>
+
+
+
+                <table class='info-table'>
+
+                    <tr>
+
+                        <td class='info-label'>Kỳ cước:</td>
+
+                        <td class='info-value'>Tháng {{Month}}/{{Year}}</td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class='info-label'>Hạn thanh toán:</td>
+
+                        <td class='info-value'><strong>{{DueDate}}</strong></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class='info-label'>TỔNG TIỀN PHẢI THANH TOÁN:</td>
+
+                        <td class='info-value highlight-amount'>{{TotalAmount}} VNĐ</td>
+
+                    </tr>
+
+                </table>
+
+
+
+                <p>Quý khách vui lòng kiểm tra file <strong>Bảng kê chi tiết</strong> (đính kèm) và sắp xếp thanh toán đúng hạn để dịch vụ không bị gián đoạn.</p>
+
+                
+
+                <p class='note-text'>(Thông tin tài khoản ngân hàng xem chi tiết trong file đính kèm).</p>
+
+
+
+                <p>📂 <strong>Tài liệu đính kèm:</strong></p>
+
+                <ul class='attachment-list'>
+
+                     {{AttachmentList}}
+
+                </ul>
+
+
+
+                <p style='margin-top: 30px;'>Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ.</p>
+
+                <p>Trân trọng,<br><strong>Phòng Kế toán {{CompanyName}}</strong></p>
+
+            </div>
+
+
+
+            <div class='email-footer'>
+
+                <p>&copy; {{Year}} {{CompanyName}}. All rights reserved.</p>
+
+                <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>"
+
+     });
             modelBuilder.Entity<TaxMessageCode>().HasData(
     // ---- Đăng ký ----
     new TaxMessageCode { Id = 1, MessageCode = "100", MessageName = "Thông điệp gửi tờ khai đăng ký/thay đổi thông tin sử dụng hóa đơn điện tử", Category = "Đăng ký", FlowType = 1 },
