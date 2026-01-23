@@ -113,7 +113,16 @@ namespace EIMS.Application.Common.Mapping
                     src.Invoice != null
                     ? src.Invoice.TotalAmount - src.Invoice.Payments.Sum(p => p.AmountPaid)
                     : 0
-                )); 
+                ));
+            CreateMap<InvoicePayment, InvoicePaymentDetailDTO>()
+             .ForMember(dest => dest.InvoiceCode, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber : null))
+             .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Invoice != null && src.Invoice.Customer != null ? src.Invoice.Customer.CustomerName : "Khách lẻ"))
+             .ForMember(dest => dest.TotalInvoiceAmount, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.TotalAmount : 0))
+             .ForMember(dest => dest.TotalPaidAmount, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.PaidAmount : 0))
+             .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.Invoice != null ? (src.Invoice.TotalAmount - src.Invoice.PaidAmount) : 0))
+
+             // 4. Logic tính trạng thái (Custom Logic)
+             .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => GetInvoiceStatus(src.Invoice)));
             CreateMap<InvoiceStatementDetail, StatementInvoiceDto>()
                   .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber : 0))
                   .ForMember(dest => dest.SignDate, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.SignDate : null))
@@ -172,7 +181,16 @@ namespace EIMS.Application.Common.Mapping
             7 => "Refunded",
             _ => "Unknown"
         };
+        private string GetInvoiceStatus(Invoice? invoice)
+        {
+            if (invoice == null) return "Không xác định";
+            if (invoice.PaidAmount >= invoice.TotalAmount)
+            {
+                return "Hoàn tất";
+            }
 
+            return "Thanh toán một phần";
+        }
         private static string GetPaymentStatus(decimal owed, decimal total)
         {
             if (owed <= 0) return "Paid";
