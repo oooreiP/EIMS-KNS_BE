@@ -68,5 +68,6 @@ namespace EIMS.Domain.Entities
         public virtual ICollection<Invoice> CreatedInvoices { get; set; } = new List<Invoice>();
         [InverseProperty(nameof(Customer.Sale))]
         public virtual ICollection<Customer> ManagedCustomers { get; set; } = new List<Customer>();
+        public ICollection<MinuteInvoice> CreatedMinutes { get; set; } = new List<MinuteInvoice>();
     }
 }
