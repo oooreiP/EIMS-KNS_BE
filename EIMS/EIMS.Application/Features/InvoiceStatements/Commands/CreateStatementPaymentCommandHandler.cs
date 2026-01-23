@@ -56,8 +56,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             if (statement == null)
                 return Result.Fail($"Statement with id {request.StatementId} not found.");
             // invalid statement
-            if (statement.StatusID == 6 || statement.StatusID == 7)
-                return Result.Fail("Cannot add payment to a cancelled or refunded statement.");
+            if (statement.StatusID is not (3 or 4))
+                return Result.Fail("Invalid statement status. Only Sent or Partially Paid statements can accept payments.");
             // the money pay is bigger than the whole statement
             if (request.Amount > statement.TotalAmount)
                 return Result.Fail($"Payment amount ({request.Amount:N0}) exceeds statement total ({statement.TotalAmount:N0}).");

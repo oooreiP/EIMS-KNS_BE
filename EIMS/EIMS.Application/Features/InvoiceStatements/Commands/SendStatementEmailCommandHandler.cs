@@ -79,13 +79,11 @@ EIMS Support Team"
             if (sendResult.IsFailed)
                 return sendResult;
 
-            if (statement.StatusID != 5 && statement.StatusID != 6 && statement.StatusID != 7)
-            {
-                statement.StatusID = 3; // Sent
-                await _uow.InvoiceStatementRepository.UpdateAsync(statement);
-                await _uow.SaveChanges();
-            }
-
+            if (statement.StatusID != 1)
+                return Result.Fail(new Error("Statement must be draft to be wait for payment"));                                          
+            statement.StatusID = 3; // Sent
+            await _uow.InvoiceStatementRepository.UpdateAsync(statement);
+            await _uow.SaveChanges();
             return Result.Ok();
         }
     }

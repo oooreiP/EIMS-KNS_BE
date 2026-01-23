@@ -23,7 +23,7 @@ namespace EIMS.Infrastructure.Repositories
             .Include(s => s.StatementStatus)
             .Include(s => s.StatementDetails)
                 .ThenInclude(sd => sd.Invoice)
-                .ThenInclude(i => i.InvoiceItems) 
+                .ThenInclude(i => i.InvoiceItems)
                     .ThenInclude(it => it.Product)
             .Include(s => s.StatementDetails)
                 .ThenInclude(sd => sd.Invoice)
@@ -44,14 +44,23 @@ namespace EIMS.Infrastructure.Repositories
             var endDate = startDate.AddMonths(1).AddDays(-1);
             endDate.EndOfDay();
             return await dbSet
-                .Include(s => s.Customer) 
+                .Include(s => s.Customer)
                 .Where(s =>
                     s.DueDate >= startDate &&
                     s.DueDate <= endDate &&
-                    s.PaidAmount < s.TotalAmount && 
-                    s.StatusID != 6 
+                    s.PaidAmount < s.TotalAmount &&
+                    s.StatusID != 6
                 )
                 .ToListAsync();
-        }       
+        }
+        public async Task<bool> IsDuplicated(int customerId, int month, int year)
+        {
+            return await _db.InvoiceStatements
+                .AnyAsync(s =>
+                s.CustomerID == customerId &&
+                s.PeriodMonth == month &&
+                s.PeriodYear == year
+                );
+        }
     }
 }
