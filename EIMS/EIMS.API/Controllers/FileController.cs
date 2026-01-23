@@ -3,6 +3,7 @@ using EIMS.Application.Features.Files.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EIMS.API.Controllers
 {
@@ -37,6 +38,23 @@ namespace EIMS.API.Controllers
                 return BadRequest(result.Errors);
 
             return Ok(result.Value);
+        }
+        [HttpPost("sign")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> SignPdf(IFormFile file, [FromForm] string keyword)
+        {
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+
+            var command = new SignPdfCommand(ms.ToArray(), keyword);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors.Select(e => e.Message));
+            }
+
+            return File(result.Value, "application/pdf", $"Signed_{file.FileName}");
         }
         [HttpPost("generate-xml/{invoiceId:int}")]
         public async Task<IActionResult> GenerateInvoiceXml(int invoiceId)
