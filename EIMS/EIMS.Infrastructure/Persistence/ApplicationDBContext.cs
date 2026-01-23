@@ -44,6 +44,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<PaymentStatus> PaymentStatuses { get; set; }
         public DbSet<TemplateFrame> TemplateFrames { get; set; }
         public DbSet<InvoiceStatementDetail> InvoiceStatementDetails { get; set; }
+        public DbSet<StatementPayment> StatementPayments { get; set; }
         public DbSet<SystemActivityLog> SystemActivityLogs { get; set; }
         public DbSet<InvoiceErrorNotification> InvoiceErrorNotifications { get; set; }
         public DbSet<InvoiceErrorDetail> InvoiceErrorDetails { get; set; }

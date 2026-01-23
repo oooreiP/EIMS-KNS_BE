@@ -35,6 +35,7 @@ namespace EIMS.Application.Commons.UnitOfWork
         public ICompanyRepository CompanyRepository { get; set; }
         public IBaseRepository<InvoiceStatus> InvoiceStatusRepository { get; set; }
         public IInvoicePaymentRepository InvoicePaymentRepository { get; private set; }
+        public IStatementPaymentRepository StatementPaymentRepository { get; private set; }
         public IBaseRepository<EmailTemplate> EmailTemplateRepository { get; set; }
         public IBaseRepository<SystemActivityLog> SystemActivityLogRepository { get; set; }
         public IBaseRepository<AuditLog> AuditLogRepository { get; set; }
@@ -70,6 +71,7 @@ namespace EIMS.Application.Commons.UnitOfWork
             TemplateFrameRepository = new TemplateFrameRepository(_db);
             CompanyRepository = new CompanyRepository(_db);
             InvoicePaymentRepository = new InvoicePaymentRepository(_db);
+            StatementPaymentRepository = new StatementPaymentRepository(_db);
             InvoiceItemRepository = new BaseRepository<InvoiceItem>(_db);
             EmailTemplateRepository = new BaseRepository<EmailTemplate>(_db);
             SystemActivityLogRepository = new BaseRepository<SystemActivityLog>(_db);
@@ -77,9 +79,10 @@ namespace EIMS.Application.Commons.UnitOfWork
             NotificationTypeRepository = new BaseRepository<NotificationType>(_db);
             NotificationRepository = new BaseRepository<Notification>(_db);
             NotificationStatusRepository = new BaseRepository<NotificationStatus>(_db);
-            InvoiceLookupLogRepository = new BaseRepository<InvoiceLookupLog>(_db);         
+            InvoiceLookupLogRepository = new BaseRepository<InvoiceLookupLog>(_db);
             ErrorNotificationRepository = new ErrorNotificationRepository(_db);
             InvoiceErrorDetailRepository = new BaseRepository<InvoiceErrorDetail>(_db);
+
         }
         public async Task SaveChanges()
         {
