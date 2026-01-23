@@ -25,6 +25,9 @@ namespace EIMS.Infrastructure.Repositories
                 .ThenInclude(sd => sd.Invoice)
                 .ThenInclude(i => i.InvoiceItems) 
                     .ThenInclude(it => it.Product)
+            .Include(s => s.StatementDetails)
+                .ThenInclude(sd => sd.Invoice)
+                .ThenInclude(i => i.Payments)
             .FirstOrDefaultAsync(s => s.StatementID == id);
         }
         public async Task<List<InvoiceStatement>> GetStatementsContainingInvoiceAsync(int invoiceId)

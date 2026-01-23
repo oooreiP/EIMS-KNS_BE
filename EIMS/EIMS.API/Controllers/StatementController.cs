@@ -59,6 +59,26 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+
+        [HttpGet("{id}/payments")]
+        public async Task<IActionResult> GetStatementPayments(int id)
+        {
+            var query = new GetStatementPaymentsQuery(id);
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Get Statement Payments Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+
+            return Ok(result.Value);
+        }
         [HttpGet]
         public async Task<IActionResult> GetStatements([FromQuery] GetInvoiceStatementsQuery query)
         {
@@ -107,6 +127,26 @@ namespace EIMS.API.Controllers
             }
             return BadRequest(result.Errors);
         }
+            [HttpPost("{id}/send-email")]
+            public async Task<IActionResult> SendStatementEmail(int id, [FromBody] SendStatementEmailCommand command)
+            {
+                command.StatementId = id;
+                command.RootPath = _env.ContentRootPath;
+
+                var result = await _sender.Send(command);
+                if (result.IsFailed)
+                {
+                    var firstError = result.Errors.FirstOrDefault();
+                    return BadRequest(new ProblemDetails
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = "Send Statement Email Failed",
+                        Detail = firstError?.Message ?? "Invalid request."
+                    });
+                }
+
+                return Ok(new { message = "Statement email sent." });
+            }
         [HttpGet("{id}/export-pdf")]
         public async Task<IActionResult> ExportPdf(int id)
         {
@@ -138,6 +178,25 @@ namespace EIMS.API.Controllers
                 return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
             }
             return Content(result.Value, "text/html", Encoding.UTF8);
+
+        [HttpPost("{id}/payments")]
+        public async Task<IActionResult> CreateStatementPayment(int id, [FromBody] CreateStatementPaymentCommand command)
+        {
+            command.StatementId = id;
+            var result = await _sender.Send(command);
+
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Create Statement Payment Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+
+            return Ok(result.Value);
         }
     }
 }

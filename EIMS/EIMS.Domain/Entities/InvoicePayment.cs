@@ -36,5 +36,8 @@ namespace EIMS.Domain.Entities
         // --- Navigation Properties ---
         [InverseProperty("Payments")]
         public virtual Invoice Invoice { get; set; }
+
+        [InverseProperty("Payment")]
+        public virtual ICollection<StatementPayment> StatementPayments { get; set; } = new List<StatementPayment>();
     }
 }

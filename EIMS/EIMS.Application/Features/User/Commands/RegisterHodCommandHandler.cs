@@ -77,7 +77,7 @@ namespace EIMS.Application.Features.User.Commands
             <p><strong>Email:</strong> {request.Email}</p>
             <p><strong>Temporary Password:</strong> {tempPassword}</p>
             <p>Please log in and change your password immediately.</p>
-            <a href='http://your-frontend-url/login'>Click here to Login</a>";
+            <a href='https://www.knsinvoice.id.vn'>Click here to Login</a>";
 
             var mailRequest = new MailRequest
             {
