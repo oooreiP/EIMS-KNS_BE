@@ -47,5 +47,17 @@ namespace EIMS.API.Controllers
             // Vì GetAll hiếm khi lỗi logic, thường chỉ trả về list rỗng
             return Ok(result.Value);
         }
+        [HttpPost("sign-seller/{id}")]
+        public async Task<IActionResult> SignBySeller(int id)
+        {
+            var command = new SignMinuteInvoiceCommand(id, "ĐẠI DIỆN BÊN B");
+
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+                return BadRequest(result.Errors);
+
+            return Ok(new { Message = "Đã ký số thành công", NewUrl = result.Value });
+        }
     }
 }
