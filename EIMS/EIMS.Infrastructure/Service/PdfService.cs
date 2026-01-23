@@ -28,6 +28,7 @@ using EIMS.Infrastructure.Security;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using iText.Kernel.Pdf.Canvas.Parser;
 using Rectangle = iText.Kernel.Geom.Rectangle;
+using System.Net.Http;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -35,14 +36,17 @@ namespace EIMS.Infrastructure.Service
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _xmlService;
         private readonly IQrCodeService _qrService;
+        private readonly IHttpClientFactory _httpClientFactory;
         public PdfService(
         IUnitOfWork uow,
         IInvoiceXMLService xmlService,
-        IQrCodeService qrService)
+        IQrCodeService qrService,
+        IHttpClientFactory httpClientFactory)
         {
             _uow = uow;
             _xmlService = xmlService;
             _qrService = qrService;
+            _httpClientFactory = httpClientFactory;
         }
         private async Task<byte[]> GeneratePdfBytesAsync(string htmlContent)
         {
@@ -308,6 +312,11 @@ namespace EIMS.Infrastructure.Service
 
                 return msOutput.ToArray();
             }
+        }
+        public async Task<byte[]> DownloadFileBytesAsync(string url)
+        {
+            var client = _httpClientFactory.CreateClient();
+            return await client.GetByteArrayAsync(url);
         }
         public async Task<string> GetBlankInvoicePreviewAsync(int templateId, int companyId, string rootPath)
         {
