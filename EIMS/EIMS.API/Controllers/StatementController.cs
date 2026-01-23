@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Text;
+using AutoMapper;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Application.Features.InvoiceStatements.Commands;
@@ -7,7 +8,6 @@ using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -178,7 +178,7 @@ namespace EIMS.API.Controllers
                 return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
             }
             return Content(result.Value, "text/html", Encoding.UTF8);
-
+        }
         [HttpPost("{id}/payments")]
         public async Task<IActionResult> CreateStatementPayment(int id, [FromBody] CreateStatementPaymentCommand command)
         {
