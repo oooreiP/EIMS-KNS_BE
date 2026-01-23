@@ -32,7 +32,8 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 .SumAsync(cancellationToken) ?? 0m;
 
             var paymentItems = await paymentsQuery
-                .OrderByDescending(x => x.AppliedAt)
+                .OrderBy(x => x.AppliedAt)
+                .ThenBy(x => x.StatementPaymentID)
                 .Select(x => new StatementPaymentItemDto
                 {
                     StatementPaymentId = x.StatementPaymentID,
@@ -48,6 +49,19 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                     CreatedBy = x.Payment.CreatedBy
                 })
                 .ToListAsync(cancellationToken);
+
+            var runningPaid = 0m;
+            foreach (var item in paymentItems)
+            {
+                runningPaid += item.AppliedAmount;
+                item.StatementPaidAfter = runningPaid;
+                item.StatementBalanceAfter = Math.Max(0, statement.TotalAmount - runningPaid);
+            }
+
+            paymentItems = paymentItems
+                .OrderByDescending(x => x.PaymentDate)
+                .ThenByDescending(x => x.StatementPaymentId)
+                .ToList();
 
             var response = new StatementPaymentsResponseDto
             {

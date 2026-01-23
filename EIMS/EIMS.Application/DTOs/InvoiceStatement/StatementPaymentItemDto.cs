@@ -10,6 +10,8 @@ namespace EIMS.Application.DTOs.InvoiceStatement
         public long InvoiceNumber { get; set; }
         public decimal AppliedAmount { get; set; }
         public decimal InvoiceRemainingAfter { get; set; }
+        public decimal StatementPaidAfter { get; set; }
+        public decimal StatementBalanceAfter { get; set; }
         public DateTime PaymentDate { get; set; }
         public string? PaymentMethod { get; set; }
         public string? TransactionCode { get; set; }
