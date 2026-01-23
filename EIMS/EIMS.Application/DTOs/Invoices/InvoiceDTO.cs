@@ -43,6 +43,7 @@ namespace EIMS.Application.DTOs.Invoices
         public string? CustomerAddress { get; set; }
         public string? CustomerEmail { get; set; }
         public string? ContactPerson { get; set; }
+        public string? ContactPhone { get; set; }
         public string? TaxCode { get; set; }
         public DateTime? OriginalInvoiceSignDate { get; set; }
         public string? OriginalInvoiceSymbol { get; set; }
