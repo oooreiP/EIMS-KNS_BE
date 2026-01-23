@@ -10,8 +10,8 @@
 	<xsl:param name="ColorTheme" select="'#0056b3'"/>
 	<xsl:param name="FontFamily" select="'Times New Roman'"/>
 	<xsl:param name="IsBilingual" select="'false'"/>
-	<xsl:param name="IsDraft" select="'false'"/>
-	<xsl:param name="QrCodeData" select="''"/>
+	<xsl:param name="IsDraft" select="'true'"/>
+	<xsl:param name="QrCodeData" select="''"/>	
 	<xsl:param name="ShowQrCode" select="'true'"/>
 	<xsl:param name="ShowLogo" select="'true'"/>
 	<xsl:param name="ShowSignature" select="'true'"/>
@@ -68,7 +68,7 @@
 						padding: 1px 0;
 					}
 					.info-content {
-						display: inline; margin-left: 5px; font-size: 12px;
+						text-align: left; padding-left: 5px; font-size: 12px; font-weight: bold;
 					}
 					.info-divider { border-top: 1px solid #ddd; margin: 5px 0; }
 
@@ -357,100 +357,119 @@
 
 		<div class="info-divider"></div>
 
-		<table class="info-table" style="width: 100%; border-collapse: collapse;">
-			<xsl:if test="$ShowCusName = 'true'">
-				<tr>
-					<td class="info-label" style="white-space: nowrap; width: 160px; vertical-align: top;">
-						Họ tên người mua hàng <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Buyer Name)</span></xsl:if>:
-					</td>
-					<td class="info-content text-bold">
-						<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='HVTNMHang']"/>
-					</td>
-				</tr>
-				<tr>
-					<td class="info-label" style="white-space: nowrap; vertical-align: top;">
-						Đơn vị mua <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Company Name)</span></xsl:if>:
-					</td>
-					<td class="info-content text-bold" style="font-size: 13px;">
-						<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='Ten']"/>
-					</td>
-				</tr>
-			</xsl:if>
+		<table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+  <tr>
+    <td style="vertical-align: top; text-align: left;">
 
-			<xsl:if test="$ShowCusTaxCode = 'true' or $ShowCusPhone = 'true'">
-				<tr>
-					<td colspan="2" style="padding: 0; border: none;">
-						<table style="width: 100%; border-collapse: collapse;">
-							<tr>
-								<td style="width: 50%; vertical-align: top; padding: 0;">
-									<xsl:if test="$ShowCusTaxCode = 'true'">
-										<table style="width: 100%;">
-											<tr>
-												<td class="info-label" style="white-space: nowrap; width: 160px; vertical-align: top;">
-													Mã số thuế <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Tax ID)</span></xsl:if>:
-												</td>
-												<td class="info-content">
-													<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']"/>
-												</td>
-											</tr>
-										</table>
-									</xsl:if>
-								</td>
-								
-								<td style="width: 50%; vertical-align: top; padding: 0;">
-									<xsl:if test="$ShowCusPhone = 'true'">
-										<table style="width: 100%;">
-											<tr>
-												<td class="info-label" style="white-space: nowrap; width: 110px; vertical-align: top; padding-left: 10px;">
-													Điện thoại <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Phone)</span></xsl:if>:
-												</td>
-												<td class="info-content">
-													<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='SDThoai']"/>
-												</td>
-											</tr>
-										</table>
-									</xsl:if>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-			</xsl:if>
+      <!-- Buyer Name -->
+      <xsl:if test="$ShowCusName = 'true'">
+        <div style="margin-bottom: 4px;">
+          <span style="font-size: 12px;">
+            Họ tên người mua hàng
+            <xsl:if test="$IsBilingual = 'true'">
+              <span class="en-label">(Buyer Name)</span>
+            </xsl:if>:
+          </span>
+          <span style="font-weight: bold; font-size: 13px;">
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='HVTNMHang']"/>
+          </span>
+        </div>
+      </xsl:if>
 
-			<xsl:if test="$ShowCusAddress = 'true'">
-				<tr>
-					<td class="info-label" style="white-space: nowrap; vertical-align: top;">
-						Địa chỉ <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Address)</span></xsl:if>:
-					</td>
-					<td class="info-content">
-						<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='DChi']"/>
-					</td>
-				</tr>
-			</xsl:if>
+      <xsl:if test="ShowCusName = 'true'">
+        <div style="margin-bottom: 4px;">
+          <span style="font-size: 12px;">
+            Đơn vị mua
+            <xsl:if test="$IsBilingual = 'true'">
+              <span class="en-label">(Company Name)</span>
+            </xsl:if>:
+          </span>
+          <span style="font-weight: bold; font-size: 13px;">
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='Ten']"/>
+          </span>
+        </div>
+      </xsl:if>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
+        <tr>
+          <td style="vertical-align: top; width: 50%; padding: 0;">
+            <xsl:if test="$ShowCusTaxCode = 'true'">
+              <div>
+                <span style="font-size: 12px;">
+                  Mã số thuế
+                  <xsl:if test="$IsBilingual = 'true'">
+                    <span class="en-label">(Tax ID)</span>
+                  </xsl:if>:
+                </span>
+                <span style="font-weight: bold; font-size: 13px;">
+                  <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']"/>
+                </span>
+              </div>
+            </xsl:if>
+          </td>
 
-			<xsl:if test="$ShowCusEmail = 'true'">
-				<tr>
-					<td class="info-label" style="white-space: nowrap; vertical-align: top;">
-						Email <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Email)</span></xsl:if>:
-					</td>
-					<td class="info-content">
-						<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='DCTDTu']"/>
-					</td>
-				</tr>
-			</xsl:if>
+          <td style="vertical-align: top; width: 50%; padding-left: 10px;">
+            <xsl:if test="$ShowCusPhone = 'true'">
+              <div>
+                <span style="font-size: 12px;">
+                  Điện thoại
+                  <xsl:if test="$IsBilingual = 'true'">
+                    <span class="en-label">(Phone)</span>
+                  </xsl:if>:
+                </span>
+                <span style="font-weight: bold; font-size: 13px;">
+                  <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='SDThoai']"/>
+                </span>
+              </div>
+            </xsl:if>
+          </td>
+        </tr>
+      </table>
 
-			<xsl:if test="$ShowPaymentMethod = 'true'">
-				<tr>
-					<td class="info-label" style="white-space: nowrap; vertical-align: top;">
-						Hình thức thanh toán <xsl:if test="$IsBilingual = 'true'"> <span class="en-label">(Payment method)</span></xsl:if>:
-					</td>
-					<td class="info-content">
-						<xsl:value-of select="*[local-name()='TTChung']/*[local-name()='HTTToan']"/>
-					</td>
-				</tr>
-			</xsl:if>
-		</table>
+      <!-- Address -->
+      <xsl:if test="$ShowCusAddress = 'true'">
+        <div style="margin-bottom: 4px;">
+          <span style="font-size: 12px;">
+            Địa chỉ
+            <xsl:if test="$IsBilingual = 'true'">
+              <span class="en-label">(Address)</span>
+            </xsl:if>:
+          </span>
+          <span style="font-weight: bold; font-size: 13px;">
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='DChi']"/>
+          </span>
+        </div>
+      </xsl:if>
 
+      <!-- Email -->
+      <xsl:if test="$ShowCusEmail = 'true'">
+        <div style="margin-bottom: 4px;">
+          <span style="font-size: 12px;">
+            Email:
+          </span>
+          <span style="font-weight: bold; font-size: 13px;">
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='DCTDTu']"/>
+          </span>
+        </div>
+      </xsl:if>
+
+      <!-- Payment Method -->
+      <xsl:if test="$ShowPaymentMethod = 'true'">
+        <div>
+          <span style="font-size: 12px;">
+            Hình thức thanh toán
+            <xsl:if test="$IsBilingual = 'true'">
+              <span class="en-label">(Payment method)</span>
+            </xsl:if>:
+          </span>
+          <span style="font-weight: bold; font-size: 13px;">
+            <xsl:value-of select="*[local-name()='TTChung']/*[local-name()='HTTToan']"/>
+          </span>
+        </div>
+      </xsl:if>
+
+    </td>
+  </tr>
+</table>
 		<table class="body-table">
 			<colgroup>
 				<col style="width: 5%;" />

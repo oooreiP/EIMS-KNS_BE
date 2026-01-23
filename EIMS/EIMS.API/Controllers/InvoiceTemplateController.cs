@@ -92,6 +92,20 @@ namespace EIMS.API.Controllers
 
             return Ok(new { Message = "Template updated successfully" });
         }
+        // API: PATCH api/invoicetemplates/{id}/status
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, bool isActive)
+        {
+            var command = new UpdateInvoiceTemplateStatusCommand { TemplateID = id, IsActive = isActive };
+            var result = await _sender.Send(command);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
         [HttpGet("{id}/view")]
         public async Task<IActionResult> ViewTemplate(int id)
         {
