@@ -40,11 +40,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                     InvoiceId = x.Payment.InvoiceID,
                     InvoiceNumber = x.Payment.Invoice.InvoiceNumber ?? 0,
                     AppliedAmount = x.AppliedAmount,
-                    InvoiceRemainingAfter = Math.Max(0,
-                        x.Payment.Invoice.TotalAmount - x.Payment.Invoice.Payments
-                            .Where(p => p.PaymentDate < x.Payment.PaymentDate
-                                     || (p.PaymentDate == x.Payment.PaymentDate && p.PaymentID <= x.PaymentID))
-                            .Sum(p => p.AmountPaid)),
+                    InvoiceRemainingAfter = Math.Max(0, x.Payment.Invoice.TotalAmount - x.Payment.Invoice.PaidAmount),
                     PaymentDate = x.Payment.PaymentDate,
                     PaymentMethod = x.Payment.PaymentMethod,
                     TransactionCode = x.Payment.TransactionCode,
