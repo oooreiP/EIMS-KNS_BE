@@ -324,16 +324,16 @@ namespace EIMS.Infrastructure.Persistence
                 new Prefix { PrefixID = 2, PrefixName = "Hóa đơn điện tử bán hàng" },
                 new Prefix { PrefixID = 3, PrefixName = "Hóa đơn điện tử bán tài sản công" },
                 new Prefix { PrefixID = 4, PrefixName = "Hóa đơn điện tử bán hàng dự trữ quốc gia" },
-                new Prefix { PrefixID = 5, PrefixName = "Hóa đơn điện tử khác là tem điện tử, vé điện tử, thẻ điện tử, phiếu thu điện tử hoặc các chứng từ điện tử có tên gọi khác nhưng có nội dung của hóa đơn điện tử theo quy định tại Nghị định số 123/2020/NĐ-CP" },
-                new Prefix { PrefixID = 6, PrefixName = "Chứng từ điện tử được sử dụng và quản lý như hóa đơn gồm phiếu xuất kho kiêm vận chuyển nội bộ điện tử, phiếu xuất kho hàng gửi bán đại lý điện tử" },
+                new Prefix { PrefixID = 5, PrefixName = "Hóa đơn điện tử khác là tem điện tử, vé điện tử" },
+                new Prefix { PrefixID = 6, PrefixName = "Chứng từ điện tử được sử dụng và quản lý" },
                 new Prefix { PrefixID = 7, PrefixName = "Hóa đơn thương mại điện tử" },
                 new Prefix { PrefixID = 8, PrefixName = "Hóa đơn giá trị gia tăng tích hợp biên lai thu thuế, phí, lệ phí" },
                 new Prefix { PrefixID = 9, PrefixName = "Hóa đơn bán hàng tích hợp biên lai thu thuế, phí, lệ phí" }
             );
             modelBuilder.Entity<InvoiceType>().HasData(
                 new InvoiceType { InvoiceTypeID = -1, Symbol = "0", TypeName = "Hóa đơn hệ thống không có ký hiệu" },
-                new InvoiceType { InvoiceTypeID = 1, Symbol = "T", TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân kinh doanh đăng ký sử dụng" },
-                new InvoiceType { InvoiceTypeID = 2, Symbol = "D", TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia hoặc hóa đơn điện tử đặc thù không nhất thiết phải có một số tiêu thức do các doanh nghiệp, tổ chức đăng ký sử dụng" },
+                new InvoiceType { InvoiceTypeID = 1, Symbol = "T", TypeName = "Hóa đơn Doanh nghiệp, tổ chức, hộ, cá nhân" },
+                new InvoiceType { InvoiceTypeID = 2, Symbol = "D", TypeName = "Hóa đơn tài sản công và hóa đơn bán hàng dự trữ quốc gia" },
                 new InvoiceType { InvoiceTypeID = 3, Symbol = "L", TypeName = "Hóa đơn Cơ quan thuế cấp theo từng lần phát sinh" },
                 new InvoiceType { InvoiceTypeID = 4, Symbol = "M", TypeName = "Hóa đơn khởi tạo từ máy tính tiền" },
                 new InvoiceType { InvoiceTypeID = 5, Symbol = "N", TypeName = "Phiếu xuất kho kiêm vận chuyển nội bộ" },
