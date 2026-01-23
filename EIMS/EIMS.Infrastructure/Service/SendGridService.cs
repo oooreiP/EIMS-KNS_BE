@@ -218,6 +218,7 @@ namespace EIMS.Infrastructure.Service
                 { "{{TotalAmount}}", invoice.TotalAmount.ToString("N0") },
                 { "{{AttachmentList}}", fileLinksHtml },
                 { "{{LookupCode}}", invoice.LookupCode ?? "" },
+                { "{{LookupUrl}}", $"https://tracuu-knsinvoice.id.vn/?code={invoice.LookupCode ?? string.Empty}" },
                 { "{{Serial}}", serialString }
             };
 

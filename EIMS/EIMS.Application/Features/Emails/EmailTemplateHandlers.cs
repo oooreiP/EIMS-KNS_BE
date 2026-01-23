@@ -169,7 +169,9 @@ namespace EIMS.Application.Features.Emails
                 "{{CreatedAt}}",     // Ngày tạo trên hệ thống
                 "{{DueDate}}",       // Hạn thanh toán
                 "{{Message}}",       // Lời nhắn từ người gửi (User nhập lúc gửi mail)
-                "{{PaymentLink}}"    // Link thanh toán online (nếu có)
+                "{{PaymentLink}}",   // Link thanh toán online (nếu có)
+                "{{LookupCode}}",    // Mã tra cứu hóa đơn
+                "{{LookupUrl}}"      // Link tra cứu hóa đơn
             });
                     break;
 

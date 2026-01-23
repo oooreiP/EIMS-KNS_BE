@@ -589,6 +589,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
@@ -665,6 +668,9 @@ namespace EIMS.Infrastructure.Persistence
                 <div class='lookup-box'>
                     <span>Mã tra cứu hóa đơn</span>
                     <span class='lookup-code'>{{LookupCode}}</span>
+                    <div style='margin-top:10px;'>
+                        <a href='{{LookupUrl}}' target='_blank' style='color:#007BFF; font-weight:bold; text-decoration:none;'>Tra cứu hóa đơn</a>
+                    </div>
                 </div>
 
                 <p>📂 <strong>Tài liệu đính kèm:</strong></p>
