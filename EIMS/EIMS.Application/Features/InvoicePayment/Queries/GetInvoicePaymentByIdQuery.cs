@@ -8,8 +8,8 @@ using MediatR;
 
 namespace EIMS.Application.Features.InvoicePayment.Queries
 {
-    public class GetInvoicePaymentByIdQuery : IRequest<Result<InvoicePaymentDTO>>
+    public class GetInvoicePaymentByIdQuery : IRequest<Result<InvoicePaymentDetailDTO>>
     {
-        public int Id { get; set; }
+        public int PaymentID { get; set; }
     }
 }

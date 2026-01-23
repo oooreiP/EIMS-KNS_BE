@@ -59,5 +59,8 @@ namespace EIMS.Domain.Entities
         [InverseProperty("Statement")]
         public virtual ICollection<InvoiceStatementDetail> StatementDetails { get; set; } = new List<InvoiceStatementDetail>();
 
+        [InverseProperty("Statement")]
+        public virtual ICollection<StatementPayment> StatementPayments { get; set; } = new List<StatementPayment>();
+
     }
 }
