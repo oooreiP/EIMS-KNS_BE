@@ -10,7 +10,6 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
         [JsonIgnore]
         public string? Subject { get; set; }
         [JsonIgnore]
-        [JsonIgnore]
         public string? Message { get; set; }
         public bool IncludePdf { get; set; } = true;
 
