@@ -134,6 +134,7 @@ namespace EIMS.Domain.Entities
         [ForeignKey("CreatedBy")]
         [InverseProperty("CreatedInvoices")] // Points to User.CreatedInvoices
         public virtual User? InvoiceCreator { get; set; }
+        public ICollection<MinuteInvoice> MinuteInvoices { get; set; } = new List<MinuteInvoice>();
 
         // 2. Add the Calculation Logic
         // [NotMapped]
