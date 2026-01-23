@@ -371,12 +371,12 @@
             </xsl:if>:
           </span>
           <span style="font-weight: bold; font-size: 13px;">
-            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='HVTNMHang']"/>
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='Ten']"/>
           </span>
         </div>
       </xsl:if>
 
-      <xsl:if test="ShowCusName = 'true'">
+      <xsl:if test="$ShowCusName = 'true'">
         <div style="margin-bottom: 4px;">
           <span style="font-size: 12px;">
             Đơn vị mua
