@@ -41,7 +41,15 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 : request.Subject;
 
             var message = string.IsNullOrWhiteSpace(request.Message)
-                ? $"Please find attached your statement {statement.StatementCode}."
+                ? $@"Kính gửi Quý khách,
+
+Vui lòng xem đính kèm bảng kê công nợ {statement.StatementCode} để Quý khách đối chiếu.
+Nếu cần hỗ trợ thêm, vui lòng liên hệ bộ phận chăm sóc khách hàng của chúng tôi.
+
+Trân trọng cảm ơn Quý khách.
+
+Trân trọng,
+EIMS Support Team"
                 : request.Message;
 
             var mailRequest = new FEMailRequest
