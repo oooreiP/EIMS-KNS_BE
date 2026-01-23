@@ -53,6 +53,7 @@ namespace EIMS.Infrastructure.Persistence
         public DbSet<InvoiceRequestItem> InvoiceRequestItems { get; set; }
         public DbSet<InvoiceRequestStatus> InvoiceRequestStatuses { get; set; }
         public DbSet<EmailTemplate> EmailTemplate { get; set; }
+        public DbSet<MinuteInvoice> MinuteInvoices { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.AddInterceptors(_auditableEntityInterceptor);

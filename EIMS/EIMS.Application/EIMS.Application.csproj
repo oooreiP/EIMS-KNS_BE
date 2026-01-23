@@ -42,8 +42,4 @@
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Minutes\Commands\" />
-  </ItemGroup>
-
 </Project>

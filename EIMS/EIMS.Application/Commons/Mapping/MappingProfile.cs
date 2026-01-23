@@ -19,6 +19,7 @@ using EIMS.Application.Features.Invoices.Commands.UpdateInvoice;
 using EIMS.Application.DTOs.InvoicePayment;
 using EIMS.Application.DTOs.LogsDTO;
 using EIMS.Application.DTOs.InvoiceItems;
+using EIMS.Application.DTOs.Minutes;
 
 
 namespace EIMS.Application.Common.Mapping
@@ -28,6 +29,19 @@ namespace EIMS.Application.Common.Mapping
         public MappingProfile()
         {
             CreateMap<RegisterRequest, RegisterCommand>();
+            CreateMap<MinuteInvoice, MinuteInvoiceDto>()
+            .ForMember(dest => dest.MinuteInvoiceId, opt => opt.MapFrom(src => src.MinutesInvoiceId))
+            .ForMember(dest => dest.InvoiceId, opt => opt.MapFrom(src => src.InvoiceId ?? 1))
+            .ForMember(dest => dest.InvoiceNo, opt => opt.MapFrom(src =>
+                src.Invoice != null ? src.Invoice.InvoiceNumber.ToString() : "N/A"))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
+                (src.Invoice != null && src.Invoice.Customer != null)
+                    ? src.Invoice.Customer.CustomerName
+                    : "N/A"))
+            .ForMember(dest => dest.MinuteType, opt => opt.MapFrom(src => src.MinutesType.ToString()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src =>
+                src.Creator != null ? src.Creator.FullName : "Unknown"));
             CreateMap<LoginRequest, LoginCommand>();
             CreateMap<LoginResponse, AuthResponse>();
             CreateMap<RefreshTokenResponse, AuthResponse>();
