@@ -7,6 +7,7 @@ using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace EIMS.API.Controllers
 {
@@ -124,6 +125,19 @@ namespace EIMS.API.Controllers
                 "application/pdf",     
                 fileData.FileName      
             );
+        }
+        [HttpGet("{id}/preview-statement")]
+        public async Task<IActionResult> PreviewHTML(int id)
+        {
+            string rootPath = _env.ContentRootPath;
+            var query = new PreviewStatementQuery(id, rootPath);
+
+            Result<string> result = await _sender.Send(query);
+            if (result.IsFailed)
+            {
+                return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
+            }
+            return Content(result.Value, "text/html", Encoding.UTF8);
         }
     }
 }

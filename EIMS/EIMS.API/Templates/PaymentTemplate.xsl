@@ -8,8 +8,11 @@
 		<html>
 			<head>
 				<style>
+					@page {
+					size: A4 landscape; 
+					margin: 10mm;       
+					}
 					body { font-family: 'Times New Roman', sans-serif; font-size: 13px; }
-
 					/* Header Styles */
 					.header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 					.header-left { width: 30%; }
