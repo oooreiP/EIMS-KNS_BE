@@ -147,6 +147,26 @@ namespace EIMS.API.Controllers
 
                 return Ok(new { message = "Statement email sent." });
             }
+        [HttpPost("{id}/send-debt-reminder")]
+        public async Task<IActionResult> SendDebtReminderEmail(int id, [FromBody] SendDebtReminderEmailCommand command)
+        {
+            command.StatementId = id;
+            command.RootPath = _env.ContentRootPath;
+
+            var result = await _sender.Send(command);
+            if (result.IsFailed)
+            {
+                var firstError = result.Errors.FirstOrDefault();
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Send Debt Reminder Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            }
+
+            return Ok(new { message = "Debt reminder email sent." });
+        }
         [HttpGet("{id}/export-pdf")]
         public async Task<IActionResult> ExportPdf(int id)
         {
