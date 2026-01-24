@@ -371,7 +371,7 @@
             </xsl:if>:
           </span>
           <span style="font-weight: bold; font-size: 13px;">
-            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='Ten']"/>
+            <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='HVTNMHang']"/>
           </span>
         </div>
       </xsl:if>
@@ -391,21 +391,34 @@
       </xsl:if>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
         <tr>
-          <td style="vertical-align: top; width: 43%; padding: 0;">
-            <xsl:if test="$ShowCusTaxCode = 'true'">
-              <div>
-                <span style="font-size: 12px;">
-                  Mã số thuế
-                  <xsl:if test="$IsBilingual = 'true'">
-                    <span class="en-label">(Tax ID)</span>
-                  </xsl:if>:
-                </span>
-                <span style="font-weight: bold; font-size: 13px;">
-                  <xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']"/>
-                </span>
-              </div>
-            </xsl:if>
-          </td>
+			<td style="vertical-align: top; width: 43%; padding: 0;">
+				<xsl:if test="$ShowCusTaxCode = 'true'
+    and (
+      normalize-space(*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']) != ''
+      or
+      normalize-space(*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='CCCDan']) != ''
+    )
+  ">
+					<div>
+						<span style="font-size: 12px;">
+							Mã số thuế
+							<xsl:if test="$IsBilingual = 'true'">
+								<span class="en-label">(Tax ID)</span>
+							</xsl:if>:
+						</span>
+						<span style="font-weight: bold; font-size: 13px;">
+							<xsl:choose>
+								<xsl:when test="normalize-space(*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']) != ''">
+									<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='MST']"/>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="*[local-name()='NDHDon']/*[local-name()='NMua']/*[local-name()='CCCDan']"/>
+								</xsl:otherwise>
+							</xsl:choose>
+						</span>
+					</div>
+				</xsl:if>
+			</td>
 
           <td style="vertical-align: top; width: 57%; padding-left: -50px;">
             <xsl:if test="$ShowCusPhone = 'true'">
