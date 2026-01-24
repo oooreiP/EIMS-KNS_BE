@@ -41,6 +41,35 @@ namespace EIMS.API.Controllers
             }
             return Ok(result.Value);
         }
+        [HttpPost("{requestId}/upload-evidence")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadEvidence(
+        [FromRoute] int requestId, IFormFile pdfFile,
+        CancellationToken cancellationToken)
+        {
+            if (pdfFile == null || pdfFile.Length == 0)
+            {
+                return BadRequest("Vui lòng đính kèm file PDF.");
+            }
+
+            var command = new UploadEvidenceCommand(requestId, pdfFile);
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (result.IsFailed)
+            {
+                var error = result.Errors.FirstOrDefault();
+                return BadRequest(new
+                {
+                    Message = error?.Message,
+                    Metadata = error?.Metadata
+                });
+            }
+
+            return Ok(new
+            {
+                FileUrl = result.Value
+            });
+        }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] GetAllInvoiceRequestsQuery query)
         { 

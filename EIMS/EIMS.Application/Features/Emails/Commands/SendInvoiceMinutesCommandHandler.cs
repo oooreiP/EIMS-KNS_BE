@@ -192,7 +192,7 @@ namespace EIMS.Application.Features.Emails.Commands
                     if (request.Type == MinutesType.Replacement)
                     {
                         minutesFileBytes = await minutesGenerator.GenerateReplacementMinutesAsync(original, request.Reason, contentBefore, contentAfter, adjustment.InvoiceNumber.ToString(), request.AgreementDate);
-                        minutesFileName = $"BienBan_ThayThe_{original.InvoiceNumber}_to_{adjustment.InvoiceNumber}.docx";
+                        minutesFileName = $"BienBan_ThayThe_Cua_{original.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_REPLACE";
                     }
                     else

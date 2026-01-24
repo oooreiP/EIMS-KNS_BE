@@ -40,6 +40,15 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         {
             var userId = int.Parse(_currentUser.UserId);
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
+            var template = invoice.Template;
+            var serial = template.Serial;
+            var prefix = serial.Prefix;
+            string khmsHDon = prefix.PrefixID.ToString();
+            string khHDon = khmsHDon +
+                $"{serial.SerialStatus.Symbol}" +
+                $"{serial.Year}" +
+                $"{serial.InvoiceType.Symbol}" +
+                $"{serial.Tail}";
             Invoice? original = null;
             if (invoice.OriginalInvoiceID != null)
             {
@@ -121,7 +130,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 var signedXmlDoc = new System.Xml.XmlDocument();
                 signedXmlDoc.PreserveWhitespace = true;
                 signedXmlDoc.LoadXml(xmlDoc.OuterXml);
-                var newFileName = $"Invoice_{invoice.InvoiceNumber}_Signed.xml";
+                var newFileName = $"Invoice_{khHDon}_{invoice.InvoiceNumber}_Signed.xml";
                 var newUrl = await _invoiceXMLService.UploadXmlAsync(signedXmlDoc, newFileName);
                 invoice.XMLPath = newUrl; // Cập nhật đường dẫn mới
                 invoice.InvoiceStatusID = 5; // Trạng thái: Signed (Đã ký)
