@@ -10,6 +10,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int? CustomerID { get; set; }
+        public int? SalesId { get; set; }
         public string? StatementCode { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
