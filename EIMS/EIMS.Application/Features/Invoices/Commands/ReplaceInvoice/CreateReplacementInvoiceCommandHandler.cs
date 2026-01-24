@@ -230,7 +230,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     $"{fullTemplate.Serial.Year}" +
                     $"{fullTemplate.Serial.InvoiceType.Symbol}" +
                     $"{fullTemplate.Serial.Tail}";
-                string originalAutoReferenceText = $"Bị thay thế bởi hóa đơn Mẫu số {fullkhmsHDon} Ký hiệu {fullkhHDon} Số {soHoaDon} ngày {ngayGoc.Day:00} tháng {ngayGoc.Month:00} năm {ngayGoc.Year}";
+                string originalAutoReferenceText = $"Bị thay thế bởi hóa đơn Mẫu số {fullkhmsHDon} Ký hiệu {fullkhHDon} Số {soHoaDon} ngày {originalInvoice.IssuedDate:dd/MM/yyyy}";
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
                 originalInvoice.ReferenceNote = originalAutoReferenceText;
