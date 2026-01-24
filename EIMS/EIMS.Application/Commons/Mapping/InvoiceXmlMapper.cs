@@ -26,6 +26,21 @@ namespace EIMS.Application.Commons.Mapping
         {
             if (invoice == null)
                 throw new ArgumentNullException(nameof(invoice));
+            var buyerTaxCode = invoice.InvoiceCustomerTaxCode
+                   ?? invoice.Customer?.TaxCode
+                   ?? string.Empty;
+
+            string buyerMst = string.Empty;
+            string buyerCccd = string.Empty;
+
+            if (buyerTaxCode.Length == 10 || buyerTaxCode.Length == 13)
+            {
+                buyerMst = buyerTaxCode;
+            }
+            else if (buyerTaxCode.Length == 12)
+            {
+                buyerCccd = buyerTaxCode;
+            }
             var template = invoice.Template;
             var serial = template.Serial;
             var prefix = serial.Prefix;
@@ -68,16 +83,17 @@ namespace EIMS.Application.Commons.Mapping
                                     STKNHang = invoice.Company.AccountNumber ?? ""
                                 },
                                 // ---- Người mua ----
-                                NMua = new Party
+                                NMua = new BMua
                                 {
-                                    // Ten = invoice.Customer.CustomerName,
-                                    // MST = invoice.Customer.TaxCode ?? "",
-                                    // DChi = invoice.Customer.Address,
-                                    Ten = invoice.InvoiceCustomerName ?? invoice.Customer.CustomerName,
-                                    MST = invoice.InvoiceCustomerTaxCode ?? invoice.Customer.TaxCode ?? "",
+                                    Ten = invoice.InvoiceCustomerName ?? invoice.Customer.CustomerName ?? invoice.Customer.ContactPerson,
+                                    MST = buyerMst,
+                                    MDVQHNSach =  "",
                                     DChi = invoice.InvoiceCustomerAddress ?? invoice.Customer.Address,
                                     DCTDTu = invoice.Customer.ContactEmail,
                                     SDThoai = invoice.Customer.ContactPhone ?? "",
+                                    CCCDan = buyerCccd,
+                                    SHChieu = "",
+                                    HVTNMHang = invoice.Customer.ContactPerson ?? "",
                                     TNHang = "",
                                     STKNHang = ""
                                 },
