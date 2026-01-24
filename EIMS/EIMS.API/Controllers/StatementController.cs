@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using AutoMapper;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Application.DTOs.Mails;
@@ -82,6 +83,43 @@ namespace EIMS.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetStatements([FromQuery] GetInvoiceStatementsQuery query)
         {
+            var result = await _sender.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
+        }
+
+        [HttpGet("sale/{saleId}")]
+        public async Task<IActionResult> GetStatementsBySaleId(
+            int saleId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int? customerId = null,
+            [FromQuery] string? statementCode = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
+            [FromQuery] int? periodMonth = null,
+            [FromQuery] int? periodYear = null,
+            [FromQuery] int? statusId = null)
+        {
+            var query = new GetInvoiceStatementsQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                CustomerID = customerId,
+                StatementCode = statementCode,
+                FromDate = fromDate,
+                ToDate = toDate,
+                PeriodMonth = periodMonth,
+                PeriodYear = periodYear,
+                StatusID = statusId,
+                SalesId = saleId
+            };
+
             var result = await _sender.Send(query);
 
             if (result.IsFailed)
