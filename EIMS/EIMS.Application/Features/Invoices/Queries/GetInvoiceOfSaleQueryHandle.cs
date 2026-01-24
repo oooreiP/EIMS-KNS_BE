@@ -32,7 +32,7 @@ namespace EIMS.Application.Features.Invoices.Queries
                             .AsNoTracking() 
                             .Include(x => x.Customer) 
                             .Include(x => x.Sales) 
-                            .Where(x => x.SalesID != null)
+                            .Where(x => x.Customer.SaleID != null)
                             .Where(x => allowedStatuses.Contains(x.InvoiceStatusID));
 
             // 2. Các bộ lọc bổ sung (Filter)
@@ -40,7 +40,7 @@ namespace EIMS.Application.Features.Invoices.Queries
             // Nếu muốn lọc theo 1 Sale cụ thể
             if (request.SpecificSaleId.HasValue)
             {
-                query = query.Where(x => x.SalesID == request.SpecificSaleId);
+                query = query.Where(x => x.Customer.SaleID == request.SpecificSaleId);
             }
 
             // Tìm kiếm theo mã hóa đơn hoặc tên khách
