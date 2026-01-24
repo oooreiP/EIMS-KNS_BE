@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using EIMS.Domain.Enums;
 
 namespace EIMS.Domain.Entities
 {
@@ -25,6 +26,7 @@ namespace EIMS.Domain.Entities
         [ForeignKey("CreatedInvoiceID")]
         public int? CreatedInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
+        public EInvoiceCustomerType InvoiceCustomerType { get; set; } = EInvoiceCustomerType.Business;
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal SubtotalAmount { get; set; }

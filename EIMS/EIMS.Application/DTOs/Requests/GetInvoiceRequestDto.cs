@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EIMS.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,7 @@ namespace EIMS.Application.DTOs.Requests
         public string StatusName { get; set; }
         public int StatusId { get; set; } // Để FE tô màu (Pending=Vàng, Approved=Xanh)
         public string SaleName { get; set; }
+        public string? InvoiceCustomerType { get; set; } 
         public string? EvidenceFilePath { get; set; }
         public DateTime CreatedAt { get; set; }
     }

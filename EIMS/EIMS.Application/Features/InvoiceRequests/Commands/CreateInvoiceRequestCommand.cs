@@ -2,6 +2,7 @@
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Application.DTOs.Requests;
 using EIMS.Application.Features.Invoices.Commands;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -15,7 +16,6 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
 {
     public class CreateInvoiceRequestCommand :  IRequest<Result<CreateRequestResponse>>
     {
-        public int? AccountantId { get; set; }
         public int? CustomerID { get; set; }
         public string TaxCode { get; set; } = string.Empty;
         public int CompanyID { get; set; } = 1;
@@ -30,6 +30,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
         public decimal? TotalAmount { get; set; }
         public int? MinRows { get; set; }
         // public int SalesID { get; set; }
+        public EInvoiceCustomerType InvoiceCustomerType { get; set; } = EInvoiceCustomerType.Business;
         public string? ContactEmail { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }

@@ -2,6 +2,7 @@
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Requests;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,9 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 StatusName = x.RequestStatus.StatusName,
                 StatusId = x.RequestStatusID,
                 SaleName =  x.Sales.FullName,
+                InvoiceCustomerType = x.InvoiceCustomerType != null
+                    ? x.InvoiceCustomerType.ToString()
+                    : null,
                 EvidenceFilePath = x.EvidenceFilePath,
                 CreatedAt = x.CreatedAt
             });
