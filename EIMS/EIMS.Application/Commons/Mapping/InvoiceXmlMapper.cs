@@ -32,15 +32,20 @@ namespace EIMS.Application.Commons.Mapping
 
             string buyerMst = string.Empty;
             string buyerCccd = string.Empty;
-
-            if (buyerTaxCode.Length == 10 || buyerTaxCode.Length == 13)
-            {
-                buyerMst = buyerTaxCode;
-            }
-            else if (buyerTaxCode.Length == 12)
+            string companyName = string.Empty;
+            string buyerName = string.Empty;
+            if (buyerTaxCode.Length == 12)
             {
                 buyerCccd = buyerTaxCode;
+                buyerName = invoice.InvoiceCustomerName;
             }
+            else
+            {
+                buyerMst = buyerTaxCode;
+                companyName = invoice.InvoiceCustomerName;
+                buyerName = invoice.Customer.ContactPerson ?? "";
+            }
+           
             var template = invoice.Template;
             var serial = template.Serial;
             var prefix = serial.Prefix;
@@ -85,7 +90,7 @@ namespace EIMS.Application.Commons.Mapping
                                 // ---- Người mua ----
                                 NMua = new BMua
                                 {
-                                    Ten = invoice.InvoiceCustomerName ?? invoice.Customer.CustomerName ?? invoice.Customer.ContactPerson,
+                                    Ten = companyName,
                                     MST = buyerMst,
                                     MDVQHNSach =  "",
                                     DChi = invoice.InvoiceCustomerAddress ?? invoice.Customer.Address,
@@ -93,7 +98,7 @@ namespace EIMS.Application.Commons.Mapping
                                     SDThoai = invoice.Customer.ContactPhone ?? "",
                                     CCCDan = buyerCccd,
                                     SHChieu = "",
-                                    HVTNMHang = invoice.Customer.ContactPerson ?? "",
+                                    HVTNMHang = buyerName,
                                     TNHang = "",
                                     STKNHang = ""
                                 },

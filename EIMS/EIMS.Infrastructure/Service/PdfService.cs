@@ -297,11 +297,11 @@ namespace EIMS.Infrastructure.Service
             {
                 PdfReader reader = new PdfReader(msInput);
                 PdfSigner signer = new PdfSigner(reader, msOutput, new StampingProperties());
-                float width = 150;
-                float height = 70;
+                float width = 260;
+                float height = 90;
                 Rectangle signatureRect = new Rectangle(
                     location.Rect.GetLeft(),
-                    location.Rect.GetBottom() - height - 5,
+                    location.Rect.GetBottom() - height - 35,
                     width,
                     height);
 

@@ -76,7 +76,7 @@
 							<xsl:value-of select="PaymentStatement/ProviderInfo/Address"/>
 						</div>
 						<div class="title">
-							BẢNG KÊ THANH TOÁN<br/>(PAYMENT LIST)
+							BẢNG KÊ THANH TOÁN VÀ CÔNG NỢ<br/>(STATEMENT LIST AND PAYMENT)
 						</div>
 					</div>
 					<div class="header-right"></div>
