@@ -29,6 +29,14 @@ using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using iText.Kernel.Pdf.Canvas.Parser;
 using Rectangle = iText.Kernel.Geom.Rectangle;
 using System.Net.Http;
+using iText.Kernel.Colors;
+using iText.Layout.Borders;
+using iText.Layout.Properties;
+using Org.BouncyCastle.Tls;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Kernel.Pdf.Xobject;
+using iText.Kernel.Pdf.Canvas;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -300,6 +308,44 @@ namespace EIMS.Infrastructure.Service
 
                 signer.SetPageNumber(location.PageNumber);
                 signer.SetPageRect(signatureRect);
+                PdfSignatureAppearance appearance = signer.GetSignatureAppearance();
+                appearance
+                    .SetReuseAppearance(false)
+                    .SetPageRect(signatureRect)
+                    .SetPageNumber(location.PageNumber);
+
+                var pdfDoc = signer.GetDocument();
+                PdfFormXObject layer = appearance.GetLayer2();
+                Canvas canvas = new Canvas(layer, pdfDoc);
+                Color themeColor = new DeviceRgb(0, 102, 204); // xanh giống XSL
+                string sellerName = signingCert.GetNameInfo(X509NameType.SimpleName, false);
+                // Border
+                canvas.Add(new Div()
+                    .SetBorder(new SolidBorder(themeColor, 2))
+                    .SetPadding(6)
+                    .SetWidth(UnitValue.CreatePercentValue(100))
+                    .SetHeight(UnitValue.CreatePercentValue(100))
+                    .Add(new Paragraph("ĐÃ KÝ ĐIỆN TỬ BỞI")
+                        .SetFontSize(10)
+                        .SetBold()
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetFontColor(themeColor))
+                    .Add(new Paragraph(sellerName.ToUpper())
+                        .SetFontSize(11)
+                        .SetBold()
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetMarginTop(3))
+                    .Add(new Paragraph($"Ngày ký: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}")
+                        .SetFontSize(9)
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetMarginTop(3))
+                    .Add(new Paragraph("✔")
+                        .SetFontSize(14)
+                        .SetFontColor(ColorConstants.GREEN)
+                        .SetTextAlignment(TextAlignment.CENTER))
+                );
+
+                canvas.Close();
                 X509CertificateParser parser = new X509CertificateParser();
                 var bcCert = parser.ReadCertificate(signingCert.RawData);
                 var chain = new IX509Certificate[] {
