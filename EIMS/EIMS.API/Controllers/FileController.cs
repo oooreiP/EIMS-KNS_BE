@@ -12,10 +12,11 @@ namespace EIMS.API.Controllers
     public class FileController : ControllerBase
     {
         private readonly IMediator _mediator;
-
-        public FileController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public FileController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
+            _env = env;
         }
 
         [HttpPost("upload")]
@@ -46,7 +47,7 @@ namespace EIMS.API.Controllers
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms);
 
-            var command = new SignPdfCommand(ms.ToArray(), keyword);
+            var command = new SignPdfCommand(ms.ToArray(), keyword, _env.ContentRootPath);
             var result = await _mediator.Send(command);
 
             if (result.IsFailed)

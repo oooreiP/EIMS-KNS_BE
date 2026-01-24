@@ -18,12 +18,14 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notiService;
+        private readonly IFileStorageService _fileStorageService;
         private readonly ICurrentUserService _currentUser;
-        public CreateInvoiceRequestCommandHandler(IUnitOfWork unitOfWork, INotificationService notiService, ICurrentUserService currentUser)
+        public CreateInvoiceRequestCommandHandler(IUnitOfWork unitOfWork, INotificationService notiService, ICurrentUserService currentUser, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _notiService = notiService;
             _currentUser = currentUser;
+            _fileStorageService = fileStorageService;
         }
         public async Task<Result<CreateRequestResponse>> Handle(CreateInvoiceRequestCommand request, CancellationToken cancellationToken)
         {
@@ -46,7 +48,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
                 return Result.Fail(new Error("Chỉ có Sale mới được phép tạo Invoice Request"));
 
             if (request.Items == null || !request.Items.Any())
-                return Result.Fail("Request phải có ít nhất 1 vật phẩm");
+                return Result.Fail("Request phải có ít nhất 1 vật phẩm");          
             await using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -115,7 +117,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
                 if (request.Amount <= 0) request.Amount = subtotal;
                 if (request.TaxAmount <= 0) request.TaxAmount = vatAmount;
                 if (request.TotalAmount <= 0) request.TotalAmount = request.Amount + request.TaxAmount;
-                decimal invoiceVatRate = subtotal > 0 ? Math.Round(vatAmount / subtotal * 100, 2) : 0;
+                decimal invoiceVatRate = subtotal > 0 ? Math.Round(vatAmount / subtotal * 100, 2) : 0;            
                 var invoiceRequest = new InvoiceRequest
                 {
                     CustomerID = customer?.CustomerID ?? request.CustomerID!.Value,
@@ -134,7 +136,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
                     InvoiceRequestItems = processedItems,
                     InvoiceCustomerName = customer.CustomerName,
                     InvoiceCustomerAddress = customer.Address,
-                    InvoiceCustomerTaxCode = customer.TaxCode,
+                    InvoiceCustomerTaxCode = customer.TaxCode
                 };
                 await _unitOfWork.InvoiceRequestRepository.CreateAsync(invoiceRequest);
                 await _unitOfWork.SaveChanges();

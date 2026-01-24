@@ -14,7 +14,7 @@ namespace EIMS.Application.DTOs.XMLModels
         public Party NBan { get; set; } = new();
 
         [XmlElement("NMua")]
-        public Party NMua { get; set; } = new();
+        public BMua NMua { get; set; } = new();
 
         [XmlArray("DSHHDVu")]
         [XmlArrayItem("HHDVu")]

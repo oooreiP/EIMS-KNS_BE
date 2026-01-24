@@ -44,6 +44,7 @@ namespace EIMS.Domain.Entities
 
         [StringLength(2000)]
         public string? Notes { get; set; }
+        public string? EvidenceFilePath { get; set; }
         public int MinRows { get; set; } = 5;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string InvoiceCustomerName { get; set; }

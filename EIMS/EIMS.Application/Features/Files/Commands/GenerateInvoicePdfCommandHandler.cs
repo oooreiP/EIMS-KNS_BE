@@ -50,7 +50,8 @@ namespace EIMS.Application.Features.Files.Commands
                 SellerAddress = company.Address,
                 SellerPhone = company.ContactPhone,
                 SellerBankAccount = company.AccountNumber, // Or from Company Table
-                BuyerName = invoice.Customer.CustomerName,
+                BuyerName = invoice.Customer.ContactPerson ?? "",
+                BuyerCompany = invoice.Customer.CustomerName,
                 BuyerAddress = invoice.Customer?.Address ?? "",
                 BuyerTaxCode = invoice.Customer?.TaxCode ?? "",
                 Items = _mapper.Map<List<InvoiceItemDto>>(invoice.InvoiceItems),

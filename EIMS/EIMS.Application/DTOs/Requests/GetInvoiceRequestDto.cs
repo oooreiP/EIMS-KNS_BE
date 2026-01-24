@@ -15,6 +15,7 @@ namespace EIMS.Application.DTOs.Requests
         public string StatusName { get; set; }
         public int StatusId { get; set; } // Để FE tô màu (Pending=Vàng, Approved=Xanh)
         public string SaleName { get; set; }
+        public string? EvidenceFilePath { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

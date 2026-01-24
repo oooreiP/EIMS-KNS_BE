@@ -29,6 +29,16 @@ using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using iText.Kernel.Pdf.Canvas.Parser;
 using Rectangle = iText.Kernel.Geom.Rectangle;
 using System.Net.Http;
+using iText.Kernel.Colors;
+using iText.Layout.Borders;
+using iText.Layout.Properties;
+using Org.BouncyCastle.Tls;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Kernel.Pdf.Xobject;
+using iText.Kernel.Pdf.Canvas;
+using iText.IO.Font;
+using iText.Kernel.Font;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -279,7 +289,7 @@ namespace EIMS.Infrastructure.Service
             return await GeneratePdfBytesAsync(htmlContent);
         }
 
-        public byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText)
+        public byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText, string rootPath)
         {
             var location = FindText(pdfBytes, searchText);
             if (location == null) throw new Exception($"Không tìm thấy dòng chữ '{searchText}'");
@@ -289,17 +299,61 @@ namespace EIMS.Infrastructure.Service
             {
                 PdfReader reader = new PdfReader(msInput);
                 PdfSigner signer = new PdfSigner(reader, msOutput, new StampingProperties());
-                float width = 150;
-                float height = 70;
+                float width = 260;
+                float height = 90;
                 Rectangle signatureRect = new Rectangle(
                     location.Rect.GetLeft(),
-                    location.Rect.GetBottom() - height - 5,
+                    location.Rect.GetBottom() - height - 35,
                     width,
                     height);
 
 
                 signer.SetPageNumber(location.PageNumber);
                 signer.SetPageRect(signatureRect);
+                PdfSignatureAppearance appearance = signer.GetSignatureAppearance();
+                appearance
+                    .SetReuseAppearance(false)
+                    .SetPageNumber(location.PageNumber);
+
+                var pdfDoc = signer.GetDocument();
+                PdfFormXObject layer = appearance.GetLayer2();
+                PdfFont font = PdfFontFactory.CreateFont(
+                    rootPath,
+                    PdfEncodings.IDENTITY_H,
+                    PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED
+                );
+                Canvas canvas = new Canvas(layer, pdfDoc);
+                Color themeColor = new DeviceRgb(0, 102, 204); // xanh giống XSL
+                string sellerName = signingCert.GetNameInfo(X509NameType.SimpleName, false);
+                // Border
+                canvas.Add(new Div()
+                    .SetBorder(new SolidBorder(themeColor, 2))
+                    .SetPadding(6)
+                    .SetWidth(UnitValue.CreatePercentValue(100))
+                    .SetHeight(UnitValue.CreatePercentValue(100))
+                    .Add(new Paragraph("ĐÃ KÝ ĐIỆN TỬ BỞI")
+                        .SetFont(font)
+                        .SetFontSize(10)
+                        .SetBold()
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetFontColor(themeColor))
+                    .Add(new Paragraph(sellerName.ToUpper())
+                        .SetFontSize(11)
+                        .SetBold()
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetMarginTop(3))
+                    .Add(new Paragraph($"Ngày ký: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}")
+                        .SetFontSize(9)
+                        .SetTextAlignment(TextAlignment.CENTER)
+                        .SetMarginTop(3))
+                    .Add(new Paragraph("✔")
+                        .SetFont(font)
+                        .SetFontSize(14)
+                        .SetFontColor(ColorConstants.GREEN)
+                        .SetTextAlignment(TextAlignment.CENTER))
+                );
+
+                canvas.Close();
                 X509CertificateParser parser = new X509CertificateParser();
                 var bcCert = parser.ReadCertificate(signingCert.RawData);
                 var chain = new IX509Certificate[] {
@@ -408,12 +462,12 @@ namespace EIMS.Infrastructure.Service
             string mccqt = invoice.TaxAuthorityCode ?? "";
             if (!string.IsNullOrEmpty(invoice.QRCodeData))
             {
-                qrContent = $"http://159.223.64.31/swagger/view?code={invoice.QRCodeData}";
+                qrContent = $"https://tracuu-knsinvoice.id.vn/";
             }
             else
             {
                 // Fallback: Thông tin cơ bản
-                qrContent = $"{invoice.InvoiceNumber}|{invoice.TotalAmount}";
+                qrContent = $"https://tracuu-knsinvoice.id.vn/";
             }
             string qrBase64 = _qrService.GenerateQrImageBase64(qrContent);
             string refText = invoice.ReferenceNote ?? "";
