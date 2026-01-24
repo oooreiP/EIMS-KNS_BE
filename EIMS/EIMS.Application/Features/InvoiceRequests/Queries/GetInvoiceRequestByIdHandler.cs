@@ -42,6 +42,9 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 TotalAmountInWords = entity.TotalAmountInWords,
                 CreatedAt = entity.CreatedAt,
                 EvidenceFilePath = entity.EvidenceFilePath,
+                InvoiceCustomerType = entity.InvoiceCustomerType != null
+                    ? entity.InvoiceCustomerType.ToString()
+                    : null,
                 RejectReason = entity.Notes, 
                 Items = entity.InvoiceRequestItems.Select(i => new InvoiceRequestItemDto
                 {

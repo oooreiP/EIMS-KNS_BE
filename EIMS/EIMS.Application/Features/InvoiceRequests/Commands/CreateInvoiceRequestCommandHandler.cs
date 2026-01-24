@@ -132,6 +132,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
                     TotalAmount = totalAmount,
                     TotalAmountInWords = NumberToWordsConverter.ChuyenSoThanhChu(totalAmount),
                     RequestStatusID = 1,
+                    InvoiceCustomerType = request.InvoiceCustomerType,
                     MinRows = request.MinRows ?? 5,
                     InvoiceRequestItems = processedItems,
                     InvoiceCustomerName = customer.CustomerName,
@@ -141,12 +142,9 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
                 await _unitOfWork.InvoiceRequestRepository.CreateAsync(invoiceRequest);
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
-                if (request.AccountantId.HasValue)
-                {
-                    await _notiService.SendToUserAsync(request.AccountantId.Value,
+                await _notiService.SendToRoleAsync("Accountant",
                 $"Có yêu cầu hóa đơn mới với id là {invoiceRequest.RequestID} đã được khởi tạo bởi {user.FullName}. Vui lòng xử lý.",
                 typeId: 2);
-                }
                 var entity = await _unitOfWork.InvoiceRequestRepository.GetAllQueryable()
                 .Include(x => x.RequestStatus)
                 .Include(x => x.Sales)

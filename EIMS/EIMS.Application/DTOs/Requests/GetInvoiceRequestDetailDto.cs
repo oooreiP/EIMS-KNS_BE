@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EIMS.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,7 @@ namespace EIMS.Application.DTOs.Requests
         public string TotalAmountInWords { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? RejectReason { get; set; }
+        public string? InvoiceCustomerType { get; set; }
         public string? EvidenceFilePath { get; set; }
         public List<InvoiceRequestItemDto> Items { get; set; } = new();
     }
