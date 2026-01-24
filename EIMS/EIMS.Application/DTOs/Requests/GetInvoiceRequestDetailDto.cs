@@ -17,6 +17,7 @@ namespace EIMS.Application.DTOs.Requests
         public string TotalAmountInWords { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? RejectReason { get; set; }
+        public string? EvidenceFilePath { get; set; }
         public List<InvoiceRequestItemDto> Items { get; set; } = new();
     }
 }

@@ -53,6 +53,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 StatusName = x.RequestStatus.StatusName,
                 StatusId = x.RequestStatusID,
                 SaleName =  x.Sales.FullName,
+                EvidenceFilePath = x.EvidenceFilePath,
                 CreatedAt = x.CreatedAt
             });
             var paginatedResult = await PaginatedList<GetInvoiceRequestDto>

@@ -4,6 +4,7 @@ using EIMS.Application.DTOs.Requests;
 using EIMS.Application.Features.Invoices.Commands;
 using FluentResults;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,5 +33,6 @@ namespace EIMS.Application.Features.InvoiceRequests.Commands
         public string? ContactEmail { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
+       
     }
 }

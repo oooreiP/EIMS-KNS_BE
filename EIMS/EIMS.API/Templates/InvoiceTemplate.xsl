@@ -401,9 +401,9 @@
   ">
 					<div>
 						<span style="font-size: 12px;">
-							Mã số thuế
+							Mã số thuế/CCCD
 							<xsl:if test="$IsBilingual = 'true'">
-								<span class="en-label">(Tax ID)</span>
+								<span class="en-label">(Tax ID/ID Card)</span>
 							</xsl:if>:
 						</span>
 						<span style="font-weight: bold; font-size: 13px;">
