@@ -279,7 +279,7 @@ namespace EIMS.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateAdjustment([FromBody] AdjustmentInvoiceDTO dto)
         {
-            var command = new CreateAdjustmentInvoiceCommand { TemplateId = dto.TemplateId, OriginalInvoiceId = dto.OriginalInvoiceId,AdjustmentItems = dto.AdjustmentItems, AdjustmentReason = dto.AdjustmentReason};
+            var command = new CreateAdjustmentInvoiceCommand { TemplateId = dto.TemplateId,InvoiceStatusId = dto.InvoiceStatusId, OriginalInvoiceId = dto.OriginalInvoiceId,AdjustmentItems = dto.AdjustmentItems, AdjustmentReason = dto.AdjustmentReason};
             command.RootPath = _env.ContentRootPath;
             var result = await _mediator.Send(command);
 

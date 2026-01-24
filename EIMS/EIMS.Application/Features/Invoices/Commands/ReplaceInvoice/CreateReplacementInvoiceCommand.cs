@@ -19,6 +19,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         // --- [GIỐNG CREATE INVOICE - CHO PHÉP SỬA] ---
         public int? TemplateID { get; set; }
         public int? CustomerID { get; set; }
+        public int? InvoiceStatusID { get; set; }
         public string? TaxCode { get; set; } 
         public int CompanyID { get; set; } = 1;
 
