@@ -47,6 +47,11 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<RefreshTokenResponse, AuthResponse>();
             CreateMap<Invoice, InvoiceDTO>()
                         // Map the PaymentStatus name from the navigation property
+                        .ForMember(dest => dest.InvoiceCustomerType, opt => opt.MapFrom(src =>
+                            src.InvoiceCustomerType.HasValue
+                                ? src.InvoiceCustomerType.Value.ToString()
+                                : null
+                        ))
                         .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src =>
                             src.PaymentStatus != null ? src.PaymentStatus.StatusName : "Unknown"))
                         // Ensure PaidAmount is calculated from the Payments collection (which we now include)

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using EIMS.Domain.Enums;
 
 namespace EIMS.Application.DTOs.Invoices
 {
@@ -23,6 +24,7 @@ namespace EIMS.Application.DTOs.Invoices
         public DateTime? IssuedDate { get; set; }
         public DateTime? PaymentDueDate { get; set; }
         public decimal SubtotalAmount { get; set; }
+        public string? InvoiceCustomerType { get; set; }
         public decimal VATRate { get; set; }
         public decimal VATAmount { get; set; }
         public decimal TotalAmount { get; set; }

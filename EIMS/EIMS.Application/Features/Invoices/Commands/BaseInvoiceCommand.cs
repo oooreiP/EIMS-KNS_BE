@@ -1,4 +1,5 @@
 ﻿using EIMS.Application.DTOs.InvoiceItem;
+using EIMS.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace EIMS.Application.Features.Invoices.Commands
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
         public int? PerformedBy { get; set; }
+        public EInvoiceCustomerType? InvoiceCustomerType { get; set; }
         public int? MinRows { get; set; }
         // public int SalesID { get; set; }
         public string? ContactEmail { get; set; }

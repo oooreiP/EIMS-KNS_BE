@@ -1,5 +1,6 @@
 ﻿using EIMS.Application.DTOs;
 using EIMS.Application.DTOs.Invoices;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using System;
@@ -24,6 +25,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public int CompanyID { get; set; } = 1;
 
         // Thông tin khách hàng (Cho phép sửa lại toàn bộ nếu sai)
+        public EInvoiceCustomerType? InvoiceCustomerType { get; set; }
         public string? CustomerName { get; set; }
         public string? Address { get; set; }
         public string? ContactEmail { get; set; }
