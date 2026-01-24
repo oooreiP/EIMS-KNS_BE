@@ -27,7 +27,7 @@ namespace EIMS.Application.Features.Files.Commands
             if (certResult.IsFailed)
                 return Result.Fail(certResult.Errors);
             var signingCert = certResult.Value;
-            var result = _pdfService.SignPdfAtText(request.PdfBytes, signingCert, request.SearchText);
+            var result = _pdfService.SignPdfAtText(request.PdfBytes, signingCert, request.SearchText, request.RootPath);
 
             return await Task.FromResult(result);
         }

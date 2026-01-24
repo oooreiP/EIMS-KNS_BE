@@ -47,7 +47,7 @@
 
 	<xs:simpleType name="MSTType">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="([0-9]{10})|([0-9]{10}-[0-9]{3})"/>
+			<xs:pattern value="([0-9]{10})|([0-9]{10}-[0-9]{3}|())"/>
 		</xs:restriction>
 	</xs:simpleType>
 

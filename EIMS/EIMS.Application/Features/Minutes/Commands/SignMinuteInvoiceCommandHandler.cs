@@ -67,12 +67,16 @@ namespace EIMS.Application.Features.Minutes.Commands
                 return Result.Fail(certResult.Errors);
 
             var signingCert = certResult.Value;
-
+            var fontPath = Path.Combine(
+                request.RootPath,
+                "Fonts",
+                "arial.ttf"
+            );
             // Ký số vào file (Kết quả là byte[] đã ký)
             byte[] signedPdfBytes;
             try
             {
-                signedPdfBytes = _pdfService.SignPdfAtText(pdfBytes, signingCert, request.SearchText);
+                signedPdfBytes = _pdfService.SignPdfAtText(pdfBytes, signingCert, request.SearchText, fontPath);
             }
             catch (Exception ex)
             {
