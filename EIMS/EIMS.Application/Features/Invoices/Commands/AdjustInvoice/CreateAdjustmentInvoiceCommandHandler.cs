@@ -72,6 +72,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 CustomerID = originalInvoice.CustomerID,
                 SalesID = originalInvoice.SalesID,
                 InvoiceCustomerName = originalInvoice.InvoiceCustomerName,
+                InvoiceCustomerType = originalInvoice.InvoiceCustomerType,
                 InvoiceCustomerAddress = originalInvoice.InvoiceCustomerAddress,
                 InvoiceCustomerTaxCode = originalInvoice.InvoiceCustomerTaxCode,
                 InvoiceStatusID = request.InvoiceStatusId ?? 1,

@@ -1,3 +1,4 @@
+using EIMS.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -39,6 +40,7 @@ namespace EIMS.Domain.Entities
         public int? RequestID { get; set; }
         public int? CreatedBy { get; set; }
         public int InvoiceType { get; set; } = 1;
+        public EInvoiceCustomerType? InvoiceCustomerType { get; set; } = EInvoiceCustomerType.Business;
         public int? OriginalInvoiceID { get; set; }
         public string? PaymentMethod { get; set; }
         public DateTime? SignDate { get; set; }

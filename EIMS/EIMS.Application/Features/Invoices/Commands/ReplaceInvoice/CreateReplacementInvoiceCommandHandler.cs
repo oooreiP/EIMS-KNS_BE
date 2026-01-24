@@ -184,6 +184,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     Notes = request.Notes, // Ghi chú user nhập (Lý do thay thế ngắn gọn)
                     CompanyId = request.CompanyID,
                     PaymentMethod = request.PaymentMethod,
+                    InvoiceCustomerType = request.InvoiceCustomerType ?? originalInvoice.InvoiceCustomerType,
                     ReferenceNote = refText,
                     SubtotalAmount = subtotal,
                     VATAmount = vatAmount,
