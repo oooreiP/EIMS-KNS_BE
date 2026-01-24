@@ -277,8 +277,9 @@ namespace EIMS.API.Controllers
         [HttpPost("adjustment")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateAdjustment([FromBody] CreateAdjustmentInvoiceCommand command)
+        public async Task<IActionResult> CreateAdjustment([FromBody] AdjustmentInvoiceDTO dto)
         {
+            var command = new CreateAdjustmentInvoiceCommand { TemplateId = dto.TemplateId, OriginalInvoiceId = dto.OriginalInvoiceId,AdjustmentItems = dto.AdjustmentItems, AdjustmentReason = dto.AdjustmentReason};
             command.RootPath = _env.ContentRootPath;
             var result = await _mediator.Send(command);
 
