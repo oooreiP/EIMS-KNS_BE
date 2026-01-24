@@ -177,7 +177,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     OriginalInvoiceID = originalInvoice.InvoiceID,
                     AdjustmentReason = refText,
                     CreatedAt = DateTime.UtcNow, // Thời gian hiện tại
-                    InvoiceStatusID = 1, // Draft
+                    InvoiceStatusID = request.InvoiceStatusID ?? 1, // Draft
                     TemplateID = request.TemplateID.Value,
                     CustomerID = customer.CustomerID,
                     SalesID = originalInvoice.SalesID,
