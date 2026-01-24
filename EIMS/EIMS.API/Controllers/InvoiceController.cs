@@ -279,7 +279,7 @@ namespace EIMS.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateAdjustment([FromBody] CreateAdjustmentInvoiceCommand command)
         {
-            // Gửi command sang Handler xử lý
+            command.RootPath = _env.ContentRootPath;
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)
@@ -316,6 +316,7 @@ namespace EIMS.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateReplacement([FromBody] CreateReplacementInvoiceCommand command)
         {
+            command.RootPath = _env.ContentRootPath;
             var result = await _mediator.Send(command);
 
             if (result.IsSuccess)

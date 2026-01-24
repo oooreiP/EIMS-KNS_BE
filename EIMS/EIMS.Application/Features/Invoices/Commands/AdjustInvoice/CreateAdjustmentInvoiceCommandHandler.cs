@@ -233,8 +233,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
             await _uow.SaveChanges();
             try
             {
-                string rootPath = AppDomain.CurrentDomain.BaseDirectory;
-                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
+                byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, request.RootPath);
                 using (var pdfStream = new MemoryStream(pdfBytes))
                 {
                     string filePdfName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";

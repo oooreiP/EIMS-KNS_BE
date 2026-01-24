@@ -19,5 +19,6 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
         public string? AdjustmentReason { get; set; }
         public int? PerformedBy { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
+        public string? RootPath { get; set; }
     }
 }

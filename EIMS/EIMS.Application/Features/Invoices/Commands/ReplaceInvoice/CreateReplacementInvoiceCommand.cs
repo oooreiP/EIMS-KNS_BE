@@ -30,7 +30,6 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public string? ContactPhone { get; set; }
         public string? Notes { get; set; } // Ghi chú thêm
         public string PaymentMethod { get; set; }
-
         // Danh sách hàng hóa (Làm lại bảng mới hoàn toàn)
         public List<InvoiceItemDto>? Items { get; set; }
 
@@ -38,5 +37,6 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public decimal? Amount { get; set; }
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
+        public string? RootPath { get; set; }
     }
 }
