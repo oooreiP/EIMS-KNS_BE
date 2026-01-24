@@ -12,10 +12,11 @@ namespace EIMS.API.Controllers
     public class MinuteController : ControllerBase
     {
         private readonly IMediator _mediator;
-
-        public MinuteController(IMediator mediator)
+        private readonly IWebHostEnvironment _env;
+        public MinuteController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
+            _env = env;
         }
 
         [HttpPost]
@@ -50,7 +51,7 @@ namespace EIMS.API.Controllers
         [HttpPost("sign-seller/{id}")]
         public async Task<IActionResult> SignBySeller(int id)
         {
-            var command = new SignMinuteInvoiceCommand(id, "ĐẠI DIỆN BÊN B");
+            var command = new SignMinuteInvoiceCommand(id, "ĐẠI DIỆN BÊN B", _env.ContentRootPath);
 
             var result = await _mediator.Send(command);
 

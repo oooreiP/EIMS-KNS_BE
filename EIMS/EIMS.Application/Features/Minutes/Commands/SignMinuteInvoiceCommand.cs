@@ -12,11 +12,13 @@ namespace EIMS.Application.Features.Minutes.Commands
     {
         public int MinuteInvoiceId { get; set; }
         public string SearchText { get; set; } = "ĐẠI DIỆN BÊN B"; // Mặc định vị trí ký của bên bán
+        public string RootPath { get; set; } 
 
-        public SignMinuteInvoiceCommand(int id, string searchText)
+        public SignMinuteInvoiceCommand(int id, string searchText, string rootPath)
         {
             MinuteInvoiceId = id;
             SearchText = searchText;
+            RootPath = rootPath;
         }
     }
 }

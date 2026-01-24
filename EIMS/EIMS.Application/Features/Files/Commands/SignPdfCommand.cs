@@ -11,6 +11,7 @@ namespace EIMS.Application.Features.Files.Commands
 {
     public record SignPdfCommand(
     byte[] PdfBytes,
-    string SearchText
+    string SearchText,
+    string RootPath
     ) : IRequest<Result<byte[]>>;
 }

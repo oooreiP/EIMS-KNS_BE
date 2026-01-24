@@ -37,6 +37,8 @@ using iText.Layout;
 using iText.Layout.Element;
 using iText.Kernel.Pdf.Xobject;
 using iText.Kernel.Pdf.Canvas;
+using iText.IO.Font;
+using iText.Kernel.Font;
 namespace EIMS.Infrastructure.Service
 {
     public class PdfService : IPdfService
@@ -287,7 +289,7 @@ namespace EIMS.Infrastructure.Service
             return await GeneratePdfBytesAsync(htmlContent);
         }
 
-        public byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText)
+        public byte[] SignPdfAtText(byte[] pdfBytes, X509Certificate2 signingCert, string searchText, string rootPath)
         {
             var location = FindText(pdfBytes, searchText);
             if (location == null) throw new Exception($"Không tìm thấy dòng chữ '{searchText}'");
@@ -311,11 +313,15 @@ namespace EIMS.Infrastructure.Service
                 PdfSignatureAppearance appearance = signer.GetSignatureAppearance();
                 appearance
                     .SetReuseAppearance(false)
-                    .SetPageRect(signatureRect)
                     .SetPageNumber(location.PageNumber);
 
                 var pdfDoc = signer.GetDocument();
                 PdfFormXObject layer = appearance.GetLayer2();
+                PdfFont font = PdfFontFactory.CreateFont(
+                    rootPath,
+                    PdfEncodings.IDENTITY_H,
+                    PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED
+                );
                 Canvas canvas = new Canvas(layer, pdfDoc);
                 Color themeColor = new DeviceRgb(0, 102, 204); // xanh giống XSL
                 string sellerName = signingCert.GetNameInfo(X509NameType.SimpleName, false);
@@ -326,6 +332,7 @@ namespace EIMS.Infrastructure.Service
                     .SetWidth(UnitValue.CreatePercentValue(100))
                     .SetHeight(UnitValue.CreatePercentValue(100))
                     .Add(new Paragraph("ĐÃ KÝ ĐIỆN TỬ BỞI")
+                        .SetFont(font)
                         .SetFontSize(10)
                         .SetBold()
                         .SetTextAlignment(TextAlignment.CENTER)
@@ -340,6 +347,7 @@ namespace EIMS.Infrastructure.Service
                         .SetTextAlignment(TextAlignment.CENTER)
                         .SetMarginTop(3))
                     .Add(new Paragraph("✔")
+                        .SetFont(font)
                         .SetFontSize(14)
                         .SetFontColor(ColorConstants.GREEN)
                         .SetTextAlignment(TextAlignment.CENTER))
@@ -454,12 +462,12 @@ namespace EIMS.Infrastructure.Service
             string mccqt = invoice.TaxAuthorityCode ?? "";
             if (!string.IsNullOrEmpty(invoice.QRCodeData))
             {
-                qrContent = $"http://159.223.64.31/swagger/view?code={invoice.QRCodeData}";
+                qrContent = $"https://tracuu-knsinvoice.id.vn/";
             }
             else
             {
                 // Fallback: Thông tin cơ bản
-                qrContent = $"{invoice.InvoiceNumber}|{invoice.TotalAmount}";
+                qrContent = $"https://tracuu-knsinvoice.id.vn/";
             }
             string qrBase64 = _qrService.GenerateQrImageBase64(qrContent);
             string refText = invoice.ReferenceNote ?? "";

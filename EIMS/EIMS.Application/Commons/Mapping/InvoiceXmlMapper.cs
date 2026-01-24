@@ -91,12 +91,12 @@ namespace EIMS.Application.Commons.Mapping
                                 NMua = new BMua
                                 {
                                     Ten = companyName,
-                                    MST = buyerMst,
+                                    MST = string.IsNullOrWhiteSpace(buyerMst) ? null : buyerMst,
                                     MDVQHNSach =  "",
                                     DChi = invoice.InvoiceCustomerAddress ?? invoice.Customer.Address,
                                     DCTDTu = invoice.Customer.ContactEmail,
                                     SDThoai = invoice.Customer.ContactPhone ?? "",
-                                    CCCDan = buyerCccd,
+                                    CCCDan = string.IsNullOrWhiteSpace(buyerCccd) ? null : buyerCccd,
                                     SHChieu = "",
                                     HVTNMHang = buyerName,
                                     TNHang = "",
