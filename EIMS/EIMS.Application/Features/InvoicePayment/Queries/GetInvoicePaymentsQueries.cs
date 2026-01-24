@@ -15,6 +15,7 @@ namespace EIMS.Application.Features.InvoicePayment.Queries
         public int PageSize { get; set; } = 10;
         public int? InvoiceId { get; set; }
         public int? CustomerId { get; set; }
+        public int? SalesId { get; set; }
         public string? SearchTerm { get; set; }
     }
 }
