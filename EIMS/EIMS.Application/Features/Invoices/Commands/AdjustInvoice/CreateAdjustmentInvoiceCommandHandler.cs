@@ -88,54 +88,92 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                     // Tìm sản phẩm gốc để đối chiếu số lượng (Validation)
                     var originalItem = originalInvoice.InvoiceItems
                         .FirstOrDefault(x => x.ProductID == itemDto.ProductID);
-
-                    var origQty = originalItem?.Quantity ?? 0;
-                    decimal origPrice = originalItem?.UnitPrice ?? 0;
-
-                    // Lấy thông tin sản phẩm hiện tại (để lấy VAT mới nhất nếu cần)
                     var product = await _uow.ProductRepository.GetByIdAsync(itemDto.ProductID);
-
-                    // --- [LOGIC VALIDATION] ---
-                    // Số cuối = Số Gốc + Số Điều Chỉnh
-                    var finalQty = origQty + itemDto.Quantity;
-
-                    // Rule: Số lượng cuối không được Âm
-                    if (finalQty < 0)
+                    if (product == null)
                     {
-                        return Result.Fail($"Sản phẩm {product?.Name ?? itemDto.ProductID.ToString()}: Số lượng điều chỉnh giảm quá lớn. (Gốc: {origQty}, Giảm: {itemDto.Quantity} -> Còn: {finalQty})");
+                        return Result.Fail($"Không tìm thấy sản phẩm ID = {itemDto.ProductID}");
                     }
 
-                    // Rule: Đơn giá cuối không được Âm (trừ trường hợp chiết khấu đặc biệt, nhưng thường là không)
-                    decimal adjPrice = itemDto.UnitPrice ?? 0; // Giá chênh lệch
-                    decimal finalPrice = origPrice + adjPrice;
-                    if (finalPrice < 0)
+                    if (originalItem != null)
                     {
-                        return Result.Fail($"Sản phẩm {product?.Name}: Đơn giá sau điều chỉnh bị âm.");
+                        var origQty = originalItem?.Quantity ?? 0;
+                        decimal origPrice = originalItem?.UnitPrice ?? 0;
+                        var finalQty = origQty + itemDto.Quantity;
+
+                        // Rule: Số lượng cuối không được Âm
+                        if (finalQty < 0)
+                        {
+                            return Result.Fail($"Sản phẩm {product?.Name ?? itemDto.ProductID.ToString()}: Số lượng điều chỉnh giảm quá lớn. (Gốc: {origQty}, Giảm: {itemDto.Quantity} -> Còn: {finalQty})");
+                        }
+
+                        // Rule: Đơn giá cuối không được Âm (trừ trường hợp chiết khấu đặc biệt, nhưng thường là không)
+                        decimal adjPrice = itemDto.UnitPrice ?? 0; // Giá chênh lệch
+                        decimal finalPrice = origPrice + adjPrice;
+                        if (finalPrice < 0)
+                        {
+                            return Result.Fail($"Sản phẩm {product?.Name}: Đơn giá sau điều chỉnh bị âm.");
+                        }
+
+                        decimal vatRate = itemDto.OverrideVATRate ?? product?.VATRate ?? originalItem?.Product?.VATRate ?? 0;
+                        decimal originalAmount = (decimal)origQty * origPrice;
+                        decimal finalAmount = (decimal)finalQty * finalPrice;
+                        decimal adjustmentAmount = finalAmount - originalAmount;
+
+                        decimal adjustmentVAT = adjustmentAmount * (vatRate / 100m);
+
+                        // Tạo Item (Lưu số chênh lệch)
+                        var newItem = new InvoiceItem
+                        {
+                            IsAdjustmentItem = true,
+                            OriginalInvoiceItemID = originalItem.InvoiceItemID,
+                            ProductID = itemDto.ProductID,
+                            Quantity = itemDto.Quantity, // Lưu phần chênh lệch (VD: -2)
+                            UnitPrice = adjPrice,                  // Lưu phần chênh lệch giá (VD: 0 hoặc -1000)
+                            Amount = adjustmentAmount,             // Lưu tiền chênh lệch (Có thể Âm)
+                            VATAmount = adjustmentVAT              // Lưu thuế chênh lệch (Có thể Âm)
+                        };
+
+                        adjInvoice.InvoiceItems.Add(newItem);
+
+                        totalAdjSubtotal += adjustmentAmount;
+                        totalAdjVAT += adjustmentVAT;
                     }
-
-                    decimal vatRate = itemDto.OverrideVATRate ?? product?.VATRate ?? originalItem?.Product?.VATRate ?? 0;
-                    decimal originalAmount = (decimal)origQty * origPrice;
-                    decimal finalAmount = (decimal)finalQty * finalPrice;
-                    decimal adjustmentAmount = finalAmount - originalAmount;
-
-                    decimal adjustmentVAT = adjustmentAmount * (vatRate / 100m);
-
-                    // Tạo Item (Lưu số chênh lệch)
-                    var newItem = new InvoiceItem
+                    else
                     {
-                        IsAdjustmentItem = true,
-                        OriginalInvoiceItemID = originalItem.InvoiceItemID,
-                        ProductID = itemDto.ProductID,
-                        Quantity = itemDto.Quantity, // Lưu phần chênh lệch (VD: -2)
-                        UnitPrice = adjPrice,                  // Lưu phần chênh lệch giá (VD: 0 hoặc -1000)
-                        Amount = adjustmentAmount,             // Lưu tiền chênh lệch (Có thể Âm)
-                        VATAmount = adjustmentVAT              // Lưu thuế chênh lệch (Có thể Âm)
-                    };
+                        if (itemDto.Quantity <= 0)
+                        {
+                            return Result.Fail(
+                                $"Sản phẩm {product.Name}: Không thể thêm mới với số lượng <= 0."
+                            );
+                        }
 
-                    adjInvoice.InvoiceItems.Add(newItem);
+                        decimal unitPrice = itemDto.UnitPrice ?? product.BasePrice;
+                        if (unitPrice < 0)
+                        {
+                            return Result.Fail($"Sản phẩm {product.Name}: Đơn giá không hợp lệ.");
+                        }
 
-                    totalAdjSubtotal += adjustmentAmount;
-                    totalAdjVAT += adjustmentVAT;
+                        decimal vatRate = itemDto.OverrideVATRate ?? product.VATRate ?? 0;
+
+                        decimal amount = (decimal)itemDto.Quantity * unitPrice;
+                        decimal vatAmount = amount * (vatRate / 100m);
+
+                        var newItem = new InvoiceItem
+                        {
+                            IsAdjustmentItem = true,
+                            OriginalInvoiceItemID = null, 
+                            ProductID = itemDto.ProductID,
+                            Quantity = itemDto.Quantity,
+                            UnitPrice = unitPrice,
+                            Amount = amount,
+                            VATAmount = vatAmount
+                        };
+
+                        adjInvoice.InvoiceItems.Add(newItem);
+
+                        totalAdjSubtotal += amount;
+                        totalAdjVAT += vatAmount;
+                    }
                 }
             }
 
