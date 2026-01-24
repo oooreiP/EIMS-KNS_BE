@@ -71,7 +71,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 {
                     customer = new Customer
                     {
-                        CustomerName = request.CustomerName ?? request.ContactPerson ?? "Khách hàng chưa đặt tên",
+                        CustomerName = request.CustomerName ?? "Khách hàng chưa đặt tên",
                         TaxCode = request.TaxCode ?? "",
                         Address = request.Address ?? "Chưa cập nhật",
                         ContactEmail = request.ContactEmail ?? "noemail@system.local",
