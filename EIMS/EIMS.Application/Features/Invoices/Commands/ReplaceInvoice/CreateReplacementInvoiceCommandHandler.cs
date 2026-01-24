@@ -223,9 +223,19 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 var fullInvoice = await _uow.InvoicesRepository.GetByIdAsync(
                     replacementInvoice.InvoiceID,                   "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,InvoiceStatus,Company"
                 );
+                var fullTemplate = await _uow.InvoiceTemplateRepository.GetTemplateDetailsAsync(fullInvoice.InvoiceID);
+                string fullkhmsHDon = fullTemplate.Serial.PrefixID.ToString();
+                string fullkhHDon =
+                    $"{fullTemplate.Serial.SerialStatus.Symbol}" +
+                    $"{fullTemplate.Serial.Year}" +
+                    $"{fullTemplate.Serial.InvoiceType.Symbol}" +
+                    $"{fullTemplate.Serial.Tail}";
+                string originalAutoReferenceText = $"Bị thay thế bởi hóa đơn Mẫu số {fullkhmsHDon} Ký hiệu {fullkhHDon} Số {soHoaDon} ngày {ngayGoc.Day:00} tháng {ngayGoc.Month:00} năm {ngayGoc.Year}";
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
+                originalInvoice.ReferenceNote = originalAutoReferenceText;
                 await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+                await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
                 await _uow.SaveChanges();
                 try
                 {
