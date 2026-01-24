@@ -36,6 +36,10 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
             {
                 query = query.Where(s => s.CustomerID == request.CustomerID.Value);
             }
+            if (request.SalesId.HasValue)
+            {
+                query = query.Where(s => s.StatementDetails.Any(d => d.Invoice.SalesID == request.SalesId.Value));
+            }
 
             if (!string.IsNullOrEmpty(request.StatementCode))
             {

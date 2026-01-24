@@ -74,6 +74,37 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+
+        [HttpGet("sale/{saleId}")]
+        public async Task<IActionResult> GetPaymentsBySaleId(
+            int saleId,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] int? invoiceId = null,
+            [FromQuery] int? customerId = null)
+        {
+            var query = new GetInvoicePayments
+            {
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                InvoiceId = invoiceId,
+                CustomerId = customerId,
+                SalesId = saleId
+            };
+
+            var result = await _mediator.Send(query);
+            var firstError = result.Errors.FirstOrDefault();
+            if (result.IsFailed)
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Get Payments By Sale Failed",
+                    Detail = firstError?.Message ?? "Invalid request."
+                });
+            return Ok(result.Value);
+        }
         [HttpGet("monthly-debt")]
         public async Task<IActionResult> GetMonthlyDebt([FromQuery] int month, [FromQuery] int year, [FromQuery] int? customerId)
         {
