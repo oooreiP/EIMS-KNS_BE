@@ -221,15 +221,17 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
 
                 // Load lại full data để sinh XML
                 var fullInvoice = await _uow.InvoicesRepository.GetByIdAsync(
-                    replacementInvoice.InvoiceID,                   "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,InvoiceStatus,Company"
+                    replacementInvoice.InvoiceID,"Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,InvoiceStatus,Company"
                 );
-                var fullTemplate = await _uow.InvoiceTemplateRepository.GetTemplateDetailsAsync(fullInvoice.InvoiceID);
-                string fullkhmsHDon = fullTemplate.Serial.PrefixID.ToString();
+                var fulltemplate = originalInvoice.Template;
+                var fullserial = fulltemplate.Serial;
+                var fullprefix = fullserial.Prefix;
+                string fullkhmsHDon = fullprefix.PrefixID.ToString();
                 string fullkhHDon =
-                    $"{fullTemplate.Serial.SerialStatus.Symbol}" +
-                    $"{fullTemplate.Serial.Year}" +
-                    $"{fullTemplate.Serial.InvoiceType.Symbol}" +
-                    $"{fullTemplate.Serial.Tail}";
+                    $"{fullserial.SerialStatus.Symbol}" +
+                    $"{fullserial.Year}" +
+                    $"{fullserial.InvoiceType.Symbol}" +
+                    $"{fullserial.Tail}";
                 string originalAutoReferenceText = $"Bị thay thế bởi hóa đơn Mẫu số {fullkhmsHDon} Ký hiệu {fullkhHDon} Số {soHoaDon} ngày {originalInvoice.IssuedDate:dd/MM/yyyy}";
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
@@ -239,8 +241,8 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 await _uow.SaveChanges();
                 try
                 {
-                    string rootPath = AppDomain.CurrentDomain.BaseDirectory;
-                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
+                    
+                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, request.RootPath);
                     using (var pdfStream = new MemoryStream(pdfBytes))
                     {
                         string filePdfName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
