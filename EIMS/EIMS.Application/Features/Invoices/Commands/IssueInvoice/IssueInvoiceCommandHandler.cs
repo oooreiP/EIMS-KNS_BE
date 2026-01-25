@@ -91,7 +91,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                     invoice.RemainingAmount = invoice.TotalAmount - initialPaidAmount;
                     if (invoice.RemainingAmount <= 0)
                     {
-                        invoice.PaymentStatusID = 3;
+                        invoice.PaymentStatusID = 1;
                     }
                     else
                     {
@@ -124,7 +124,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 invoiceRequest.RequestStatusID = 5;
                 await _uow.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
             }
-
+            await _uow.SaveChanges();
             if (invoice.InvoiceType == 2 || invoice.InvoiceType == 3)
             {
                 await RecalculateStatementsForInvoiceAsync(invoice, cancellationToken);
