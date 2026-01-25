@@ -41,6 +41,12 @@ namespace EIMS.Application.Features.Customers.Queries
                 );
             }
 
+            // 2.1 Apply Active Filter (if provided)
+            if (request.IsActive.HasValue)
+            {
+                query = query.Where(c => c.IsActive == request.IsActive.Value);
+            }
+
             // 3. Order by most recently added (or by ID)
             query = query.OrderByDescending(c => c.CustomerID);
 

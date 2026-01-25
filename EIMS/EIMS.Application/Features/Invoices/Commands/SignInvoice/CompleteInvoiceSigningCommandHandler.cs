@@ -4,6 +4,7 @@ using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,15 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
         private readonly IInvoiceXMLService _invoiceXmlService;
         private readonly IPdfService _pdfService;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ILogger<CompleteInvoiceSigningCommandHandler> _logger;
 
-        public CompleteInvoiceSigningCommandHandler(IUnitOfWork uow, IInvoiceXMLService invoiceXmlService, IPdfService pdfService, IFileStorageService fileStorageService)
+        public CompleteInvoiceSigningCommandHandler(IUnitOfWork uow, IInvoiceXMLService invoiceXmlService, IPdfService pdfService, IFileStorageService fileStorageService, ILogger<CompleteInvoiceSigningCommandHandler> logger)
         {
             _unitOfWork = uow;
             _invoiceXmlService = invoiceXmlService;
             _pdfService = pdfService;
             _fileStorageService = fileStorageService;
+            _logger = logger;
         }
 
         public async Task<Result> Handle(CompleteInvoiceSigningCommand request, CancellationToken cancellationToken)
@@ -45,6 +48,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             await _unitOfWork.SaveChanges();
             try
             {
+                _logger.LogInformation("Starting PDF generation for InvoiceId {InvoiceId}", invoice.InvoiceID);
                 byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(
                  invoice.InvoiceID,
                  request.RootPath);
@@ -52,6 +56,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
 
                 using (var pdfStream = new MemoryStream(pdfBytes))
                 {
+                    _logger.LogInformation("Uploading PDF {FileName} for InvoiceId {InvoiceId}", pdfFileName, invoice.InvoiceID);
                     var pdfUpload = await _fileStorageService.UploadFileAsync(pdfStream, pdfFileName, "invoices/pdf");
 
                     if (pdfUpload.IsSuccess)
@@ -60,12 +65,17 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                         invoice.FilePath = pdfUpload.Value.Url;
                         await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);
                         await _unitOfWork.SaveChanges();
+                        _logger.LogInformation("PDF uploaded and saved to DB. InvoiceId {InvoiceId} | Url {Url}", invoice.InvoiceID, invoice.FilePath);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("PDF upload failed for InvoiceId {InvoiceId}. Error: {Error}", invoice.InvoiceID, pdfUpload.Errors.FirstOrDefault()?.Message);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // _logger.LogError($"Ký thành công nhưng lỗi tạo PDF: {ex.Message}");
+                _logger.LogError(ex, "Signed invoice but failed to generate/upload PDF. InvoiceId {InvoiceId}", invoice.InvoiceID);
             }
             var history = new InvoiceHistory
             {
