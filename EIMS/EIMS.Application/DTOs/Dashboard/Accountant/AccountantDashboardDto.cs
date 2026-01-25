@@ -8,6 +8,7 @@ namespace EIMS.Application.DTOs.Dashboard.Accountant
     public class AccountantDashboardDto
     {
         public CurrentUserDto CurrentUser { get; set; } = new();
+        public AccountantOverviewStatsDto OverviewStats { get; set; } = new();
         public AccountantKpiDto Kpis { get; set; } = new();
         public AccountantInvoiceRequestStatsDto InvoiceRequestStats { get; set; } = new();
         public AccountantTotalMonthlyDebtDto TotalMonthlyDebt { get; set; } = new();

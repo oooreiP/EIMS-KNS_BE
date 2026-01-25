@@ -967,6 +967,28 @@ namespace EIMS.Infrastructure.Repositories
                             && (i.InvoiceStatusID == statusIssued || i.InvoiceStatusID == statusSent || i.PaymentStatusID == 3))
                 .SumAsync(i => i.TotalAmount, cancellationToken);
 
+            var totalInvoiceRequests = await _context.InvoiceRequests
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var totalProducts = await _context.Products
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var totalInvoicesIssued = await _context.Invoices
+                .AsNoTracking()
+                .CountAsync(i => i.IssuedDate != null
+                                 && (i.InvoiceStatusID == statusIssued), cancellationToken);
+
+            var totalInvoicesPendingApproval = await _context.Invoices
+                .AsNoTracking()
+                .CountAsync(i => i.InvoiceStatusID == statusPendingApproval, cancellationToken);
+
+            var totalDebtAll = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.PaymentStatusID != 3)
+                .SumAsync(i => i.RemainingAmount, cancellationToken);
+
             var lastMonthRevenue = await baseQuery
                 .Where(i => i.IssuedDate != null
                             && i.IssuedDate >= startOfLastMonth
@@ -1254,6 +1276,15 @@ namespace EIMS.Infrastructure.Repositories
                     FullName = user?.FullName ?? "Unknown",
                     Role = user?.Role?.RoleName ?? "",
                     Email = user?.Email ?? "",
+                },
+                OverviewStats = new AccountantOverviewStatsDto
+                {
+                    TotalMonthlyRevenue = totalMonthlyRevenue,
+                    TotalInvoiceRequests = totalInvoiceRequests,
+                    TotalProducts = totalProducts,
+                    TotalInvoicesIssued = totalInvoicesIssued,
+                    TotalInvoicesPendingApproval = totalInvoicesPendingApproval,
+                    TotalDebtAll = totalDebtAll
                 },
                 Kpis = new AccountantKpiDto
                 {
