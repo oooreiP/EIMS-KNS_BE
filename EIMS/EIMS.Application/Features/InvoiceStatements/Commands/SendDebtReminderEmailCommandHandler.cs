@@ -87,7 +87,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
 
             var replacements = new Dictionary<string, string>
             {
-                { "{{CustomerName}}", statement.Customer?.CustomerName ?? "Quý khách" },
+                { "{{ContactName}}", statement.Customer?.CustomerName ?? "Quý khách" },
                 { "{{CompanyName}}", companyName },
                 { "{{Month}}", periodMonth.ToString("00") },
                 { "{{Year}}", periodYear.ToString() },

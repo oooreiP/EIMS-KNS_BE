@@ -16,33 +16,24 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
     public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand, Result<CreateInvoiceResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IFileStorageService _fileStorageService;
-        private readonly IEmailService _emailService;
-        private readonly IPdfService _pdfService;
-        private readonly IInvoiceXMLService _invoiceXMLService;
-        private readonly INotificationService _notiService;
-        private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUser;
-        private readonly IInvoiceRealtimeService _invoiceRealtimeService;
-        private readonly IDashboardRealtimeService _dashboardRealtimeService;
+        private readonly IInvoiceBackgroundService _invoiceBackgroundService; // Inject service mới
 
-        public CreateInvoiceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IInvoiceXMLService invoiceXMLService, INotificationService notiService, IPdfService pdfService, ICurrentUserService currentUser, IInvoiceRealtimeService invoiceRealtimeService, IDashboardRealtimeService dashboardRealtimeService)
+        public CreateInvoiceCommandHandler(
+            IUnitOfWork unitOfWork,
+            ICurrentUserService currentUser,
+            IInvoiceBackgroundService invoiceBackgroundService)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _fileStorageService = fileStorageService;
-            _emailService = emailService;
-            _invoiceXMLService = invoiceXMLService;
-            _notiService = notiService;
-            _pdfService = pdfService;
             _currentUser = currentUser;
-            _invoiceRealtimeService = invoiceRealtimeService;
-            _dashboardRealtimeService = dashboardRealtimeService;
+            _invoiceBackgroundService = invoiceBackgroundService;
         }
 
         public async Task<Result<CreateInvoiceResponse>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
         {
-            var userId = int.Parse(_currentUser.UserId);
+            try
+            {
+                var userId = int.Parse(_currentUser.UserId);
             if (request.Items == null || !request.Items.Any())
                 return Result.Fail(new Error("Invoice must has at least one item").WithMetadata("ErrorCode", "Invoice.Create.Failed"));
             if (request.TemplateID == null || request.TemplateID == 0)
@@ -174,95 +165,33 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                 await _unitOfWork.InvoiceHistoryRepository.CreateAsync(history);
                 await _unitOfWork.SaveChanges();
                 await _unitOfWork.CommitAsync();
-                var fullInvoice = await _unitOfWork.InvoicesRepository
-                    .GetByIdAsync(invoice.InvoiceID, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,InvoiceStatus,Company");
-                var symbol = await _unitOfWork.InvoicesRepository.GetInvoiceSymbolAsync(fullInvoice.InvoiceID);
-                fullInvoice.InvoiceSymbol = symbol.FullSymbol;
-                await _unitOfWork.SaveChanges();
-                string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
-                fullInvoice.XMLPath = newXmlUrl;
-                await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
-                try
-                {
-                    string rootPath = AppDomain.CurrentDomain.BaseDirectory;
-                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, rootPath);
-                    using (var pdfStream = new MemoryStream(pdfBytes))
-                    {
-                        string fileName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
-                        var uploadResult = await _fileStorageService.UploadFileAsync(pdfStream, fileName, "invoices");
+                _invoiceBackgroundService.ProcessInvoiceCreation(invoice.InvoiceID, userId, request.RequestID);
 
-                        if (uploadResult.IsSuccess)
-                        {
-                            fullInvoice.FilePath = uploadResult.Value.Url;
-                            await _unitOfWork.InvoicesRepository.UpdateAsync(fullInvoice);
-                            await _unitOfWork.SaveChanges();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                }
-                await _notiService.SendToRoleAsync("HOD",
-                $"Có hóa đơn đã được khởi tạo. Vui lòng xác nhận.",
-                typeId: 2);
-                if(request.RequestID != null && request.RequestID != 0)
-                {
-                   var invoiceRequest = await _unitOfWork.InvoiceRequestRepository.GetByIdAsync(request.RequestID ?? 1);
-                    invoiceRequest.RequestStatusID = (int)EInvoiceRequestStatus.Approved;
-                    invoiceRequest.CreatedInvoiceID = fullInvoice.InvoiceID;
-                    await _unitOfWork.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
-                    await _notiService.SendToUserAsync(invoiceRequest.SaleID ?? 3,
-                $"Yêu cầu cấp hóa đơn với id {invoiceRequest.RequestID} đã được chấp thuận và tạo hóa đơn nháp.",
-                typeId: 2);
-                }
-                await _unitOfWork.SaveChanges();
+                // --- PHẦN 4: TRẢ VỀ KẾT QUẢ NGAY LẬP TỨC ---
                 var response = new CreateInvoiceResponse
                 {
-                    InvoiceID = fullInvoice.InvoiceID,
-                    CustomerID = fullInvoice.CustomerID,
-                    TotalAmount = fullInvoice.TotalAmount,
-                    TotalAmountInWords = fullInvoice.TotalAmountInWords,
-                    PaymentMethod = fullInvoice.PaymentMethod,
-                    Status = fullInvoice.InvoiceStatus.StatusName,
-                    XMLPath = fullInvoice.XMLPath
+                    InvoiceID = invoice.InvoiceID,
+                    CustomerID = invoice.CustomerID,
+                    TotalAmount = invoice.TotalAmount,
+                    TotalAmountInWords = invoice.TotalAmountInWords,
+                    PaymentMethod = invoice.PaymentMethod,
+                    Status = "Processing", // Báo cho UI biết là đang xử lý file
+                    XMLPath = null // Chưa có file ngay lập tức
                 };
-                await _invoiceRealtimeService.NotifyInvoiceChangedAsync(new EIMS.Application.Commons.Models.InvoiceRealtimeEvent
-                {
-                    InvoiceId = fullInvoice.InvoiceID,
-                    ChangeType = "Created",
-                    CompanyId = fullInvoice.CompanyId,
-                    CustomerId = fullInvoice.CustomerID,
-                    StatusId = fullInvoice.InvoiceStatusID,
-                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
-                }, cancellationToken);
-                await _dashboardRealtimeService.NotifyDashboardChangedAsync(new EIMS.Application.Commons.Models.DashboardRealtimeEvent
-                {
-                    Scope = "Invoices",
-                    ChangeType = "Created",
-                    EntityId = fullInvoice.InvoiceID,
-                    Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
-                }, cancellationToken);
-                // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 1);
+
                 return Result.Ok(response);
-
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // If anything fails, roll back everything.
                 await _unitOfWork.RollbackAsync();
-
-                Console.WriteLine(ex.ToString());
-
-                return Result.Fail(new Error($"Failed to create invoice: {ex.Message}").WithMetadata("ErrorCode", "Invoice.Create.Exception").CausedBy(ex));
-            }
-            finally
-            {
-                // 12. Clean up temp file
-                if (!string.IsNullOrEmpty(xmlPath) && File.Exists(xmlPath))
-                {
-                    File.Delete(xmlPath);
-                }
+                throw;
             }
         }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+        return Result.Fail(new Error($"Failed: {ex.Message}"));
+    }
+}
     }
 }

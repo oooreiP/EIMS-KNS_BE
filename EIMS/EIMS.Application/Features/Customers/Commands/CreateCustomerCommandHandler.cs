@@ -30,8 +30,6 @@ namespace EIMS.Application.Features.Customers.Commands
                         .WithMetadata("ErrorCode", "Customer.Create.DuplicateTaxCode"));
                 }
             }
-
-            // 2. Map Command to Entity
             var customer = new Customer
             {
                 CustomerName = request.CustomerName,
@@ -44,8 +42,6 @@ namespace EIMS.Application.Features.Customers.Commands
                 IsActive = request.IsActive ?? true
             };
 
-            // 3. Save to Database
-            // The CustomerRepository.CreateCustomerAsync implementation already calls SaveChangesAsync
             await _unitOfWork.CustomerRepository.CreateCustomerAsync(customer);
 
             return Result.Ok(customer.CustomerID);

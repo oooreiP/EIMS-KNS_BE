@@ -1,10 +1,12 @@
 ﻿using System.Text;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using EIMS.API.Middleware;
 using EIMS.Application;
 using EIMS.Application.Common.Mapping;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.Commons.Models;
 using EIMS.Application.DTOs.Mails;
+using EIMS.Application.Features.Invoices.Commands.CreateInvoice;
 using EIMS.Infrastructure;
 using EIMS.Infrastructure.Persistence;
 using EIMS.Infrastructure.Security;
@@ -79,6 +81,7 @@ builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileS
 // builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IExternalCompanyLookupService, VietQrLookupService>();
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddTransient<IInvoiceBackgroundService, InvoiceBackgroundService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
