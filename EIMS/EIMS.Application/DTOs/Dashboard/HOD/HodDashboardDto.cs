@@ -7,6 +7,7 @@ namespace EIMS.Application.DTOs.Dashboard.HOD
 {
     public class HodDashboardDto
     {
+        public HodOverviewStatsDto OverviewStats { get; set; } = new();
         public HodFinancialMetricsDto Financials { get; set; } = new();
         public List<CashFlowDto> CashFlow { get; set; } = new();
         public DebtAgingReportDto DebtAging { get; set; } = new();

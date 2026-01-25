@@ -589,7 +589,14 @@ namespace EIMS.Infrastructure.Repositories
         {
             var now = DateTime.UtcNow;
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
             var sixMonthsAgo = now.AddMonths(-6);
+
+            const int statusDraft = 1;
+            const int statusIssued = 2;
+            const int statusCancelled = 3;
+            const int statusSent = 9;
+            const int statusPendingApproval = 6;
 
             // A.Tháng hiện tại
             var monthlyData = await _context.Invoices
@@ -599,7 +606,7 @@ namespace EIMS.Infrastructure.Repositories
                 .Select(g => new
                 {
                     // Trừ hóa đơn đã hủy
-                    NetRevenue = g.Where(i => i.InvoiceStatusID != 3 && i.InvoiceStatusID != 1).Sum(i => i.TotalAmount),
+                    NetRevenue = g.Where(i => i.InvoiceStatusID != statusCancelled && i.InvoiceStatusID != statusDraft).Sum(i => i.TotalAmount),
                     CashCollected = g.Sum(i => i.PaidAmount)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -620,6 +627,39 @@ namespace EIMS.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(i => i.PaymentStatusID != 3) // != Paid
                 .SumAsync(i => i.RemainingAmount, cancellationToken);
+
+            var totalMonthlyRevenue = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.IssuedDate != null
+                            && i.IssuedDate >= startOfMonth
+                            && i.IssuedDate < startOfNextMonth
+                            && (i.InvoiceStatusID == statusIssued
+                                || i.InvoiceStatusID == statusSent
+                                || i.PaymentStatusID == 3))
+                .SumAsync(i => i.TotalAmount, cancellationToken);
+
+            var totalCustomers = await _context.Customers
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var totalInvoiceRequests = await _context.InvoiceRequests
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var totalProducts = await _context.Products
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var totalInvoicesIssued = await _context.Invoices
+                .AsNoTracking()
+                .CountAsync(i => i.IssuedDate != null
+                                 && (i.InvoiceStatusID == statusIssued
+                                     || i.InvoiceStatusID == statusSent
+                                     || i.PaymentStatusID == 3), cancellationToken);
+
+            var totalInvoicesPendingApproval = await _context.Invoices
+                .AsNoTracking()
+                .CountAsync(i => i.InvoiceStatusID == statusPendingApproval, cancellationToken);
             var metrics = new HodFinancialMetricsDto
             {
                 NetRevenue = monthlyData?.NetRevenue ?? 0,
@@ -857,6 +897,16 @@ namespace EIMS.Infrastructure.Repositories
             .ToList();
             return new HodDashboardDto
             {
+                OverviewStats = new HodOverviewStatsDto
+                {
+                    TotalMonthlyRevenue = totalMonthlyRevenue,
+                    TotalCustomers = totalCustomers,
+                    TotalInvoiceRequests = totalInvoiceRequests,
+                    TotalProducts = totalProducts,
+                    TotalInvoicesIssued = totalInvoicesIssued,
+                    TotalInvoicesPendingApproval = totalInvoicesPendingApproval,
+                    TotalDebtAll = totalDebtAll
+                },
                 Financials = metrics,
                 CashFlow = cashFlowList,
                 DebtAging = debtAging,
