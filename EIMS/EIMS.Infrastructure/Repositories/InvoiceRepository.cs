@@ -320,8 +320,6 @@ namespace EIMS.Infrastructure.Repositories
             var startOfLastMonth = startOfMonth.AddMonths(-1);
             var sixMonthsAgo = startOfMonth.AddMonths(-5);
 
-            const int invoiceStatusDraft = 1;
-            const int invoiceStatusRejected = 16;
             const int paymentStatusUnpaid = 1;
 
             var user = await _context.Users
@@ -428,50 +426,64 @@ namespace EIMS.Infrastructure.Repositories
                 .Select(x => x.Dto)
                 .ToList();
 
-            var overdue7Days = now.AddDays(-7);
+            var unpaidQuery = query
+                .Where(i => i.PaymentStatusID != 3 && i.RemainingAmount > 0);
 
-            var recentInvoicesRaw = await query
-                .Include(i => i.Customer)
-                .Include(i => i.PaymentStatus)
-                .Include(i => i.InvoiceStatus)
-                .Select(i => new
-                {
-                    i.InvoiceID,
-                    i.InvoiceNumber,
-                    i.InvoiceStatusID,
-                    i.PaymentStatusID,
-                    i.Customer.CustomerName,
-                    i.CreatedAt,
-                    i.IssuedDate,
-                    i.PaymentDueDate,
-                    i.TotalAmount,
-                    StatusName = i.PaymentStatus.StatusName
-                })
-                .OrderByDescending(i => i.InvoiceStatusID == invoiceStatusRejected
-                                        || (i.PaymentStatusID == paymentStatusUnpaid
-                                            && i.PaymentDueDate != null
-                                            && i.PaymentDueDate < overdue7Days))
-                .ThenByDescending(i => i.CreatedAt)
-                .Take(10)
-                .ToListAsync(cancellationToken);
+            var totalUnpaidAmount = await unpaidQuery
+                .SumAsync(i => i.RemainingAmount, cancellationToken);
 
-            var recentInvoices = recentInvoicesRaw
-                .Select(i => new SalesInvoiceSimpleDto
+            var totalDebtors = await unpaidQuery
+                .Select(i => i.CustomerID)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            var totalOverdueAmount = await unpaidQuery
+                .Where(i => i.PaymentDueDate != null && i.PaymentDueDate < now)
+                .SumAsync(i => i.RemainingAmount, cancellationToken);
+
+            var overdueCustomerCount = await unpaidQuery
+                .Where(i => i.PaymentDueDate != null && i.PaymentDueDate < now)
+                .Select(i => i.CustomerID)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            var lastMonthTotalDebt = await unpaidQuery
+                .Where(i => i.CreatedAt >= startOfLastMonth && i.CreatedAt < startOfMonth)
+                .SumAsync(i => i.RemainingAmount, cancellationToken);
+
+            double debtGrowthPercent = 0;
+            if (lastMonthTotalDebt > 0)
+            {
+                debtGrowthPercent = (double)((totalUnpaidAmount - lastMonthTotalDebt) / lastMonthTotalDebt) * 100;
+            }
+            else if (totalUnpaidAmount > 0)
+            {
+                debtGrowthPercent = 100;
+            }
+
+            var averageDebtPerCustomer = totalDebtors > 0
+                ? totalUnpaidAmount / totalDebtors
+                : 0;
+
+            var overdueCriticalDate = now.AddDays(-30);
+            var overdueHighDate = now.AddDays(-15);
+
+            var debtByUrgency = await unpaidQuery
+                .GroupBy(x => 1)
+                .Select(g => new
                 {
-                    InvoiceId = i.InvoiceID,
-                    InvoiceNumber = i.InvoiceStatusID == invoiceStatusDraft ? null : i.InvoiceNumber,
-                    CustomerName = i.CustomerName,
-                    CreatedDate = i.CreatedAt,
-                    IssueDate = i.IssuedDate,
-                    DueDate = i.PaymentDueDate,
-                    TotalAmount = i.TotalAmount,
-                    Status = (i.StatusName ?? "Unknown").Trim().ToLowerInvariant(),
-                    IsPriority = (i.InvoiceStatusID == invoiceStatusRejected)
-                                 || (i.PaymentStatusID == paymentStatusUnpaid
-                                     && i.PaymentDueDate != null
-                                     && i.PaymentDueDate < overdue7Days)
+                    Critical = g.Where(i => i.PaymentDueDate != null
+                                            && i.PaymentDueDate.Value <= overdueCriticalDate)
+                        .Sum(i => i.RemainingAmount),
+                    High = g.Where(i => i.PaymentDueDate != null
+                                        && i.PaymentDueDate.Value <= overdueHighDate
+                                        && i.PaymentDueDate.Value > overdueCriticalDate)
+                        .Sum(i => i.RemainingAmount),
+                    Medium = g.Where(i => i.PaymentDueDate == null
+                                          || i.PaymentDueDate.Value > overdueHighDate)
+                        .Sum(i => i.RemainingAmount)
                 })
-                .ToList();
+                .FirstOrDefaultAsync(cancellationToken);
 
             var requestQuery = _context.InvoiceRequests
                 .AsNoTracking()
@@ -493,6 +505,9 @@ namespace EIMS.Infrastructure.Repositories
 .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Completed
             && r.CreatedAt >= startOfMonth
             && r.CreatedAt < startOfNextMonth, cancellationToken);
+
+            var totalThisMonth = await requestQuery
+                .CountAsync(r => r.CreatedAt >= startOfMonth && r.CreatedAt < startOfNextMonth, cancellationToken);
 
             var recentRequestsRaw = await requestQuery
                 .Include(r => r.Customer)
@@ -537,6 +552,7 @@ namespace EIMS.Infrastructure.Repositories
                 SalesKPIs = new SalesKpiDto
                 {
                     CurrentRevenue = currentRevenue,
+                    LastMonthRevenue = lastMonthRevenue,
                     RevenueGrowthPercent = Math.Round(growthPercent, 2),
                     TotalCustomers = totalCustomers
                 },
@@ -546,11 +562,27 @@ namespace EIMS.Infrastructure.Repositories
                     ApprovedCount = approvedCount,
                     RejectedCount = rejectedCount,
                     IssuedCount = issuedCount,
+                    TotalThisMonth = totalThisMonth,
                     RecentRequests = recentRequests
                 },
                 SalesTrend = salesTrend,
                 DebtWatchlist = debtWatchlistMapped,
-                RecentInvoices = recentInvoices
+                TotalCustomerDebt = new TotalCustomerDebtDto
+                {
+                    TotalDebtors = totalDebtors,
+                    TotalUnpaidAmount = totalUnpaidAmount,
+                    TotalOverdueAmount = totalOverdueAmount,
+                    OverdueCustomerCount = overdueCustomerCount,
+                    LastMonthTotalDebt = lastMonthTotalDebt,
+                    DebtGrowthPercent = Math.Round(debtGrowthPercent, 2),
+                    AverageDebtPerCustomer = averageDebtPerCustomer,
+                    DebtByUrgency = new DebtByUrgencyDto
+                    {
+                        Critical = debtByUrgency?.Critical ?? 0,
+                        High = debtByUrgency?.High ?? 0,
+                        Medium = debtByUrgency?.Medium ?? 0
+                    }
+                }
             };
         }
         public async Task<HodDashboardDto> GetHodDashboardStatsAsync(CancellationToken cancellationToken)

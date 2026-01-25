@@ -12,6 +12,6 @@ namespace EIMS.Application.DTOs.Dashboard.Sale
         public InvoiceRequestStatsDto InvoiceRequestStats { get; set; } = new();
         public List<SalesTrendDto> SalesTrend { get; set; } = new();
         public List<DebtWatchlistDto> DebtWatchlist { get; set; } = new();
-        public List<SalesInvoiceSimpleDto> RecentInvoices { get; set; } = new();
+        public TotalCustomerDebtDto TotalCustomerDebt { get; set; } = new();
     }
 }

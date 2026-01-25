@@ -9,6 +9,7 @@ namespace EIMS.Application.DTOs.Dashboard.Sale
         public int ApprovedCount { get; set; }
         public int RejectedCount { get; set; }
         public int IssuedCount { get; set; }
+        public int TotalThisMonth { get; set; }
         public List<InvoiceRequestRecentDto> RecentRequests { get; set; } = new();
     }
 
