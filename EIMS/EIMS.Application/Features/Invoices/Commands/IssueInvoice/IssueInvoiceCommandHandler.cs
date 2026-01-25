@@ -52,7 +52,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 if (invoice.InvoiceType == 3) original.InvoiceStatusID = 5;
                 else if (invoice.InvoiceType == 2) original.InvoiceStatusID = 4;
                 var symbol = await _uow.InvoicesRepository.GetInvoiceSymbolAsync(invoice.InvoiceID);
-                string originalAutoReferenceText = $"Bị điều chỉnh bởi hóa đơn Mẫu số {symbol.MauSo} Ký hiệu {symbol.KyHieu} Số {invoice.InvoiceNumber}  ngày {DateTime.UtcNow:dd/MM/yyyy}";
+                string originalAutoReferenceText = $"Bị điều chỉnh bởi hóa đơn Mẫu số {symbol.MauSo} Ký hiệu {symbol.KyHieu} Số {invoice.InvoiceNumber}  ngày {DateTime.UtcNow:dd/MM/yyyy}. Biên bản thỏa thuận của hai bên đã được lưu với Ký hiệu {invoice.MinuteCode}";
                 original.ReferenceNote = originalAutoReferenceText;
             }
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");

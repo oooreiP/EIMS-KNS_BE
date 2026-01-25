@@ -97,7 +97,7 @@ namespace EIMS.Infrastructure.Service
             if (error.Any())
             {
                 var mlTDiepLoi = "204";
-                var mtDiepPhanHoi = XmlHelpers.GenerateMTDiep("K", "0311357436");
+                var mtDiepPhanHoi = XmlHelpers.GenerateMTDiep("TCT");
                 var errorResponseXml = $@"
                 <TDiep>
                     <TTChung>
