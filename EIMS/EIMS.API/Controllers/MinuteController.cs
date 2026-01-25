@@ -1,6 +1,9 @@
-﻿using EIMS.Application.DTOs.Minutes;
+﻿using EIMS.Application.DTOs.Mails;
+using EIMS.Application.DTOs.Minutes;
+using EIMS.Application.Features.InvoiceStatements.Queries;
 using EIMS.Application.Features.Minutes.Commands;
 using EIMS.Application.Features.Minutes.Queries;
+using FluentResults;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +62,25 @@ namespace EIMS.API.Controllers
                 return BadRequest(result.Errors);
 
             return Ok(new { Message = "Đã ký số thành công", NewUrl = result.Value });
+        }
+        [HttpGet("{id}/export-pdf")]
+        public async Task<IActionResult> ExportPdf(int id)
+        {
+            string rootPath = _env.ContentRootPath;
+            var query = new GetMinutePdfQuery(id, rootPath);
+
+            Result<FileAttachment> result = await _mediator.Send(query);
+            if (result.IsFailed)
+            {
+                return BadRequest(new { Error = result.Errors.FirstOrDefault()?.Message });
+            }
+
+            var fileData = result.Value;
+            return File(
+                fileData.FileContent,
+                "application/pdf",
+                fileData.FileName
+            );
         }
     }
 }
