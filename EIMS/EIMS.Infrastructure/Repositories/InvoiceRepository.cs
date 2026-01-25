@@ -663,8 +663,6 @@ namespace EIMS.Infrastructure.Repositories
                 NetRevenue = monthlyData?.NetRevenue ?? 0,
                 CashCollected = monthlyData?.CashCollected ?? 0,
                 EstimatedVAT = (monthlyData?.NetRevenue ?? 0) * 0.1m, // 10%
-                CriticalDebt = criticalDebts?.TotalDebt ?? 0,
-                CriticalDebtCount = criticalDebts?.CustomerCount ?? 0,
                 VatRate = 10,
                 TotalDebt = totalDebtAll,
             };
