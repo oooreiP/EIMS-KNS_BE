@@ -14,6 +14,7 @@ namespace EIMS.Application.Features.Minutes.Queries
     public class GetMinuteInvoicesQuery : IRequest<Result<PaginatedList<MinuteInvoiceDto>>>
     {
 
+        public int? SaleId { get; set; }
         public int PageIndex { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; } 
