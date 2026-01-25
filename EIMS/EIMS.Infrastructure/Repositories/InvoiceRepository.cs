@@ -653,9 +653,7 @@ namespace EIMS.Infrastructure.Repositories
             var totalInvoicesIssued = await _context.Invoices
                 .AsNoTracking()
                 .CountAsync(i => i.IssuedDate != null
-                                 && (i.InvoiceStatusID == statusIssued
-                                     || i.InvoiceStatusID == statusSent
-                                     || i.PaymentStatusID == 3), cancellationToken);
+                                 && (i.InvoiceStatusID == statusIssued), cancellationToken);
 
             var totalInvoicesPendingApproval = await _context.Invoices
                 .AsNoTracking()
