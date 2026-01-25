@@ -12,7 +12,6 @@ namespace EIMS.Application.DTOs.Dashboard.Sale
         public double RevenueGrowthPercent { get; set; }
         public decimal EstimatedCommission { get; set; }
         public double CommissionRate { get; set; }
-        public int NewCustomers { get; set; }
         public int OpenInvoices { get; set; }
     }
 }

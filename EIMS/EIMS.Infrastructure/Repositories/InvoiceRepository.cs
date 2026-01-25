@@ -6,6 +6,7 @@ using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
 using EIMS.Application.DTOs.Invoices;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -367,23 +368,8 @@ namespace EIMS.Infrastructure.Repositories
 
             var estimatedCommission = currentRevenue * (decimal)(commissionRate / 100.0);
 
-            var newCustomersThisMonth = await query
-                .GroupBy(i => i.CustomerID)
-                .Where(g => g.Min(x => (x.IssuedDate ?? x.CreatedAt)) >= startOfMonth)
-                .CountAsync(cancellationToken);
-
             var openInvoicesCount = await query
                 .CountAsync(i => i.PaymentStatusID == paymentStatusUnpaid, cancellationToken);
-
-            decimal targetRevenue = _config.GetValue<decimal>("SalesSettings:GlobalTargetRevenue");
-
-            double completionRate = 0;
-            if (targetRevenue > 0)
-            {
-                completionRate = (double)(currentRevenue / targetRevenue) * 100;
-            }
-            var remainingAmount = targetRevenue > currentRevenue ? targetRevenue - currentRevenue : 0;
-            var daysLeftInMonth = (startOfNextMonth.Date - now.Date).Days;
 
             var rawTrend = await query
                 .Where(i => (i.IssuedDate ?? i.CreatedAt) >= sixMonthsAgo)
@@ -502,6 +488,56 @@ namespace EIMS.Infrastructure.Repositories
                 })
                 .ToList();
 
+            var requestQuery = _context.InvoiceRequests
+                .AsNoTracking()
+                .Where(r => r.SaleID == salesPersonId);
+
+            var pendingCount = await requestQuery
+                .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Pending, cancellationToken);
+
+            var approvedCount = await requestQuery
+                .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Approved
+                                 && r.CreatedAt >= startOfMonth
+                                 && r.CreatedAt < startOfNextMonth, cancellationToken);
+
+            var rejectedCount = await requestQuery
+                .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Rejected
+                                 && r.CreatedAt >= startOfMonth
+                                 && r.CreatedAt < startOfNextMonth, cancellationToken);
+
+            var totalThisMonth = await requestQuery
+                .CountAsync(r => r.CreatedAt >= startOfMonth
+                                 && r.CreatedAt < startOfNextMonth, cancellationToken);
+
+            var recentRequestsRaw = await requestQuery
+                .Include(r => r.Customer)
+                .Include(r => r.RequestStatus)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(5)
+                .Select(r => new
+                {
+                    r.RequestID,
+                    CustomerName = r.InvoiceCustomerName ?? r.Customer.CustomerName,
+                    r.TotalAmount,
+                    StatusName = r.RequestStatus.StatusName,
+                    r.RequestStatusID,
+                    r.CreatedAt
+                })
+                .ToListAsync(cancellationToken);
+
+            var recentRequests = recentRequestsRaw
+                .Select(r => new InvoiceRequestRecentDto
+                {
+                    RequestId = r.RequestID,
+                    CustomerName = r.CustomerName ?? "Unknown",
+                    Amount = r.TotalAmount,
+                    Status = !string.IsNullOrWhiteSpace(r.StatusName)
+                        ? r.StatusName
+                        : Enum.GetName(typeof(EInvoiceRequestStatus), r.RequestStatusID) ?? "Unknown",
+                    CreatedDate = r.CreatedAt
+                })
+                .ToList();
+
             return new SalesDashboardDto
             {
                 CurrentUser = new SalesCurrentUserDto
@@ -520,16 +556,15 @@ namespace EIMS.Infrastructure.Repositories
                     RevenueGrowthPercent = Math.Round(growthPercent, 2),
                     EstimatedCommission = estimatedCommission,
                     CommissionRate = commissionRate,
-                    NewCustomers = newCustomersThisMonth,
                     OpenInvoices = openInvoicesCount
                 },
-                TargetProgress = new SalesTargetProgressDto
+                InvoiceRequestStats = new InvoiceRequestStatsDto
                 {
-                    CurrentRevenue = currentRevenue,
-                    TargetRevenue = targetRevenue,
-                    CompletionRate = Math.Round(completionRate, 2),
-                    RemainingAmount = remainingAmount,
-                    DaysLeft = daysLeftInMonth
+                    PendingCount = pendingCount,
+                    ApprovedCount = approvedCount,
+                    RejectedCount = rejectedCount,
+                    TotalThisMonth = totalThisMonth,
+                    RecentRequests = recentRequests
                 },
                 SalesTrend = salesTrend,
                 DebtWatchlist = debtWatchlistMapped,
