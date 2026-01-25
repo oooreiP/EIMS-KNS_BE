@@ -134,7 +134,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 await _uow.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
             }
 
-            if (invoice.InvoiceType == 2)
+            if (invoice.InvoiceType == 2 || invoice.InvoiceType == 3)
             {
                 await RecalculateStatementsForInvoiceAsync(invoice, cancellationToken);
             }
@@ -149,7 +149,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             await _uow.SaveChanges();
             await _emailSender.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
             // await _emailService.SendStatusUpdateNotificationAsync(invoice.InvoiceID, 2);
-            if (request.AutoCreatePayment && request.PaymentAmount > 0)
+            if (request.AutoCreatePayment && request.PaymentAmount > 0 && invoice.TotalAmount > 0)
             {
                 decimal currentRemaining = invoice.RemainingAmount;
                 if (invoice.RemainingAmount > 0)
@@ -222,11 +222,29 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
 
         private async Task RecalculateStatementsForInvoiceAsync(Invoice invoice, CancellationToken cancellationToken)
         {
+            var issuedDate = invoice.IssuedDate ?? DateTime.UtcNow;
+            var invoicePeriodMonth = issuedDate.Month;
+            var invoicePeriodYear = issuedDate.Year;
+
             var relatedStatements = await _uow.InvoiceStatementRepository
                 .GetAllQueryable()
                 .Include(s => s.StatementDetails)
                 .Where(s => s.StatementDetails.Any(d => d.InvoiceID == invoice.InvoiceID))
                 .ToListAsync(cancellationToken);
+
+            var periodStatements = await _uow.InvoiceStatementRepository
+                .GetAllQueryable()
+                .Include(s => s.StatementDetails)
+                .Where(s => s.CustomerID == invoice.CustomerID
+                            && s.PeriodMonth == invoicePeriodMonth
+                            && s.PeriodYear == invoicePeriodYear)
+                .ToListAsync(cancellationToken);
+
+            relatedStatements = relatedStatements
+                .Concat(periodStatements)
+                .GroupBy(s => s.StatementID)
+                .Select(g => g.First())
+                .ToList();
 
             if (!relatedStatements.Any())
             {
