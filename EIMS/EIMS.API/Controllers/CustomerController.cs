@@ -170,6 +170,22 @@ namespace EIMS.API.Controllers
 
             return Ok(result.Value);
         }
+        [HttpGet("by-sale/{saleId}")]
+        public async Task<IActionResult> GetCustomersBySale(int saleId,
+    [FromQuery] string? searchTerm,
+    [FromQuery] int pageIndex = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var query = new GetCustomersBySaleIdQuery(saleId, searchTerm, pageIndex, pageSize);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(result.Value);
+        }
         [HttpGet("{id}/debt-detail")]
         public async Task<IActionResult> GetCustomerDebtDetail(
     int id,

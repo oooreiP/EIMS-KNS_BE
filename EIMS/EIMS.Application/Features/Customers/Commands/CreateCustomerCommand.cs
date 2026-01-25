@@ -21,7 +21,7 @@ namespace EIMS.Application.Features.Customers.Commands
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid Email Address.")]
         public string ContactEmail { get; set; } = string.Empty;
-        public int SaleID { get; set; }
+        public int? SaleID { get; set; }
 
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
