@@ -68,6 +68,27 @@ namespace EIMS.Infrastructure.Service
 
             throw new FileNotFoundException($"Không tìm thấy file XML tại đường dẫn: {path}");
         }
+        public async Task<byte[]> DownloadBytesAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
+            // TRƯỜNG HỢP 1: File Online (Cloudinary...)
+            if (path.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                // Dùng GetByteArrayAsync thay vì GetStringAsync
+                return await _httpClient.GetByteArrayAsync(path);
+            }
+
+            // TRƯỜNG HỢP 2: File Local
+            if (System.IO.File.Exists(path))
+            {
+                // Dùng ReadAllBytesAsync thay vì ReadAllTextAsync
+                return await System.IO.File.ReadAllBytesAsync(path);
+            }
+
+            throw new FileNotFoundException($"Không tìm thấy file tại: {path}");
+        }
         // Hàm lưu XmlDocument lên Cloudinary và trả về URL mới
         public async Task<string> UploadXmlAsync(XmlDocument xmlDoc, string fileName)
         {
