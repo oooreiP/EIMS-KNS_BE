@@ -45,16 +45,9 @@ namespace EIMS.Application.Commons.Mapping
                 companyName = invoice.InvoiceCustomerName;
                 buyerName = invoice.Customer.ContactPerson ?? "";
             }
-           
-            var template = invoice.Template;
-            var serial = template.Serial;
-            var prefix = serial.Prefix;
-            string khmsHDon = prefix.PrefixID.ToString();
-            string khHDon =
-                $"{serial.SerialStatus.Symbol}" +
-                $"{serial.Year}" +
-                $"{serial.InvoiceType.Symbol}" +
-                $"{serial.Tail}";               
+
+            var khmsHDon = invoice.MauSo;            
+            var khHDon = invoice.KyHieu;            
             var model = new HDon
                     {
                         DLHDon = new DLHDon

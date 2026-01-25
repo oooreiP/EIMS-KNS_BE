@@ -15,6 +15,7 @@ namespace EIMS.Application.DTOs.TaxAPIDTO
         public string TaxApiStatusName { get; set; } 
         public int TaxApiStatusID { get; set; } 
         public string MTDiep { get; set; }
+        public string MTDiepPhanHoi { get; set; }
         public string MCCQT { get; set; }
         public string SoTBao { get; set; }
     }

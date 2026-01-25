@@ -4,6 +4,7 @@ using EIMS.Application.DTOs.Dashboard.Accountant;
 using EIMS.Application.DTOs.Dashboard.Admin;
 using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
+using EIMS.Application.DTOs.Invoices;
 using EIMS.Domain.Entities;
 using EIMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,23 @@ namespace EIMS.Infrastructure.Repositories
             }
             await _context.SaveChangesAsync();
             return invoice;
+        }
+        public async Task<InvoiceSymbolDto?> GetInvoiceSymbolAsync(int invoiceId)
+        {
+
+            var result = await _context.Invoices
+                .AsNoTracking()
+                .Where(x => x.InvoiceID == invoiceId)
+                .Select(x => new InvoiceSymbolDto
+                {
+                    MauSo = x.Template.Serial.Prefix.PrefixID.ToString(),
+                    KyHieu = x.Template.Serial.SerialStatus.Symbol
+                           + x.Template.Serial.Year
+                           + x.Template.Serial.InvoiceType.Symbol
+                           + x.Template.Serial.Tail
+                })
+                .FirstOrDefaultAsync();
+            return result;
         }
         public IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? column, string? direction)
         {

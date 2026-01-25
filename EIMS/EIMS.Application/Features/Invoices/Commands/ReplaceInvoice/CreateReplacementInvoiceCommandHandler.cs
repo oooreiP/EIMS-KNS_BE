@@ -200,6 +200,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     InvoiceCustomerName = request.CustomerName ?? customer.CustomerName,
                     InvoiceCustomerAddress = request.Address ?? customer.Address,
                     InvoiceCustomerTaxCode = request.TaxCode ?? customer.TaxCode,
+                    MinuteCode = request.MinuteCode
                 };
                 originalInvoice.InvoiceStatusID = 11; // Replaced
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
@@ -224,21 +225,13 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                 var fullInvoice = await _uow.InvoicesRepository.GetByIdAsync(
                     replacementInvoice.InvoiceID,"Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus,Template.Serial.InvoiceType,InvoiceStatus,Company"
                 );
-                var fulltemplate = originalInvoice.Template;
-                var fullserial = fulltemplate.Serial;
-                var fullprefix = fullserial.Prefix;
-                string fullkhmsHDon = fullprefix.PrefixID.ToString();
-                string fullkhHDon =
-                    $"{fullserial.SerialStatus.Symbol}" +
-                    $"{fullserial.Year}" +
-                    $"{fullserial.InvoiceType.Symbol}" +
-                    $"{fullserial.Tail}";
-                string originalAutoReferenceText = $"Bị thay thế bởi hóa đơn Mẫu số {fullkhmsHDon} Ký hiệu {fullkhHDon} Số {soHoaDon} ngày {originalInvoice.IssuedDate:dd/MM/yyyy}";
+                var symbol = await _uow.InvoicesRepository.GetInvoiceSymbolAsync(fullInvoice.InvoiceID);
+                fullInvoice.InvoiceSymbol = symbol.FullSymbol;
+                await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
+                await _uow.SaveChanges();
                 string newXmlUrl = await _invoiceXMLService.GenerateAndUploadXmlAsync(fullInvoice);
                 fullInvoice.XMLPath = newXmlUrl;
-                originalInvoice.ReferenceNote = originalAutoReferenceText;
                 await _uow.InvoicesRepository.UpdateAsync(fullInvoice);
-                await _uow.InvoicesRepository.UpdateAsync(originalInvoice);
                 await _uow.SaveChanges();
                 try
                 {

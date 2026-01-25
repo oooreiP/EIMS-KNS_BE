@@ -24,7 +24,10 @@ namespace EIMS.Application.Features.Files.Commands
         public async Task<Result<FileUploadResultDto>> Handle(UploadFileCommand request, CancellationToken cancellationToken)
         {
             var invoice = await _unitOfWork.InvoicesRepository.GetByIdAsync(request.invoiceId);
-
+            if (!string.IsNullOrEmpty(invoice.FilePath))
+            {
+                await _cloud.DeleteAsync(invoice.FilePath);
+            }
             var result = await _cloud.UploadFileAsync(request.File);
             invoice.FilePath = result.Value.Url;
             await _unitOfWork.InvoicesRepository.UpdateAsync(invoice);

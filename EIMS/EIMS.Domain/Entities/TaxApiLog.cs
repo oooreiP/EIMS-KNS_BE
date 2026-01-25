@@ -17,6 +17,7 @@ namespace EIMS.Domain.Entities
         public string RequestPayload { get; set; } = string.Empty;
         public string? ResponsePayload { get; set; }
         public string? MTDiep { get; set; }
+        public string? MTDiepPhanHoi { get; set; }
         public string? MCCQT { get; set; }
         public string? SoTBao { get; set; }
         [ForeignKey("TaxApiStatusID")]
