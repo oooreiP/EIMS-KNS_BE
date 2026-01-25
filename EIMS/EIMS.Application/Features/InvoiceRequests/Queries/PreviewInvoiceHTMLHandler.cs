@@ -37,9 +37,27 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 .AsNoTracking() 
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceRequestItems).ThenInclude(it => it.Product)
+                .Include(i => i.CreatedInvoice)
                 .FirstOrDefaultAsync(i => i.RequestID == request.RequestId, cancellationToken);
 
             if (invoiceRequest == null) return Result.Fail("Invoice Request not found");
+            if (invoiceRequest == null) return Result.Fail("Invoice Request not found");
+            var targetStatuses = new[] { 2, 4, 5 };
+
+            if (invoiceRequest.CreatedInvoice != null &&
+                targetStatuses.Contains(invoiceRequest.CreatedInvoice.InvoiceStatusID) &&
+                !string.IsNullOrEmpty(invoiceRequest.CreatedInvoice.FilePath))
+            {
+                try
+                {
+                    byte[] existingFileBytes = await _invoiceXMLService.DownloadBytesAsync(invoiceRequest.CreatedInvoice.FilePath);
+                    return Result.Ok(existingFileBytes);
+                }
+                catch (Exception ex)
+                {
+                    return Result.Fail($"Không tìm thấy file PDF đã phát hành: {ex.Message}");
+                }
+            }
             var template = await _unitOfWork.InvoiceTemplateRepository.GetByIdAsync(-1);
             if (template == null) return Result.Fail("Template not found");
 
