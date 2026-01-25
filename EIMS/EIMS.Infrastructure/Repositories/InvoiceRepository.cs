@@ -505,6 +505,10 @@ namespace EIMS.Infrastructure.Repositories
                                  && r.CreatedAt >= startOfMonth
                                  && r.CreatedAt < startOfNextMonth, cancellationToken);
 
+            var issuedCount = await requestQuery
+                            .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Completed
+                                             && r.CreatedAt >= startOfMonth
+                                             && r.CreatedAt < startOfNextMonth, cancellationToken);
             var totalThisMonth = await requestQuery
                 .CountAsync(r => r.CreatedAt >= startOfMonth
                                  && r.CreatedAt < startOfNextMonth, cancellationToken);
@@ -563,6 +567,7 @@ namespace EIMS.Infrastructure.Repositories
                     PendingCount = pendingCount,
                     ApprovedCount = approvedCount,
                     RejectedCount = rejectedCount,
+                    IssuedCount = issuedCount,
                     TotalThisMonth = totalThisMonth,
                     RecentRequests = recentRequests
                 },
@@ -854,7 +859,7 @@ namespace EIMS.Infrastructure.Repositories
         public async Task<AccountantDashboardDto> GetAccountantDashboardAsync(int userId, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            var todayStart = now.Date; 
+            var todayStart = now.Date;
             var sevenDaysAgo = now.AddDays(-7);
             var thirtyDaysAgo = now.AddDays(-30);
             var oneDayAgo = now.AddDays(-1);
@@ -879,7 +884,7 @@ namespace EIMS.Infrastructure.Repositories
 
             // B. KPIs
             int statusDraft = 1;
-            int statusRejected = 16; 
+            int statusRejected = 16;
             int statusSent = 9;
             int statusPendingApproval = 6;
 
@@ -980,8 +985,8 @@ namespace EIMS.Infrastructure.Repositories
                 .Include(i => i.Customer)
                 .Include(i => i.InvoiceStatus)
                 .Where(i => i.PaymentStatusID != 3 && i.PaymentDueDate < thirtyDaysAgo)
-                .OrderBy(i => i.PaymentDueDate) 
-                .Take(20) 
+                .OrderBy(i => i.PaymentDueDate)
+                .Take(20)
                 .Select(i => new
                 {
                     i.InvoiceID,
@@ -1016,7 +1021,7 @@ namespace EIMS.Infrastructure.Repositories
             taskQueue.AddRange(mediumPriority);
             taskQueue.AddRange(lowPriority);
             var taskQueueTotal = highPriority.Count + mediumPriority.Count + lowPriorityTotal;
-            taskQueue = taskQueue.Take(50).ToList(); 
+            taskQueue = taskQueue.Take(50).ToList();
 
             var urgentTasks = taskQueue.Count(t => (now - t.TaskDate).TotalHours > 24);
 
