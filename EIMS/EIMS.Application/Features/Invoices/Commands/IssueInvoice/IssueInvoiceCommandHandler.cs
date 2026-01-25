@@ -86,18 +86,9 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 {
                     initialPaidAmount += invoice.Payments.Sum(x => x.AmountPaid);
                 }
-                if (invoice.TotalAmount < 0)
-                {
-                    invoice.PaidAmount = 0;
-                    invoice.RemainingAmount = 0;
-                    invoice.PaymentStatusID = 3;
-                }
-                else
-                {
+
                     invoice.PaidAmount = initialPaidAmount;
                     invoice.RemainingAmount = invoice.TotalAmount - initialPaidAmount;
-                    // Cập nhật trạng thái
-                    // Nếu Remaining <= 0 nghĩa là đã trả đủ hoặc trả thừa -> Fully Paid (3)
                     if (invoice.RemainingAmount <= 0)
                     {
                         invoice.PaymentStatusID = 3;
@@ -107,7 +98,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                         // Nếu > 0: Đã trả 1 ít -> Partially (2), Chưa trả gì -> Unpaid (1)
                         invoice.PaymentStatusID = (invoice.PaidAmount > 0) ? 2 : 1;
                     }
-                }
+                
                 if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
                 if (string.IsNullOrEmpty(invoice.LookupCode))
                 {
