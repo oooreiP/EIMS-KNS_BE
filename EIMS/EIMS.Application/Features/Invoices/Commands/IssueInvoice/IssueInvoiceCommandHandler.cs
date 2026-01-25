@@ -2,6 +2,7 @@
 using EIMS.Application.Features.InvoicePayment.Commands;
 using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
+using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.CodeAnalysis;
@@ -85,18 +86,27 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 {
                     initialPaidAmount += invoice.Payments.Sum(x => x.AmountPaid);
                 }
-                invoice.PaidAmount = initialPaidAmount;
-                invoice.RemainingAmount = invoice.TotalAmount - initialPaidAmount;
-                // Cập nhật trạng thái
-                // Nếu Remaining <= 0 nghĩa là đã trả đủ hoặc trả thừa -> Fully Paid (3)
-                if (invoice.RemainingAmount <= 0)
+                if (invoice.TotalAmount < 0)
                 {
+                    invoice.PaidAmount = 0;
+                    invoice.RemainingAmount = 0;
                     invoice.PaymentStatusID = 3;
                 }
                 else
                 {
-                    // Nếu > 0: Đã trả 1 ít -> Partially (2), Chưa trả gì -> Unpaid (1)
-                    invoice.PaymentStatusID = (invoice.PaidAmount > 0) ? 2 : 1;
+                    invoice.PaidAmount = initialPaidAmount;
+                    invoice.RemainingAmount = invoice.TotalAmount - initialPaidAmount;
+                    // Cập nhật trạng thái
+                    // Nếu Remaining <= 0 nghĩa là đã trả đủ hoặc trả thừa -> Fully Paid (3)
+                    if (invoice.RemainingAmount <= 0)
+                    {
+                        invoice.PaymentStatusID = 3;
+                    }
+                    else
+                    {
+                        // Nếu > 0: Đã trả 1 ít -> Partially (2), Chưa trả gì -> Unpaid (1)
+                        invoice.PaymentStatusID = (invoice.PaidAmount > 0) ? 2 : 1;
+                    }
                 }
                 if (invoice.PaymentStatusID == 0) invoice.PaymentStatusID = 1;
                 if (string.IsNullOrEmpty(invoice.LookupCode))
@@ -122,6 +132,11 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
             {
                 invoiceRequest.RequestStatusID = 5;
                 await _uow.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
+            }
+
+            if (invoice.InvoiceType == 2)
+            {
+                await RecalculateStatementsForInvoiceAsync(invoice, cancellationToken);
             }
             var history = new InvoiceHistory
             {
@@ -203,6 +218,86 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                 Roles = new[] { "Admin", "Accountant", "Sale", "HOD" }
             }, cancellationToken);
             return Result.Ok();
+        }
+
+        private async Task RecalculateStatementsForInvoiceAsync(Invoice invoice, CancellationToken cancellationToken)
+        {
+            var relatedStatements = await _uow.InvoiceStatementRepository
+                .GetAllQueryable()
+                .Include(s => s.StatementDetails)
+                .Where(s => s.StatementDetails.Any(d => d.InvoiceID == invoice.InvoiceID))
+                .ToListAsync(cancellationToken);
+
+            if (!relatedStatements.Any())
+            {
+                return;
+            }
+
+            var allowedStatuses = new List<int>
+            {
+                (int)EInvoiceStatus.Issued,
+                (int)EInvoiceStatus.Adjusted
+            };
+
+            foreach (var statement in relatedStatements)
+            {
+                var startOfMonth = new DateTime(statement.PeriodYear, statement.PeriodMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endOfMonth = startOfMonth.AddMonths(1);
+
+                var rawInvoices = await _uow.InvoicesRepository
+                    .GetAllQueryable()
+                    .Include(i => i.Payments)
+                    .Where(i => i.CustomerID == statement.CustomerID)
+                    .Where(i => i.IssuedDate != null)
+                    .Where(i => i.IssuedDate < endOfMonth)
+                    .Where(i => allowedStatuses.Contains(i.InvoiceStatusID))
+                    .ToListAsync(cancellationToken);
+
+                decimal openingBalance = rawInvoices
+                    .Where(inv => inv.IssuedDate < startOfMonth)
+                    .Sum(inv =>
+                        inv.TotalAmount - inv.Payments
+                            .Where(p => p.PaymentDate < startOfMonth)
+                            .Sum(p => p.AmountPaid)
+                    );
+
+                decimal newCharges = rawInvoices
+                    .Where(inv => inv.IssuedDate >= startOfMonth && inv.IssuedDate < endOfMonth)
+                    .Sum(inv => inv.TotalAmount);
+
+                decimal paymentsInPeriod = rawInvoices
+                    .SelectMany(i => i.Payments)
+                    .Where(p => p.PaymentDate >= startOfMonth && p.PaymentDate < endOfMonth)
+                    .Sum(p => p.AmountPaid);
+
+                decimal closingBalance = openingBalance + newCharges - paymentsInPeriod;
+
+                var debtItems = rawInvoices
+                    .Select(inv =>
+                    {
+                        var paidTotal = inv.Payments.Where(p => p.PaymentDate < endOfMonth).Sum(p => p.AmountPaid);
+                        var remaining = inv.TotalAmount - paidTotal;
+                        return new { Invoice = inv, Remaining = remaining };
+                    })
+                    .Where(x => x.Remaining > 0 || (x.Invoice.IssuedDate >= startOfMonth))
+                    .ToList();
+
+                statement.OpeningBalance = openingBalance;
+                statement.NewCharges = newCharges;
+                statement.PaidAmount = paymentsInPeriod;
+                statement.TotalAmount = closingBalance;
+                statement.TotalInvoices = debtItems.Count;
+
+                statement.StatementDetails.Clear();
+                foreach (var item in debtItems)
+                {
+                    statement.StatementDetails.Add(new InvoiceStatementDetail
+                    {
+                        InvoiceID = item.Invoice.InvoiceID,
+                        OutstandingAmount = item.Remaining
+                    });
+                }
+            }
         }
     }
 }
