@@ -494,7 +494,7 @@ namespace EIMS.Infrastructure.Repositories
                     IssueDate = i.IssuedDate,
                     DueDate = i.PaymentDueDate,
                     TotalAmount = i.TotalAmount,
-                    Status = i.StatusName ?? "Unknown",
+                    Status = (i.StatusName ?? "Unknown").Trim().ToLowerInvariant(),
                     IsPriority = (i.InvoiceStatusID == invoiceStatusRejected)
                                  || (i.PaymentStatusID == paymentStatusUnpaid
                                      && i.PaymentDueDate != null
@@ -520,15 +520,16 @@ namespace EIMS.Infrastructure.Repositories
                     RevenueGrowthPercent = Math.Round(growthPercent, 2),
                     EstimatedCommission = estimatedCommission,
                     CommissionRate = commissionRate,
-                    NewCustomersThisMonth = newCustomersThisMonth,
-                    OpenInvoicesCount = openInvoicesCount
+                    NewCustomers = newCustomersThisMonth,
+                    OpenInvoices = openInvoicesCount
                 },
                 TargetProgress = new SalesTargetProgressDto
                 {
+                    CurrentRevenue = currentRevenue,
                     TargetRevenue = targetRevenue,
                     CompletionRate = Math.Round(completionRate, 2),
                     RemainingAmount = remainingAmount,
-                    DaysLeftInMonth = daysLeftInMonth
+                    DaysLeft = daysLeftInMonth
                 },
                 SalesTrend = salesTrend,
                 DebtWatchlist = debtWatchlistMapped,
