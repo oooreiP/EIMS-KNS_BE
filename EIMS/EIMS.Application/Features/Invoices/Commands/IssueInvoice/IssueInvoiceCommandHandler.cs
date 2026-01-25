@@ -297,7 +297,7 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                         var remaining = inv.TotalAmount - paidTotal;
                         return new { Invoice = inv, Remaining = remaining };
                     })
-                    .Where(x => x.Remaining > 0 || (x.Invoice.IssuedDate >= startOfMonth))
+                    .Where(x => x.Remaining != 0 || (x.Invoice.IssuedDate >= startOfMonth))
                     .ToList();
 
                 statement.OpeningBalance = openingBalance;
