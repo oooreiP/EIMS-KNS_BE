@@ -44,9 +44,9 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             var balanceDue = statement.TotalAmount - statement.PaidAmount;
 
             var template = await _uow.EmailTemplateRepository.GetAllQueryable()
-                .FirstOrDefaultAsync(x => x.TemplateCode == "STATEMENT_SEND" && x.LanguageCode == "vi" && x.IsActive, cancellationToken);
+                .FirstOrDefaultAsync(x => x.TemplateCode == "PAYMENT_REMINDER" && x.LanguageCode == "vi" && x.IsActive, cancellationToken);
             if (template == null)
-                return Result.Fail("Không tìm thấy mẫu email 'STATEMENT_SEND' đang hoạt động.");
+                return Result.Fail("Không tìm thấy mẫu email 'PAYMENT_REMINDER' đang hoạt động.");
 
             var company = await _uow.CompanyRepository.GetByIdAsync(1);
             var companyName = company?.CompanyName ?? "EIMS";
@@ -76,7 +76,13 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     FileContent = attachment.FileContent
                 });
 
-                attachmentListHtml = $"<li>{attachment.FileName}</li>";
+                attachmentListHtml = $@"
+                <div style='margin-top:20px'>
+                    <p><strong>📎 File đính kèm:</strong></p>
+                    <ul style='padding-left:20px;margin:5px 0'>
+                        <li>{attachment.FileName}</li>
+                    </ul>
+                </div>";
             }
 
             var replacements = new Dictionary<string, string>

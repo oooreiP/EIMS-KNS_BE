@@ -76,7 +76,8 @@ namespace EIMS.Infrastructure.Service
                 {
                     Name = company.CompanyName,
                     Address = company.Address,
-                    Phone = company.ContactPhone
+                    Phone = company.ContactPhone,
+                    LogoUrl = company.LogoUrl
                 },
                 HeaderInfo = new HeaderInfoDTO
                 {
@@ -86,7 +87,7 @@ namespace EIMS.Infrastructure.Service
                     StatementMonth = $"{statementEntity.PeriodMonth:D2}/{statementEntity.PeriodYear}",
                     CustomerName = statementEntity.Customer?.CustomerName ?? "Unknown Customer",
                     CustomerCode = $"KHACVT_{statementEntity.Customer?.CustomerID}",
-                    ContactEmail = "support@einvoice.vn"
+                    ContactEmail = "mannvse181589@fpt.edu.vn"
                 },
                 Items = new List<StatementItemDTO>()
             };
