@@ -40,15 +40,8 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
         {
             var userId = int.Parse(_currentUser.UserId);
             var invoice = await _uow.InvoicesRepository.GetByIdAsync(request.invoiceId, "Customer,InvoiceItems.Product,Template.Serial.Prefix,Template.Serial.SerialStatus, Template.Serial.InvoiceType,Company");
-            var template = invoice.Template;
-            var serial = template.Serial;
-            var prefix = serial.Prefix;
-            string khmsHDon = prefix.PrefixID.ToString();
-            string khHDon = khmsHDon +
-                $"{serial.SerialStatus.Symbol}" +
-                $"{serial.Year}" +
-                $"{serial.InvoiceType.Symbol}" +
-                $"{serial.Tail}";
+            var khmsHDon = invoice.MauSo;
+            var khHDon = invoice.KyHieu;
             Invoice? original = null;
             if (invoice.OriginalInvoiceID != null)
             {
@@ -98,8 +91,8 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
             {
                 InvoiceID = invoice.InvoiceID,
                 RequestPayload = xmlPayload,
-                TaxApiStatusID = 1, // PENDING: Đang gửi CQT
-                MTDiep = "200",
+                TaxApiStatusID = 1, 
+                MTDiep = tDiep.TtinChung.MaThongDiep,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -110,19 +103,10 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                        taxResponse.MLTDiep == "204" ? "KQ02" :
                        "TB01"; 
             log.ResponsePayload = taxResponse.RawResponse;
+            log.MTDiepPhanHoi = taxResponse.MTDiep;
+            log.MCCQT = taxResponse.MCCQT;
+            log.TaxApiStatusID = XmlHelpers.MapApiCodeToStatusId(apiStatusCode);
             await _uow.TaxApiLogRepository.UpdateAsync(log);
-            await _uow.SaveChanges();
-            var responseLog = new TaxApiLog
-            {
-                RequestPayload = xmlPayload,
-                ResponsePayload = taxResponse.RawResponse,
-                MTDiep = taxResponse.MTDiep,
-                SoTBao = taxResponse.SoTBao, 
-                MCCQT = taxResponse.MCCQT,
-                InvoiceID = request.invoiceId,
-                TaxApiStatusID = XmlHelpers.MapApiCodeToStatusId(apiStatusCode)
-            };
-            await _uow.TaxApiLogRepository.CreateAsync(responseLog);
             await _uow.SaveChanges();
             if (taxResponse.MCCQT != null) {
                 var xmlDoc = await _invoiceXMLService.LoadXmlFromUrlAsync(invoice.XMLPath);
@@ -137,12 +121,12 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
             }
-            if (responseLog.TaxApiStatusID == 30) 
+            if (log.TaxApiStatusID == 30) 
             {
                 invoice.TaxAuthorityCode = taxResponse.MCCQT;
                 invoice.InvoiceStatusID = 12; 
             }
-            else if (responseLog.TaxApiStatusID == 31) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
+            else if (log.TaxApiStatusID == 31) // REJECTED: CQT từ chối (TB02-TB11, KQ02)
             {
                 invoice.InvoiceStatusID = 13;
                 if (original != null)

@@ -19,6 +19,7 @@ namespace EIMS.Domain.Entities
         public int TemplateID { get; set; }
 
         public long? InvoiceNumber { get; set; }
+        public string? InvoiceSymbol { get; set; }
         [ForeignKey("InvoiceStatusID")]
 
         public int InvoiceStatusID { get; set; }
@@ -85,7 +86,17 @@ namespace EIMS.Domain.Entities
         public string InvoiceCustomerName { get; set; }
         public string InvoiceCustomerAddress { get; set; }
         public string InvoiceCustomerTaxCode { get; set; }
+        public string? MinuteCode { get; set; }
         public string? LookupCode { get; set; }
+        [NotMapped]
+        public string MauSo => !string.IsNullOrEmpty(InvoiceSymbol) && InvoiceSymbol.Length > 0
+                           ? InvoiceSymbol.Substring(0, 1)
+                           : string.Empty;
+
+        [NotMapped]
+        public string KyHieu => !string.IsNullOrEmpty(InvoiceSymbol) && InvoiceSymbol.Length > 1
+                                ? InvoiceSymbol.Substring(1)  
+                                : string.Empty;
 
         // --- Navigation Properties ---
         [JsonIgnore]

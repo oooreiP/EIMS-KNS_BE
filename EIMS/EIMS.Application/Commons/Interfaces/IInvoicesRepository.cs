@@ -2,6 +2,7 @@
 using EIMS.Application.DTOs.Dashboard.Accountant;
 using EIMS.Application.DTOs.Dashboard.HOD;
 using EIMS.Application.DTOs.Dashboard.Sale;
+using EIMS.Application.DTOs.Invoices;
 using EIMS.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace EIMS.Application.Commons.Interfaces
     public interface IInvoicesRepository : IBaseRepository<Invoice>
     {
         Task<Invoice> CreateInvoiceAsync(Invoice invoice);
+        Task<InvoiceSymbolDto?> GetInvoiceSymbolAsync(int invoiceId);
         public IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? column, string? direction);
         Task<CustomerDashboardDto> GetCustomerDashboardStatsAsync(int customerId);
         Task<AdminDashboardDto> GetAdminDashboardStatsAsync(string? period, CancellationToken cancellationToken);

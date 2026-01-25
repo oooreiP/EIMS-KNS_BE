@@ -13,6 +13,7 @@ namespace EIMS.Application.DTOs.Invoices
         public int? InvoiceStatusId { get; set; }
         //public string ReferenceText { get; set; }
         public string? AdjustmentReason { get; set; }
+        public string? MinuteCode { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
     }
 }

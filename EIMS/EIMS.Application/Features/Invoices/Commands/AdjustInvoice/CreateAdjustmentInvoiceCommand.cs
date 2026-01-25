@@ -16,7 +16,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
         public int OriginalInvoiceId { get; set; }
         public int? TemplateId { get; set; }
         public int? InvoiceStatusId { get; set; }
-        //public string ReferenceText { get; set; }
+        public string? MinuteCode { get; set; }
         public string? AdjustmentReason { get; set; }
         public List<InvoiceItemInputDto> AdjustmentItems { get; set; } = new();
         public string? RootPath { get; set; }

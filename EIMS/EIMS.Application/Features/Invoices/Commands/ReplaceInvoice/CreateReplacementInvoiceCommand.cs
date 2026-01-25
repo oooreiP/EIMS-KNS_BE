@@ -40,6 +40,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
         public decimal? Amount { get; set; }
         public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
+        public string? MinuteCode { get; set; }
         public string? RootPath { get; set; }
     }
 }

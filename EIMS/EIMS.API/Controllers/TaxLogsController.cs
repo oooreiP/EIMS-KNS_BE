@@ -22,9 +22,8 @@ namespace EIMS.API.Controllers
         /// Lấy danh sách lịch sử truyền nhận (Không bao gồm nội dung XML chi tiết)
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] GetTaxApiLogListQuery query)
         {
-            var query = new GetTaxApiLogListQuery();
             var result = await _mediator.Send(query);
 
             if (result.IsFailed) return BadRequest(result.Errors[0].Message);
@@ -82,10 +81,10 @@ namespace EIMS.API.Controllers
         /// <param name="type">'request' hoặc 'response'</param>
         /// <param name="viewHtml">true: Xem đẹp (Mặc định), false: Xem raw xml</param>
         [HttpGet("{id}/view")]
-        public async Task<IActionResult> ViewLogContent(int id, [FromQuery] string type = "request", [FromQuery] bool viewHtml = true)
+        public async Task<IActionResult> ViewLogContent(int id, [FromQuery] string Type ="Response", [FromQuery] bool viewHtml = true)
         {
             string rootPath = _env.ContentRootPath;
-            var query = new GetLogHtmlViewQuery(id, type, viewHtml, rootPath);
+            var query = new GetLogHtmlViewQuery(id, Type, viewHtml, rootPath);
             var result = await _mediator.Send(query);
 
             if (result.IsFailed)

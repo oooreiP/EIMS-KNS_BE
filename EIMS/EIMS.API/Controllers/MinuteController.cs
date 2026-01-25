@@ -63,6 +63,32 @@ namespace EIMS.API.Controllers
 
             return Ok(new { Message = "Đã ký số thành công", NewUrl = result.Value });
         }
+        [HttpPut("{id}/file")]
+        public async Task<IActionResult> UpdateMinuteFile(int id, IFormFile file)
+        {
+            var command = new UpdateMinuteFileCommand(id, file);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { FilePath = result.Value });
+        }
+        [HttpPut("{id}/complete")]
+        public async Task<IActionResult> CompleteMinute(int id)
+        {
+            var command = new CompleteMinuteInvoiceCommand(id);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { Message = "Đã cập nhật trạng thái biên bản thành công." });
+        }
         [HttpGet("{id}/export-pdf")]
         public async Task<IActionResult> ExportPdf(int id)
         {
