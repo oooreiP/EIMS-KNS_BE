@@ -97,6 +97,27 @@ namespace EIMS.API.Controllers
             return Ok(result.Value);
         }
         /// <summary>
+        /// Gets a paginated list of active customers.
+        /// </summary>
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActiveCustomers([FromQuery] GetCustomersQuery query)
+        {
+            query.IsActive = true;
+
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailed)
+            {
+                return BadRequest(new
+                {
+                    message = "Failed to retrieve active customers",
+                    errors = result.Errors.Select(e => e.Message)
+                });
+            }
+
+            return Ok(result.Value);
+        }
+        /// <summary>
         /// Activates a customer account.
         /// </summary>
         [HttpPut("{id}/active")]
