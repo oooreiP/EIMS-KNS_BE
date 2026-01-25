@@ -489,6 +489,10 @@ namespace EIMS.Infrastructure.Repositories
                 .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Rejected
                                  && r.CreatedAt >= startOfMonth
                                  && r.CreatedAt < startOfNextMonth, cancellationToken);
+            var issuedCount = await requestQuery
+.CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Completed
+            && r.CreatedAt >= startOfMonth
+            && r.CreatedAt < startOfNextMonth, cancellationToken);
 
             var recentRequestsRaw = await requestQuery
                 .Include(r => r.Customer)
@@ -541,6 +545,7 @@ namespace EIMS.Infrastructure.Repositories
                     PendingCount = pendingCount,
                     ApprovedCount = approvedCount,
                     RejectedCount = rejectedCount,
+                    IssuedCount = issuedCount,
                     RecentRequests = recentRequests
                 },
                 SalesTrend = salesTrend,
