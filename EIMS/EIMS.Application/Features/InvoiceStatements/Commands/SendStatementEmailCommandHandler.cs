@@ -1,8 +1,10 @@
+using EIMS.Application.Commons.Helpers;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Application.Features.InvoiceStatements.Queries;
 using FluentResults;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading;
@@ -36,29 +38,26 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             if (string.IsNullOrWhiteSpace(toEmail))
                 return Result.Fail("No recipient email found for this statement.");
 
-            var subject = string.IsNullOrWhiteSpace(request.Subject)
-                ? $"Statement {statement.StatementCode}"
-                : request.Subject;
+            var balanceDue = statement.TotalAmount - statement.PaidAmount;
 
-            var message = string.IsNullOrWhiteSpace(request.Message)
-                ? $@"Kính gửi Quý khách,
+            var template = await _uow.EmailTemplateRepository.GetAllQueryable()
+                .FirstOrDefaultAsync(x => x.TemplateCode == "STATEMENT_SEND" && x.LanguageCode == "vi" && x.IsActive, cancellationToken);
+            if (template == null)
+                return Result.Fail("Không tìm thấy mẫu email 'STATEMENT_SEND' đang hoạt động.");
 
-Vui lòng xem đính kèm bảng kê công nợ {statement.StatementCode} để Quý khách đối chiếu.
-Nếu cần hỗ trợ thêm, vui lòng liên hệ bộ phận chăm sóc khách hàng của chúng tôi.
+            var company = await _uow.CompanyRepository.GetByIdAsync(1);
+            var companyName = company?.CompanyName ?? "EIMS";
 
-Trân trọng cảm ơn Quý khách.
+            var periodMonth = statement.PeriodMonth > 0 ? statement.PeriodMonth : statement.DueDate.Month;
+            var periodYear = statement.PeriodYear > 0 ? statement.PeriodYear : statement.DueDate.Year;
 
-Trân trọng,
-EIMS Support Team"
-                : request.Message;
+            string attachmentListHtml = string.Empty;
 
             var mailRequest = new FEMailRequest
             {
                 ToEmail = toEmail,
-                Subject = subject,
-                EmailBody = message,
-                CcEmails = request.CcEmails ?? new(),
-                BccEmails = request.BccEmails ?? new()
+                Subject = template.Subject,
+                EmailBody = template.BodyContent
             };
 
             if (request.IncludePdf)
@@ -73,7 +72,23 @@ EIMS Support Team"
                     FileName = attachment.FileName,
                     FileContent = attachment.FileContent
                 });
+
+                attachmentListHtml = $"<li>{attachment.FileName}</li>";
             }
+
+            var replacements = new Dictionary<string, string>
+            {
+                { "{{CustomerName}}", statement.Customer?.CustomerName ?? "Quý khách" },
+                { "{{CompanyName}}", companyName },
+                { "{{Month}}", periodMonth.ToString("00") },
+                { "{{Year}}", periodYear.ToString() },
+                { "{{DueDate}}", statement.DueDate.ToString("dd/MM/yyyy") },
+                { "{{TotalAmount}}", balanceDue.ToString("N0") },
+                { "{{AttachmentList}}", attachmentListHtml }
+            };
+
+            mailRequest.Subject = EmailHelper.ReplacePlaceholders(mailRequest.Subject, replacements);
+            mailRequest.EmailBody = EmailHelper.ReplacePlaceholders(mailRequest.EmailBody, replacements);
 
             var sendResult = await _emailSender.SendMailAsync(mailRequest);
             if (sendResult.IsFailed)

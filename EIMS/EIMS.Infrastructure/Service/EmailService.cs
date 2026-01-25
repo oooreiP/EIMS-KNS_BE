@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
+using EIMS.Application.Commons.Helpers;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Application.Features.Emails.Commands;
@@ -234,8 +235,8 @@ namespace EIMS.Infrastructure.Service
             };
 
             // 6. Xử lý nội dung (Replace placeholders)
-            string emailSubject = ReplacePlaceholders(template.Subject, replacements);
-            string emailBody = ReplacePlaceholders(template.BodyContent, replacements);
+            string emailSubject = EmailHelper.ReplacePlaceholders(template.Subject, replacements);
+            string emailBody = EmailHelper.ReplacePlaceholders(template.BodyContent, replacements);
 
             // 7. Tạo Mail Request & Gửi
             var mailRequest = new FEMailRequest
@@ -319,17 +320,6 @@ namespace EIMS.Infrastructure.Service
 
             // 4. GỌI HÀM CHÍNH
             return await SendInvoiceEmailAsync(command);
-        }
-        private string ReplacePlaceholders(string templateText, Dictionary<string, string> replacements)
-        {
-            if (string.IsNullOrEmpty(templateText)) return "";
-
-            foreach (var item in replacements)
-            {
-                // Thay thế {{Key}} bằng Value
-                templateText = templateText.Replace(item.Key, item.Value);
-            }
-            return templateText;
-        }
+        }     
     }
 }
