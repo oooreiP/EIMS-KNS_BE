@@ -41,7 +41,6 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                 .FirstOrDefaultAsync(i => i.RequestID == request.RequestId, cancellationToken);
 
             if (invoiceRequest == null) return Result.Fail("Invoice Request not found");
-            if (invoiceRequest == null) return Result.Fail("Invoice Request not found");
             var targetStatuses = new[] { 2, 4, 5 };
 
             if (invoiceRequest.CreatedInvoice != null &&
