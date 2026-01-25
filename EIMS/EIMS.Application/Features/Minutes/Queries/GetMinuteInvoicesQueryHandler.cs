@@ -31,6 +31,12 @@ namespace EIMS.Application.Features.Minutes.Queries
                 .Include(m => m.Invoice)
                 .AsNoTracking();
 
+            if (request.SaleId.HasValue)
+            {
+                int saleId = request.SaleId.Value;
+                query = query.Where(x => x.Invoice != null && x.Invoice.Customer.SaleID == saleId);
+            }
+
             if (!string.IsNullOrEmpty(request.SearchTerm))
             {
                 string search = request.SearchTerm.ToLower().Trim();

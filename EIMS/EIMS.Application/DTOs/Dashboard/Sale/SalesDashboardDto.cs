@@ -9,9 +9,9 @@ namespace EIMS.Application.DTOs.Dashboard.Sale
     {
         public SalesCurrentUserDto CurrentUser { get; set; } = new();
         public SalesKpiDto SalesKPIs { get; set; } = new();
-        public SalesTargetProgressDto TargetProgress { get; set; } = new();
+        public InvoiceRequestStatsDto InvoiceRequestStats { get; set; } = new();
         public List<SalesTrendDto> SalesTrend { get; set; } = new();
         public List<DebtWatchlistDto> DebtWatchlist { get; set; } = new();
-        public List<SalesInvoiceSimpleDto> RecentInvoices { get; set; } = new();
+        public TotalCustomerDebtDto TotalCustomerDebt { get; set; } = new();
     }
 }

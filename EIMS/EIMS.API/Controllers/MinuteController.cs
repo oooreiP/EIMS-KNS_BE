@@ -51,6 +51,15 @@ namespace EIMS.API.Controllers
             // Vì GetAll hiếm khi lỗi logic, thường chỉ trả về list rỗng
             return Ok(result.Value);
         }
+
+        // GET: api/minute/by-sale/{saleId}?pageIndex=1&pageSize=10&searchTerm=abc&status=1
+        [HttpGet("by-sale/{saleId}")]
+        public async Task<IActionResult> GetBySaleId(int saleId, [FromQuery] GetMinuteInvoicesQuery query)
+        {
+            query.SaleId = saleId;
+            var result = await _mediator.Send(query);
+            return Ok(result.Value);
+        }
         [HttpPost("sign-seller/{id}")]
         public async Task<IActionResult> SignBySeller(int id)
         {
