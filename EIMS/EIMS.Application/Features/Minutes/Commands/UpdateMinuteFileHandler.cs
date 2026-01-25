@@ -52,7 +52,6 @@ namespace EIMS.Application.Features.Minutes.Commands
             }
             string newFileUrl = uploadResult.Value.Url;
             minute.FilePath = newFileUrl;
-            minute.Status = EMinuteStatus.Complete;
             await _uow.MinuteInvoiceRepository.UpdateAsync(minute);
             await _uow.SaveChanges();
             return Result.Ok(newFileUrl);

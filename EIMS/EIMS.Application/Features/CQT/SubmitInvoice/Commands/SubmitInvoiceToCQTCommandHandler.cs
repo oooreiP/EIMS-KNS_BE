@@ -92,7 +92,7 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 InvoiceID = invoice.InvoiceID,
                 RequestPayload = xmlPayload,
                 TaxApiStatusID = 1, 
-                MTDiep = "200",
+                MTDiep = tDiep.TtinChung.MaThongDiep,
                 Timestamp = DateTime.UtcNow
             };
 
