@@ -314,7 +314,6 @@ namespace EIMS.Infrastructure.Repositories
         }
         public async Task<SalesDashboardDto> GetSalesDashboardStatsAsync(int salesPersonId, CancellationToken cancellationToken)
         {
-            double commissionRate = _config.GetValue<double>("SalesSettings:GlobalCommissionRate");
             var now = DateTime.UtcNow;
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var startOfNextMonth = startOfMonth.AddMonths(1);
@@ -322,11 +321,7 @@ namespace EIMS.Infrastructure.Repositories
             var sixMonthsAgo = startOfMonth.AddMonths(-5);
 
             const int invoiceStatusDraft = 1;
-            const int invoiceStatusIssued = 2;
-            const int invoiceStatusPendingApproval = 6;
-            const int invoiceStatusPendingSign = 7;
             const int invoiceStatusRejected = 16;
-            const int paymentStatusPaid = 3;
             const int paymentStatusUnpaid = 1;
 
             var user = await _context.Users
@@ -339,21 +334,11 @@ namespace EIMS.Infrastructure.Repositories
                 .Where(i => i.SalesID == salesPersonId);
 
             var currentRevenue = await query
-                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= startOfMonth
-                            && (i.IssuedDate ?? i.CreatedAt) < startOfNextMonth
-                            && (i.PaymentStatusID == paymentStatusPaid
-                                || i.InvoiceStatusID == invoiceStatusIssued
-                                || i.InvoiceStatusID == invoiceStatusPendingApproval
-                                || i.InvoiceStatusID == invoiceStatusPendingSign))
+                .Where(i => i.CreatedAt >= startOfMonth && i.CreatedAt < startOfNextMonth)
                 .SumAsync(i => i.TotalAmount, cancellationToken);
 
             var lastMonthRevenue = await query
-                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= startOfLastMonth
-                            && (i.IssuedDate ?? i.CreatedAt) < startOfMonth
-                            && (i.PaymentStatusID == paymentStatusPaid
-                                || i.InvoiceStatusID == invoiceStatusIssued
-                                || i.InvoiceStatusID == invoiceStatusPendingApproval
-                                || i.InvoiceStatusID == invoiceStatusPendingSign))
+                .Where(i => i.CreatedAt >= startOfLastMonth && i.CreatedAt < startOfMonth)
                 .SumAsync(i => i.TotalAmount, cancellationToken);
 
             double growthPercent = 0;
@@ -366,14 +351,14 @@ namespace EIMS.Infrastructure.Repositories
                 growthPercent = 100;
             }
 
-            var estimatedCommission = currentRevenue * (decimal)(commissionRate / 100.0);
-
-            var openInvoicesCount = await query
-                .CountAsync(i => i.PaymentStatusID == paymentStatusUnpaid, cancellationToken);
+            var totalCustomers = await query
+                .Select(i => i.CustomerID)
+                .Distinct()
+                .CountAsync(cancellationToken);
 
             var rawTrend = await query
-                .Where(i => (i.IssuedDate ?? i.CreatedAt) >= sixMonthsAgo)
-                .GroupBy(i => new { Year = (i.IssuedDate ?? i.CreatedAt).Year, Month = (i.IssuedDate ?? i.CreatedAt).Month })
+                .Where(i => i.CreatedAt >= sixMonthsAgo)
+                .GroupBy(i => new { i.CreatedAt.Year, i.CreatedAt.Month })
                 .Select(g => new
                 {
                     g.Key.Year,
@@ -394,7 +379,7 @@ namespace EIMS.Infrastructure.Repositories
                     Month = $"T{t.Month:D2}/{t.Year}",
                     Revenue = t.Revenue,
                     InvoiceCount = t.Count,
-                    CommissionEarned = t.Revenue * (decimal)(commissionRate / 100.0)
+                    CommissionEarned = 0
                 })
                 .ToList();
 
@@ -466,7 +451,7 @@ namespace EIMS.Infrastructure.Repositories
                                         || (i.PaymentStatusID == paymentStatusUnpaid
                                             && i.PaymentDueDate != null
                                             && i.PaymentDueDate < overdue7Days))
-                .ThenByDescending(i => i.IssuedDate ?? i.CreatedAt)
+                .ThenByDescending(i => i.CreatedAt)
                 .Take(10)
                 .ToListAsync(cancellationToken);
 
@@ -503,14 +488,6 @@ namespace EIMS.Infrastructure.Repositories
             var rejectedCount = await requestQuery
                 .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Rejected
                                  && r.CreatedAt >= startOfMonth
-                                 && r.CreatedAt < startOfNextMonth, cancellationToken);
-
-            var issuedCount = await requestQuery
-                            .CountAsync(r => r.RequestStatusID == (int)EInvoiceRequestStatus.Completed
-                                             && r.CreatedAt >= startOfMonth
-                                             && r.CreatedAt < startOfNextMonth, cancellationToken);
-            var totalThisMonth = await requestQuery
-                .CountAsync(r => r.CreatedAt >= startOfMonth
                                  && r.CreatedAt < startOfNextMonth, cancellationToken);
 
             var recentRequestsRaw = await requestQuery
@@ -556,19 +533,14 @@ namespace EIMS.Infrastructure.Repositories
                 SalesKPIs = new SalesKpiDto
                 {
                     CurrentRevenue = currentRevenue,
-                    LastMonthRevenue = lastMonthRevenue,
                     RevenueGrowthPercent = Math.Round(growthPercent, 2),
-                    EstimatedCommission = estimatedCommission,
-                    CommissionRate = commissionRate,
-                    OpenInvoices = openInvoicesCount
+                    TotalCustomers = totalCustomers
                 },
                 InvoiceRequestStats = new InvoiceRequestStatsDto
                 {
                     PendingCount = pendingCount,
                     ApprovedCount = approvedCount,
                     RejectedCount = rejectedCount,
-                    IssuedCount = issuedCount,
-                    TotalThisMonth = totalThisMonth,
                     RecentRequests = recentRequests
                 },
                 SalesTrend = salesTrend,
