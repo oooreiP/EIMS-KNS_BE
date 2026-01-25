@@ -30,7 +30,7 @@ namespace EIMS.Application.Features.Minutes.Queries
             var entity = await _uow.MinuteInvoiceRepository.GetByIdAsync(request.MinuteId);
 
             if (entity == null)
-                return Result.Fail("Bảng kê không tồn tại.");
+                return Result.Fail("Biên bản không tồn tại.");
 
             try
             {
@@ -39,7 +39,7 @@ namespace EIMS.Application.Features.Minutes.Queries
                 return Result.Ok(new FileAttachment
                 {
                     FileContent = pdfBytes,
-                    FileName = $"Bang_ke_{entity.MinuteCode}.pdf",
+                    FileName = $"Bien_ban_{entity.MinuteCode}.pdf",
                 });
             }
             catch (Exception ex)
