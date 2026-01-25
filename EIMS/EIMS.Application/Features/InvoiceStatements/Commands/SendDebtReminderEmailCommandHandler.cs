@@ -76,7 +76,13 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     FileContent = attachment.FileContent
                 });
 
-                attachmentListHtml = $"<li>{attachment.FileName}</li>";
+                attachmentListHtml = $@"
+                <div style='margin-top:20px'>
+                    <p><strong>📎 File đính kèm:</strong></p>
+                    <ul style='padding-left:20px;margin:5px 0'>
+                        <li>{attachment.FileName}</li>
+                    </ul>
+                </div>";
             }
 
             var replacements = new Dictionary<string, string>
