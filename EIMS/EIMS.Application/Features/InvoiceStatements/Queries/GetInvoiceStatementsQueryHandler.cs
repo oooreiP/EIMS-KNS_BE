@@ -68,8 +68,6 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
 
             // 3. Ordering (Mới nhất lên đầu)
             query = query.OrderByDescending(s => s.StatementDate);
-
-            // 4. Projection to DTO (CẬP NHẬT QUAN TRỌNG)
             var projectedQuery = query.Select(s => new StatementSummaryResponse
             {
                 StatementID = s.StatementID,
@@ -89,8 +87,6 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
                 StatusID = s.StatusID, 
                 IsOverdue = (s.StatusID != 5) && (DateTime.UtcNow > s.DueDate)
             });
-
-            // 5. Pagination
             var paginatedResult = await PaginatedList<StatementSummaryResponse>.CreateAsync(
                 projectedQuery,
                 request.PageNumber,
