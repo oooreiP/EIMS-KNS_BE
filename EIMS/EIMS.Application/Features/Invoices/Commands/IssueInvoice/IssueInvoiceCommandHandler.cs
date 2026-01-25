@@ -4,6 +4,7 @@ using EIMS.Domain.Constants;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -50,6 +51,9 @@ namespace EIMS.Application.Features.Invoices.Commands.IssueInvoice
                .FirstOrDefaultAsync(x => x.InvoiceID == invoice.OriginalInvoiceID);
                 if (invoice.InvoiceType == 3) original.InvoiceStatusID = 5;
                 else if (invoice.InvoiceType == 2) original.InvoiceStatusID = 4;
+                var symbol = await _uow.InvoicesRepository.GetInvoiceSymbolAsync(original.InvoiceID);
+                string originalAutoReferenceText = $"Bị điều chỉnh bởi hóa đơn Mẫu số {symbol.MauSo} Ký hiệu {symbol.KyHieu}  ngày {original.IssuedDate:dd/MM/yyyy}";
+                original.ReferenceNote = originalAutoReferenceText;
             }
             if (invoice == null) return Result.Fail("Không tìm thấy hóa đơn.");
             bool hasSignature = !string.IsNullOrEmpty(invoice.DigitalSignature);
