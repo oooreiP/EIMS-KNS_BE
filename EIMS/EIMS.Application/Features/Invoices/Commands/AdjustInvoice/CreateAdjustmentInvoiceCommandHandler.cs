@@ -214,7 +214,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 $"{serial.Tail}";
             string soHoaDon = originalInvoice.InvoiceNumber.Value.ToString("D7");
             DateTime ngayGoc = originalInvoice.IssuedDate ?? originalInvoice.SignDate ?? originalInvoice.CreatedAt;
-            string autoReferenceText = $"Điều chỉnh {typeText} cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {soHoaDon} ngày {ngayGoc.Day:00} tháng {ngayGoc.Month:00} năm {ngayGoc.Year}";         
+            string autoReferenceText = $"Điều chỉnh {typeText} cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {soHoaDon} ngày {ngayGoc.Day:00} tháng {ngayGoc.Month:00} năm {ngayGoc.Year}. Biên bản thỏa thuận của hai bên đã được lưu với Ký hiệu {request.MinuteCode}";         
             adjInvoice.ReferenceNote = autoReferenceText;
             await _uow.InvoicesRepository.CreateAsync(adjInvoice);
             try

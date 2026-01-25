@@ -170,7 +170,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     $"{oldSerial.InvoiceType.Symbol}" +
                     $"{oldSerial.Tail}";
                 string soHoaDon = originalInvoice.InvoiceNumber.Value.ToString("D7");
-                string refText = $"(Thay thế cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {originalInvoice.InvoiceNumber:D7} ngày {originalInvoice.IssuedDate:dd/MM/yyyy})";
+                string refText = $"(Thay thế cho hóa đơn Mẫu số {khmsHDon} Ký hiệu {khHDon} Số {originalInvoice.InvoiceNumber:D7} ngày {originalInvoice.IssuedDate:dd/MM/yyyy}.  Biên bản thỏa thuận của hai bên đã được lưu với Ký hiệu {request.MinuteCode})";
                 var replacementInvoice = new Invoice
                 {
                     InvoiceType = 3, // 3 = Replacement
