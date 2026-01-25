@@ -19,165 +19,68 @@ namespace EIMS.Application.Features.Minutes.Commands
 {
     public class SignMinuteInvoiceCommandHandler : IRequestHandler<SignMinuteInvoiceCommand, Result<string>>
     {
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IUnitOfWork _uow;
+        private readonly IPdfService _pdfService;
+        private readonly IInvoiceXMLService _xmlService;
+        private readonly IFileStorageService _fileStorage;
+        private readonly IMediator _mediator;
 
-        public SignMinuteInvoiceCommandHandler(IServiceScopeFactory scopeFactory)
+        public SignMinuteInvoiceCommandHandler(
+            IUnitOfWork uow,
+            IPdfService pdfService,
+            IInvoiceXMLService xmlService,
+            IFileStorageService fileStorage,
+            IMediator mediator)
         {
-            _scopeFactory = scopeFactory;
+            _uow = uow;
+            _pdfService = pdfService;
+            _xmlService = xmlService;
+            _fileStorage = fileStorage;
+            _mediator = mediator;
         }
 
-        public Task<Result<string>> Handle(
-            SignMinuteInvoiceCommand request,
-            CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(SignMinuteInvoiceCommand request, CancellationToken cancellationToken)
         {
-            Task.Run(() => ProcessInBackground(request));
-            return Task.FromResult(Result.Ok("Biên bản đang được ký nền."));
-        }
-
-        private async Task ProcessInBackground(SignMinuteInvoiceCommand request)
-        {
-            using var scope = _scopeFactory.CreateScope();
-
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var pdfService = scope.ServiceProvider.GetRequiredService<IPdfService>();
-            var xmlService = scope.ServiceProvider.GetRequiredService<IInvoiceXMLService>();
-            var fileStorage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
-            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<SignMinuteInvoiceCommandHandler>>();
-
+            // 1. Lấy dữ liệu
+            var minute = await _uow.MinuteInvoiceRepository.GetByIdAsync(request.MinuteInvoiceId); // Không cần include Customer ở đây cho nhẹ
+            if (minute == null) return Result.Fail("Không tìm thấy biên bản.");
+            if (minute.IsSellerSigned) return Result.Fail("Biên bản đã được ký trước đó.");
+            byte[] pdfBytes;
+            if (minute.FilePath.StartsWith("http"))
+                pdfBytes = await _pdfService.DownloadFileBytesAsync(minute.FilePath);
+            else
+                return Result.Fail("Đường dẫn file không hợp lệ.");
+            var certResult = await _xmlService.GetCertificateAsync(1); // ID công ty
+            if (certResult.IsFailed) return Result.Fail(certResult.Errors[0].Message);
+            var fontPath = Path.Combine(request.RootPath, "Fonts", "arial.ttf");
+            byte[] signedPdfBytes;
             try
             {
-                var minute = await uow.MinuteInvoiceRepository
-        .GetByIdAsync(request.MinuteInvoiceId, "Invoice.Customer");
-                if (minute == null)
-                    return;
-
-                if (minute.IsSellerSigned)
-                    return;
-                byte[] pdfBytes;
-                try
-                {
-                    if (minute.FilePath.StartsWith("http"))
-                    {
-                        // Gọi Service đã tách ra
-                        pdfBytes = await pdfService.DownloadFileBytesAsync(minute.FilePath);
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
-                var certResult = await xmlService.GetCertificateAsync(1); // ID công ty = 1
-                if (certResult.IsFailed)
-                    return;
-
-                var signingCert = certResult.Value;
-                var fontPath = Path.Combine(
-                    request.RootPath,
-                    "Fonts",
-                    "arial.ttf"
-                );
-                // Ký số vào file (Kết quả là byte[] đã ký)
-                byte[] signedPdfBytes;
-                try
-                {
-                    signedPdfBytes = pdfService.SignPdfAtText(pdfBytes, signingCert, request.SearchText, fontPath);
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
-
-                // BƯỚC 4: Upload file ĐÃ KÝ lên lại Cloudinary
-                // Tạo tên file mới để tránh cache hoặc ghi đè (thêm suffix _Signed)
-                string newFileName = Path.GetFileNameWithoutExtension(minute.FilePath) + "_Signed_A.pdf";
-
-                // Convert byte[] sang IFormFile bằng helper class ở trên
-                IFormFile formFile = new MemoryFormFile(signedPdfBytes, newFileName);
-
-                var uploadResult = await fileStorage.UploadFileAsync(formFile);
-                if (uploadResult.IsFailed)
-                    return;
-                string defaultTemplateCode;
-                if (minute.MinutesType == MinutesType.Replacement)
-                {
-                    defaultTemplateCode = "MINUTES_REPLACE";
-                }
-                else
-                {
-                    defaultTemplateCode = "MINUTES_ADJUST";
-                }
-                var emailTemplate = await uow.EmailTemplateRepository.GetAllQueryable()
-                                .FirstOrDefaultAsync(x => x.TemplateCode == defaultTemplateCode && x.LanguageCode == "vi");
-                var attachmentList = new List<FileAttachment>();
-                string GetFileNameFromUrl(string url)
-                {
-                    try { return Path.GetFileName(new Uri(url).LocalPath); }
-                    catch { return "document.pdf"; }
-                }
-                string attachmentHtmlList = $"<li style='margin-bottom: 5px;'>📎 <strong>{GetFileNameFromUrl(minute.FilePath)}</strong></li>";
-                attachmentList.Add(new FileAttachment
-                {
-                    FileUrl = minute.FilePath,
-                    FileName = GetFileNameFromUrl(minute.FilePath)
-                });
-                attachmentHtmlList += "<br/><em style='color: #666; font-size: 12px;'>(File được đính kèm theo email)</em>";
-                var replacements = new Dictionary<string, string>
-        {
-            { "{{CustomerName}}", minute.Invoice.InvoiceCustomerName },
-            { "{{InvoiceNumber}}", minute.Invoice.InvoiceNumber.ToString() },
-            { "{{CreatedDate}}", DateTime.Now.ToString("dd/MM/yyyy") },
-            { "{{Reason}}", minute.Description },
-            { "{{AttachmentList}}", attachmentHtmlList },
-            { "{{IssuedDate}}", minute.Invoice.IssuedDate.Value.ToString("dd/MM/yyyy") },
-        };
-
-                string subject = ReplacePlaceholders(emailTemplate.Subject, replacements);
-                string body = ReplacePlaceholders(emailTemplate.BodyContent, replacements);
-                string toEmail = minute.Invoice.Customer.ContactEmail;
-
-                var mailRequest = new FEMailRequest
-                {
-                    ToEmail = toEmail,
-                    Subject = subject,
-                    EmailBody = body,
-                    AttachmentUrls = attachmentList
-                };
-                var sendResult = await emailService.SendMailAsync(mailRequest);
-                minute.FilePath = uploadResult.Value.Url;
-                minute.IsSellerSigned = true;
-                minute.SellerSignedAt = DateTime.UtcNow;
-                if (minute.IsBuyerSigned)
-                {
-                    minute.Status = EMinuteStatus.Complete;
-                }
-                else
-                {
-                    minute.Status = EMinuteStatus.Sent;
-                }
-
-                await uow.MinuteInvoiceRepository.UpdateAsync(minute); // Nếu dùng EF Core tracking thì dòng này có thể ko cần
-                await uow.SaveChanges();
-
-                return;
+                signedPdfBytes = _pdfService.SignPdfAtText(pdfBytes, certResult.Value, request.SearchText, fontPath);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Lỗi ký biên bản phút");
+                return Result.Fail($"Lỗi khi ký PDF: {ex.Message}");
             }
-        }
-        private string ReplacePlaceholders(string text, Dictionary<string, string> replacements)
-        {
-            if (string.IsNullOrEmpty(text)) return "";
-            foreach (var item in replacements)
-            {
-                text = text.Replace(item.Key, item.Value ?? "");
-            }
-            return text;
+
+            string newFileName = Path.GetFileNameWithoutExtension(minute.FilePath) + "_Signed_B.pdf";
+            IFormFile formFile = new MemoryFormFile(signedPdfBytes, newFileName); 
+
+            var uploadResult = await _fileStorage.UploadFileAsync(formFile);
+            if (uploadResult.IsFailed) return Result.Fail("Lỗi upload file đã ký.");
+            minute.FilePath = uploadResult.Value.Url;
+            minute.IsSellerSigned = true;
+            minute.SellerSignedAt = DateTime.UtcNow;
+            if (minute.IsBuyerSigned)
+                minute.Status = EMinuteStatus.Complete;
+            else
+                minute.Status = EMinuteStatus.Sent;
+
+            _uow.MinuteInvoiceRepository.UpdateAsync(minute);
+            await _uow.SaveChanges();
+            await _mediator.Publish(new MinuteSignedEvent(minute.MinutesInvoiceId), cancellationToken);
+
+            return Result.Ok(minute.FilePath);
         }
     }
 }

@@ -299,13 +299,25 @@ namespace EIMS.Infrastructure.Service
             {
                 PdfReader reader = new PdfReader(msInput);
                 PdfSigner signer = new PdfSigner(reader, msOutput, new StampingProperties());
+                var pdfDoc = signer.GetDocument();
+                var pageSize = pdfDoc.GetPage(location.PageNumber).GetPageSize();
                 float width = 260;
                 float height = 90;
+                float textCenterX = location.Rect.GetLeft() + (location.Rect.GetWidth() / 2);
+                float newX = textCenterX - (width / 2);
+                float rightMarginLimit = pageSize.GetRight() - 20;
+
+                if (newX + width > rightMarginLimit)
+                {
+                    newX = rightMarginLimit - width;
+                }
+
+                // 3. Tạo Rectangle với tọa độ X mới
                 Rectangle signatureRect = new Rectangle(
-                    location.Rect.GetLeft(),
-                    location.Rect.GetBottom() - height - 35,
-                    width,
-                    height);
+                     newX,
+                     location.Rect.GetBottom() - height - 35, 
+                     width,
+                     height);
 
 
                 signer.SetPageNumber(location.PageNumber);
@@ -315,7 +327,7 @@ namespace EIMS.Infrastructure.Service
                     .SetReuseAppearance(false)
                     .SetPageNumber(location.PageNumber);
 
-                var pdfDoc = signer.GetDocument();
+                
                 PdfFormXObject layer = appearance.GetLayer2();
                 PdfFont font = PdfFontFactory.CreateFont(
                     rootPath,
