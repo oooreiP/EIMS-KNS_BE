@@ -50,7 +50,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 {
                     RequestPayload = signedXmlPayload,
                     ResponsePayload = taxResponse.RawResponse,
-                    MTDiep = taxResponse.MTDiep,
+                    MTDiepPhanHoi = taxResponse.MTDiep,
                     SoTBao = taxResponse.SoTBao,
                     MCCQT = taxResponse.MCCQT,
                     TaxApiStatusID = XmlHelpers.MapApiCodeToStatusId(apiStatusCode),

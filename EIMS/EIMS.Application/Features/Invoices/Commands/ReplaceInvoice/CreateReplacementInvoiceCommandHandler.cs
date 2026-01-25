@@ -200,6 +200,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     InvoiceCustomerName = request.CustomerName ?? customer.CustomerName,
                     InvoiceCustomerAddress = request.Address ?? customer.Address,
                     InvoiceCustomerTaxCode = request.TaxCode ?? customer.TaxCode,
+                    MinuteCode = request.MinuteCode
                 };
                 originalInvoice.InvoiceStatusID = 11; // Replaced
                 await _uow.InvoicesRepository.UpdateAsync(originalInvoice);

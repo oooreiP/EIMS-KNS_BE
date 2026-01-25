@@ -48,7 +48,7 @@ namespace EIMS.Application.Features.Minutes.Commands
             string fileUrl = uploadResult.Value.Url;
             int count = await _uow.MinuteInvoiceRepository.CountAsync(m => m.InvoiceId == request.InvoiceId);
             string typePrefix = request.MinuteType == MinutesType.Adjustment ? "DC" : "TT";
-            string minuteCode = $"BB-{typePrefix}-{invoice.InvoiceNumber}-{count + 1}";
+            string minuteCode = $"BB-{typePrefix}-{invoice.InvoiceSymbol}_{invoice.InvoiceNumber}-{count + 1}";
             var newMinute = new MinuteInvoice
             {
                 InvoiceId = request.InvoiceId,

@@ -1,4 +1,6 @@
 ﻿using EIMS.Application.Commons.Interfaces;
+using EIMS.Application.Commons.Models;
+using EIMS.Application.DTOs.Customer;
 using EIMS.Application.DTOs.TaxAPIDTO;
 using EIMS.Application.Features.TaxLogs.Commands;
 using EIMS.Domain.Entities;
@@ -21,7 +23,7 @@ namespace EIMS.Application.Features.TaxLogs
          IRequestHandler<CreateTaxLogCommand, Result<int>>,
          IRequestHandler<DeleteTaxLogCommand, Result>,
          IRequestHandler<GetLogHtmlViewQuery, Result<string>>,
-         IRequestHandler<GetTaxApiLogListQuery, Result<List<TaxApiLogSummaryDto>>>
+         IRequestHandler<GetTaxApiLogListQuery, Result<PaginatedList<TaxApiLogSummaryDto>>>
     {
         private readonly IUnitOfWork _uow;
         private readonly IDocumentParserService _documentParserService;
@@ -30,14 +32,23 @@ namespace EIMS.Application.Features.TaxLogs
             _uow = uow;
             _documentParserService = documentParserService;
         }
-        public async Task<Result<List<TaxApiLogSummaryDto>>> Handle(GetTaxApiLogListQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PaginatedList<TaxApiLogSummaryDto>>> Handle(GetTaxApiLogListQuery request, CancellationToken cancellationToken)
         {
-            var query = _uow.TaxApiLogRepository.GetAllQueryable();
-            query = query
+            var query = _uow.TaxApiLogRepository.GetAllQueryable().AsNoTracking();
+            query = query         
                 .Include(l => l.TaxApiStatus)
                 .Include(l => l.Invoice);
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                string term = request.SearchTerm.ToLower().Trim();
+                query = query.Where(c =>
+                    c.SoTBao.ToLower().Contains(term) ||
+                    c.MTDiep.ToLower().Contains(term)
+                );
+            }
+
             query = query.OrderByDescending(l => l.Timestamp);
-            var dtoList = await query.Select(l => new TaxApiLogSummaryDto
+            var dtoList = query.Select(l => new TaxApiLogSummaryDto
             {
                 TaxLogID = l.TaxLogID,
                 InvoiceID = l.InvoiceID,
@@ -45,12 +56,17 @@ namespace EIMS.Application.Features.TaxLogs
                 TaxApiStatusID = l.TaxApiStatusID,
                 TaxApiStatusName = l.TaxApiStatus.StatusName,
                 MTDiep = l.MTDiep,
+                MTDiepPhanHoi = l.MTDiepPhanHoi,
                 MCCQT = l.MCCQT,
                 SoTBao = l.SoTBao,
                 Timestamp = l.Timestamp
-            }).ToListAsync(cancellationToken);
-
-            return Result.Ok(dtoList);
+            });
+            var paginatedList = await PaginatedList<TaxApiLogSummaryDto>.CreateAsync(
+               dtoList,
+               request.PageNumber,
+               request.PageSize
+           );
+            return Result.Ok(paginatedList);
         }
         public async Task<Result<List<TaxApiLogSummaryDto>>> Handle(GetTaxLogsByInvoiceQuery request, CancellationToken cancellationToken)
         {
@@ -67,6 +83,7 @@ namespace EIMS.Application.Features.TaxLogs
                 Timestamp = x.Timestamp,
                 TaxApiStatusName = x.TaxApiStatus?.StatusName ?? "Unknown",
                 MTDiep = x.MTDiep,
+                MTDiepPhanHoi = x.MTDiepPhanHoi,
                 MCCQT = x.MCCQT,
                 SoTBao = x.SoTBao
             }).ToList();
@@ -90,6 +107,7 @@ namespace EIMS.Application.Features.TaxLogs
                 Timestamp = log.Timestamp,
                 TaxApiStatusName = log.TaxApiStatus?.StatusName ?? "Unknown",
                 MTDiep = log.MTDiep,
+                MTDiepPhanHoi = log.MTDiepPhanHoi,
                 MCCQT = log.MCCQT,
                 SoTBao = log.SoTBao,
                 RequestPayload = formattedRequest,
@@ -131,6 +149,7 @@ namespace EIMS.Application.Features.TaxLogs
                 InvoiceNumber = x.Invoice != null ? x.Invoice.InvoiceNumber : 0,
                 Timestamp = x.Timestamp,
                 MTDiep = x.MTDiep,
+                MTDiepPhanHoi = x.MTDiepPhanHoi,
                 SoTBao = x.SoTBao,
                 TaxApiStatusID = x.TaxApiStatusID,
                 TaxApiStatusName = x.TaxApiStatus?.StatusName ?? "Unknown",
@@ -149,65 +168,99 @@ namespace EIMS.Application.Features.TaxLogs
             return Result.Ok();
         }
         public async Task<Result<string>> Handle(GetLogHtmlViewQuery request, CancellationToken cancellationToken)
+
         {
+
             // 1. LẤY DỮ LIỆU LOG TỪ DB
+
             var log = await _uow.TaxApiLogRepository.GetByIdAsync(request.LogId);
+
             if (log == null)
+
                 return Result.Fail("Không tìm thấy lịch sử truyền nhận (Log) này.");
 
+
+
             // 2. CHỌN NỘI DUNG (Gửi đi hay Nhận về)
+
             string content = (request.ViewType == "response") ? log.ResponsePayload : log.RequestPayload;
+
             string title = (request.ViewType == "response") ? "Phản hồi từ CQT (Response)" : "Dữ liệu gửi đi (Request)";
 
+
+
             if (string.IsNullOrWhiteSpace(content))
+
                 return Result.Fail("Log này không có dữ liệu.");
 
-            // =========================================================
-            // NHÁNH A: XEM RAW XML (ViewByHtml = false)
-            // =========================================================
-            // Trả về nguyên gốc để Controller hiển thị dạng text/xml (tô màu code)
             if (!request.ViewByHtml)
+
             {
+
                 return Result.Ok(content);
+
             }
 
-            // =========================================================
-            // NHÁNH B: XEM GIAO DIỆN HTML (ViewByHtml = true)
-            // =========================================================
-
-            // Bước 3: Kiểm tra sơ bộ xem có phải XML không?
-            // (Vì Response có thể là JSON lỗi, HTML 500 Server Error, hoặc Text thuần)
             if (!content.TrimStart().StartsWith("<"))
+
             {
-                // Nếu không phải XML, hiển thị giao diện Text thô
+
                 return Result.Ok(GenerateRawViewHtml(title, "Dữ liệu không phải XML (JSON/Text)", content));
+
             }
+
+
 
             try
+
             {
+
                 // Bước 4: Tự động phát hiện loại dữ liệu để chọn XSLT phù hợp
+
                 string xsltFileName = DetectTemplate(content);
 
+
+
                 // Nếu không tìm thấy template phù hợp (XML lạ), hiển thị Raw
+
                 if (string.IsNullOrEmpty(xsltFileName))
+
                 {
+
                     return Result.Ok(GenerateRawViewHtml(title, "Dữ liệu XML chưa được hỗ trợ giao diện", content));
+
                 }
 
+
+
                 // Bước 5: Lấy đường dẫn file XSLT
+
                 string xsltPath = Path.Combine(request.RootPath, "Templates", xsltFileName);
 
+
+
                 if (!File.Exists(xsltPath))
+
                     return Result.Ok(GenerateErrorHtml(title, $"Không tìm thấy file mẫu tại: {xsltPath}", content));
+
                 // Bước 6: Transform XML -> HTML
+
                 string htmlOutput = _documentParserService.TransformXmlToHtml(content, xsltPath);
+
                 return Result.Ok(htmlOutput);
+
             }
+
             catch (Exception ex)
+
             {
+
                 // Nếu transform lỗi (do XML sai cấu trúc, thiếu thẻ đóng...), hiển thị XML gốc để debug
+
                 return Result.Ok(GenerateErrorHtml(title, $"Lỗi hiển thị: {ex.Message}", content));
+
             }
+
         }
         // --- HELPER: Format XML ---
         private string TryFormatXml(string xml)
@@ -232,9 +285,8 @@ namespace EIMS.Application.Features.TaxLogs
             }
             if (xmlContent.Contains("TBao") || xmlContent.Contains("DiepToBa"))
             {
-                return "TaxNotificationTemplate.xsl"; // Xem thông báo thuế
+                return "TaxNotificationTemplate.xsl"; 
             }
-            // Mặc định dùng InvoiceTemplate hoặc một file Generic nào đó
             return "InvoiceTemplate.xsl";
         }
 

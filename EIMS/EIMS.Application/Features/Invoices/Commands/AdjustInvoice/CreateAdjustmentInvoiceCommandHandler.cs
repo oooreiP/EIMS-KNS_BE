@@ -76,6 +76,7 @@ namespace EIMS.Application.Features.Invoices.Commands.AdjustInvoice
                 InvoiceCustomerAddress = originalInvoice.InvoiceCustomerAddress,
                 InvoiceCustomerTaxCode = originalInvoice.InvoiceCustomerTaxCode,
                 InvoiceStatusID = request.InvoiceStatusId ?? 1,
+                MinuteCode = request.MinuteCode,
                 CreatedAt = DateTime.UtcNow,
                 PaymentDueDate = DateTime.UtcNow.AddDays(30),
                 PaymentStatusID = 1

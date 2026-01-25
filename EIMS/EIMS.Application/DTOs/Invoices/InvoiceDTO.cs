@@ -47,6 +47,8 @@ namespace EIMS.Application.DTOs.Invoices
         public string? ContactPerson { get; set; }
         public string? ContactPhone { get; set; }
         public string? TaxCode { get; set; }
+        public string? MinuteCode { get; set; }
+        public string? InvoiceSymbol { get; set; }
         public DateTime? OriginalInvoiceSignDate { get; set; }
         public string? OriginalInvoiceSymbol { get; set; }
         public string TaxStatusCode { get; set; }
