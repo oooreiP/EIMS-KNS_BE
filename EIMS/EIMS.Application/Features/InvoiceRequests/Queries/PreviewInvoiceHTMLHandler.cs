@@ -48,7 +48,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
             var invoice = new EmptyRequest
             {
                 TemplateID = -1,
-                InvoiceStatusID = 1,
+                InvoiceStatusID = 5,
                 CompanyID = invoiceRequest.CompanyID ?? 1,
                 SalesID = invoiceRequest.SaleID,
                 MinRows = invoiceRequest.MinRows,

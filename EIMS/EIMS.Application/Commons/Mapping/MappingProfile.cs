@@ -33,7 +33,7 @@ namespace EIMS.Application.Common.Mapping
             .ForMember(dest => dest.MinuteInvoiceId, opt => opt.MapFrom(src => src.MinutesInvoiceId))
             .ForMember(dest => dest.InvoiceId, opt => opt.MapFrom(src => src.InvoiceId ?? 1))
             .ForMember(dest => dest.InvoiceNo, opt => opt.MapFrom(src =>
-                src.Invoice != null ? src.Invoice.InvoiceNumber.ToString() : "N/A"))
+                src.Invoice != null ? $"{src.Invoice.InvoiceSymbol}_{src.Invoice.InvoiceNumber}" : "N/A"))
             .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>
                 (src.Invoice != null && src.Invoice.Customer != null)
                     ? src.Invoice.Customer.CustomerName

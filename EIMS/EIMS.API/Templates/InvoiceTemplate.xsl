@@ -10,7 +10,7 @@
 	<xsl:param name="ColorTheme" select="'#0056b3'"/>
 	<xsl:param name="FontFamily" select="'Times New Roman'"/>
 	<xsl:param name="IsBilingual" select="'false'"/>
-	<xsl:param name="IsDraft" select="'true'"/>
+	<xsl:param name="IsDraft" select="'false'"/>
 	<xsl:param name="QrCodeData" select="''"/>	
 	<xsl:param name="ShowQrCode" select="'true'"/>
 	<xsl:param name="ShowLogo" select="'true'"/>

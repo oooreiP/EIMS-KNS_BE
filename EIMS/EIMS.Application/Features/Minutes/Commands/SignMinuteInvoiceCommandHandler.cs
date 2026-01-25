@@ -43,12 +43,10 @@ namespace EIMS.Application.Features.Minutes.Commands
             var xmlService = scope.ServiceProvider.GetRequiredService<IInvoiceXMLService>();
             var fileStorage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-            var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUserService>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SignMinuteInvoiceCommandHandler>>();
 
             try
             {
-                var userId = int.Parse(currentUser.UserId);
                 var minute = await uow.MinuteInvoiceRepository
         .GetByIdAsync(request.MinuteInvoiceId, "Invoice.Customer");
                 if (minute == null)

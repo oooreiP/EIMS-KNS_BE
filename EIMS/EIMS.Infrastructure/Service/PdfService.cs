@@ -500,7 +500,6 @@ namespace EIMS.Infrastructure.Service
             args.AddParam("ShowPaymentMethod", "", cust.ShowPaymentMethod ? "true" : "false");
             bool isDraft = invoice.InvoiceStatusID == 1;
             args.AddParam("IsDraft", "", isDraft ? "true" : "false");
-
             return args;
         }
         private async Task<XsltArgumentList> PrepareNotificationXsltArguments(InvoiceErrorNotification noti)
