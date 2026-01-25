@@ -52,6 +52,7 @@ namespace EIMS.Application.Features.InvoiceRequests.Queries
                     Amount = invoiceRequest.SubtotalAmount,
                     TaxAmount = invoiceRequest.VATAmount,
                     TotalAmount = invoiceRequest.TotalAmount,
+                    InvoiceCustomerType = invoiceRequest.InvoiceCustomerType,
                     Items = invoiceRequest.InvoiceRequestItems?.Select(item => new CreateInvoiceItemRequest
                     {
                         ProductId = item.ProductID,

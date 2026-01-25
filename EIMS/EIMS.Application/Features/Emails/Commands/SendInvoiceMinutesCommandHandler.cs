@@ -1,4 +1,5 @@
-﻿using EIMS.Application.Commons.Interfaces;
+﻿using EIMS.Application.Commons.Helpers;
+using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Domain.Entities;
 using EIMS.Domain.Enums;
@@ -281,8 +282,8 @@ namespace EIMS.Application.Features.Emails.Commands
                     { "{{CustomMessage}}", request.CustomMessage ?? "" }
                 };
 
-                    string subject = ReplacePlaceholders(emailTemplate.Subject, replacements);
-                    string body = ReplacePlaceholders(emailTemplate.BodyContent, replacements);
+                    string subject = EmailHelper.ReplacePlaceholders(emailTemplate.Subject, replacements);
+                    string body = EmailHelper.ReplacePlaceholders(emailTemplate.BodyContent, replacements);
                     string toEmail = !string.IsNullOrEmpty(request.RecipientEmail)
                                      ? request.RecipientEmail
                                      : adjustment.Customer.ContactEmail;
@@ -318,17 +319,7 @@ namespace EIMS.Application.Features.Emails.Commands
                     logger.LogError(ex, $"CRITICAL ERROR khi xử lý gửi biên bản cho Invoice {request.InvoiceId}");
                 }
             }
-        }
-
-        private string ReplacePlaceholders(string text, Dictionary<string, string> replacements)
-        {
-            if (string.IsNullOrEmpty(text)) return "";
-            foreach (var item in replacements)
-            {
-                text = text.Replace(item.Key, item.Value ?? "");
-            }
-            return text;
-        }
+        }    
         string GetItemString(InvoiceItem item)
         {
             return $"SL: {item.Quantity} x Giá: {item.UnitPrice:N0} = {item.Amount:N0}";

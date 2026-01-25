@@ -1,3 +1,4 @@
+using EIMS.Application.Commons.Helpers;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.Mails;
 using EIMS.Application.Features.InvoiceStatements.Queries;
@@ -89,27 +90,14 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 { "{{AttachmentList}}", attachmentListHtml }
             };
 
-            mailRequest.Subject = ReplacePlaceholders(mailRequest.Subject, replacements);
-            mailRequest.EmailBody = ReplacePlaceholders(mailRequest.EmailBody, replacements);
+            mailRequest.Subject = EmailHelper.ReplacePlaceholders(mailRequest.Subject, replacements);
+            mailRequest.EmailBody = EmailHelper.ReplacePlaceholders(mailRequest.EmailBody, replacements);
 
             var sendResult = await _emailSender.SendMailAsync(mailRequest);
             if (sendResult.IsFailed)
                 return sendResult;
 
             return Result.Ok();
-        }
-
-        private static string ReplacePlaceholders(string templateText, Dictionary<string, string> replacements)
-        {
-            if (string.IsNullOrEmpty(templateText))
-                return string.Empty;
-
-            foreach (var item in replacements)
-            {
-                templateText = templateText.Replace(item.Key, item.Value);
-            }
-
-            return templateText;
-        }
+        }       
     }
 }

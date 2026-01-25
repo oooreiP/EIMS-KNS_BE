@@ -208,6 +208,9 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                     invoiceRequest.RequestStatusID = (int)EInvoiceRequestStatus.Approved;
                     invoiceRequest.CreatedInvoiceID = fullInvoice.InvoiceID;
                     await _unitOfWork.InvoiceRequestRepository.UpdateAsync(invoiceRequest);
+                    await _notiService.SendToUserAsync(invoiceRequest.SaleID ?? 3,
+                $"Yêu cầu cấp hóa đơn với id {invoiceRequest.RequestID} đã được chấp thuận và tạo hóa đơn nháp.",
+                typeId: 2);
                 }
                 await _unitOfWork.SaveChanges();
                 var response = new CreateInvoiceResponse
