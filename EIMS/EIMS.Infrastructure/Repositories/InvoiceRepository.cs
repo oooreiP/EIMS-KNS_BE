@@ -364,7 +364,21 @@ namespace EIMS.Infrastructure.Repositories
             {
                 growthPercent = 100;
             }
-
+            var totalCustomers = await _context.Customers.AsNoTracking().CountAsync(c => c.SaleID == salesPersonId, cancellationToken);
+            var totalInvoiceRequests = await _context.InvoiceRequests
+            .AsNoTracking()
+            .CountAsync(r => r.SaleID == salesPersonId, cancellationToken);
+            var totalLifetimeRevenue = await query
+            .Where(i => i.PaymentStatusID == paymentStatusPaid
+                     || i.InvoiceStatusID == invoiceStatusIssued
+                     || i.InvoiceStatusID == invoiceStatusPendingApproval
+                     || i.InvoiceStatusID == invoiceStatusPendingSign)
+            .SumAsync(i => i.TotalAmount, cancellationToken);
+            var totalIssuedInvoices = await query
+            .CountAsync(i => i.InvoiceStatusID == invoiceStatusIssued, cancellationToken);
+            var totalOutstandingDebt = await query
+            .Where(i => i.RemainingAmount > 0) 
+            .SumAsync(i => i.RemainingAmount, cancellationToken);
             var estimatedCommission = currentRevenue * (decimal)(commissionRate / 100.0);
 
             var newCustomersThisMonth = await query
@@ -521,7 +535,13 @@ namespace EIMS.Infrastructure.Repositories
                     EstimatedCommission = estimatedCommission,
                     CommissionRate = commissionRate,
                     NewCustomersThisMonth = newCustomersThisMonth,
-                    OpenInvoicesCount = openInvoicesCount
+                    OpenInvoicesCount = openInvoicesCount,
+
+                    TotalCustomers = totalCustomers,
+                    TotalInvoiceRequests = totalInvoiceRequests,
+                    TotalLifetimeRevenue = totalLifetimeRevenue,
+                    TotalIssuedInvoices = totalIssuedInvoices,
+                    TotalOutstandingDebt = totalOutstandingDebt
                 },
                 TargetProgress = new SalesTargetProgressDto
                 {

@@ -14,5 +14,11 @@ namespace EIMS.Application.DTOs.Dashboard.Sale
         public double CommissionRate { get; set; }
         public int NewCustomersThisMonth { get; set; }
         public int OpenInvoicesCount { get; set; }
+
+        public int TotalCustomers { get; set; }        
+        public int TotalInvoiceRequests { get; set; }  
+        public decimal TotalLifetimeRevenue { get; set; }
+        public int TotalIssuedInvoices { get; set; }    
+        public decimal TotalOutstandingDebt { get; set; }
     }
 }
