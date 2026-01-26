@@ -28,13 +28,15 @@ namespace EIMS.Application.Features.Minutes.Queries
         public async Task<Result<PaginatedList<MinuteInvoiceDto>>> Handle(GetMinuteInvoicesQuery request, CancellationToken cancellationToken)
         {
             var query = _uow.MinuteInvoiceRepository.GetAllQueryable()
+                .Include(m => m.Creator)
                 .Include(m => m.Invoice)
+                .ThenInclude(m => m.Customer)
                 .AsNoTracking();
 
             if (request.SaleId.HasValue)
             {
-                int saleId = request.SaleId.Value;
-                query = query.Where(x => x.Invoice != null && x.Invoice.Customer.SaleID == saleId);
+                int sId = request.SaleId.Value;
+                query = query.Where(x => x.Creator.UserID == sId);
             }
 
             if (!string.IsNullOrEmpty(request.SearchTerm))
