@@ -29,6 +29,7 @@ namespace EIMS.Application.Features.Minutes.Queries
         {
             var query = _uow.MinuteInvoiceRepository.GetAllQueryable()
                 .Include(m => m.Invoice)
+                .ThenInclude(m => m.Customer)
                 .AsNoTracking();
 
             if (request.SaleId.HasValue)
