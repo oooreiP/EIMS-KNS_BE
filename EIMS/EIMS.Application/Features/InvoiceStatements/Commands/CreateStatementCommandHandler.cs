@@ -1,4 +1,5 @@
 using AutoMapper;
+using EIMS.Application.Commons.Helpers;
 using EIMS.Application.Commons.Interfaces;
 using EIMS.Application.DTOs.InvoiceStatement;
 using EIMS.Domain.Entities;
@@ -6,6 +7,8 @@ using EIMS.Domain.Enums;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace EIMS.Application.Features.InvoiceStatements.Commands
 {
@@ -13,11 +16,12 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-
-        public CreateStatementCommandHandler(IUnitOfWork uow, IMapper mapper)
+        private readonly IServiceScopeFactory _scopeFactory;
+        public CreateStatementCommandHandler(IUnitOfWork uow, IMapper mapper, IServiceScopeFactory scopeFactory)
         {
             _uow = uow;
             _mapper = mapper;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<Result<StatementDetailResponse>> Handle(CreateStatementCommand request, CancellationToken cancellationToken)
@@ -156,7 +160,12 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                 // SaveChanges will execute the INSERT or UPDATE
                 await _uow.SaveChanges();
                 await _uow.CommitAsync();
-
+                Task.Run(() =>
+            ProcessStatementPdfInBackground(
+                statement.StatementID,
+                request.RootPath
+            )
+        );
                 var response = _mapper.Map<StatementDetailResponse>(statementToReturn);
                 return Result.Ok(response);
             }
@@ -164,6 +173,80 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
             {
                 await _uow.RollbackAsync();
                 return Result.Fail($"Failed to generate statement: {ex.Message}");
+            }
+        }
+        private async Task ProcessStatementPdfInBackground(
+        int statementId,
+        string rootPath)
+        {
+            using var scope = _scopeFactory.CreateScope();
+
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var pdfService = scope.ServiceProvider.GetRequiredService<IPdfService>();
+            var xmlService = scope.ServiceProvider.GetRequiredService<IInvoiceXMLService>();
+            var statementService = scope.ServiceProvider.GetRequiredService<IStatementService>();
+            var fileStorage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<CreateStatementCommandHandler>>();
+
+            try
+            {
+                var statement = await uow.InvoiceStatementRepository
+                    .GetAllQueryable()
+                    .Include(s => s.Customer)
+                    .Include(s => s.StatementDetails)
+                        .ThenInclude(d => d.Invoice)
+                            .ThenInclude(i => i.InvoiceItems)
+                                .ThenInclude(it => it.Product)
+                    .FirstOrDefaultAsync(s => s.StatementID == statementId);
+
+                if (statement == null)
+                {
+                    logger.LogError($"Statement {statementId} not found.");
+                    return;
+                }
+                var certResult = await xmlService.GetCertificateAsync(1);
+                if (certResult.IsFailed)
+                {
+                    logger.LogError($"Certificate not found for Statement {statementId}");
+                    return;
+                }
+
+                var cert = certResult.Value;
+                var paymentDto = await statementService.GetPaymentRequestXmlAsync(statement);
+
+                string unsignedXml = XmlHelpers.Serialize(paymentDto);
+                var signedResult = XmlHelpers.SignElectronicDocument(unsignedXml, cert, true);
+
+                string signedXml = signedResult.SignedXml;
+                string xslPath = Path.Combine(rootPath, "Templates", "PaymentTemplate.xsl");
+                string htmlContent = pdfService.TransformXmlToHtml(signedXml, xslPath);
+                byte[] pdfBytes = await pdfService.ConvertHtmlToPdfAsync(htmlContent);
+
+                string fileName = $"Statement_{statement.StatementCode}_{Guid.NewGuid()}.pdf";
+
+                using var pdfStream = new MemoryStream(pdfBytes);
+                var uploadResult = await fileStorage.UploadFileAsync(
+                    pdfStream,
+                    fileName,
+                    "statement"
+                );
+
+                if (uploadResult.IsFailed)
+                {
+                    logger.LogError($"Upload failed for Statement {statementId}");
+                    return;
+                }
+
+                statement.FilePath = uploadResult.Value.Url;
+
+                await uow.InvoiceStatementRepository.UpdateAsync(statement);
+                await uow.SaveChanges();
+
+                logger.LogInformation($"Statement {statementId} PDF generated successfully.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Error generating PDF for Statement {statementId}");
             }
         }
     }

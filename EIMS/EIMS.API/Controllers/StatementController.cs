@@ -30,6 +30,7 @@ namespace EIMS.API.Controllers
         public async Task<IActionResult> GenerateStatement([FromBody] GenerateStatementRequest request)
         {
             var response = _mapper.Map<CreateStatementCommand>(request);
+            response.RootPath = _env.ContentRootPath;
             var result = await _sender.Send(response);
             if (result.IsFailed)
             {
