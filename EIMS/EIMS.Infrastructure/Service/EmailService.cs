@@ -266,7 +266,7 @@ namespace EIMS.Infrastructure.Service
             switch (newStatusId)
             {
                 case 1:
-                    subjectPrefix = $"{invoice.InvoiceNumber} đã được khởi tạo";
+                    subjectPrefix = $"{invoice.InvoiceSymbol}_{invoice.InvoiceNumber} đã được khởi tạo";
                     messageContent = "Hóa đơn điện tử của quý khách đã được tạo và đang ở trạng thái nháp.";
                     break;
                 case 12: 

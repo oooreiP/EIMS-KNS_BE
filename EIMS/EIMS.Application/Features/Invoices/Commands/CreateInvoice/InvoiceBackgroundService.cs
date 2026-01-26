@@ -96,7 +96,7 @@ namespace EIMS.Application.Features.Invoices.Commands.CreateInvoice
                         }
 
                         // 6. Gửi thông báo cho HOD
-                        await notiService.SendToRoleAsync("HOD", $"Có hóa đơn mới {fullInvoice.InvoiceNumber} đã được khởi tạo.", typeId: 2);
+                        await notiService.SendToRoleAsync("HOD", $"Có hóa đơn mới {symbol.FullSymbol}_{fullInvoice.InvoiceNumber} đã được khởi tạo.", typeId: 2);
 
                         // 7. Realtime Updates (SignalR)
                         await invoiceRealtimeService.NotifyInvoiceChangedAsync(new InvoiceRealtimeEvent

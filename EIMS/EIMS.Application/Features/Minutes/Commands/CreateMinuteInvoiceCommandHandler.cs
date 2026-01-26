@@ -37,7 +37,7 @@ namespace EIMS.Application.Features.Minutes.Commands
 
             if (Path.GetExtension(request.PdfFile.FileName).ToLower() != ".pdf")
                 throw new Exception("Chỉ chấp nhận file định dạng PDF.");
-            string fileName = $"Minute_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+            string fileName = $"Minute_{invoice.InvoiceSymbol}_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
             var uploadResult = await _fileStorageService.UploadFileAsync(request.PdfFile);
 
             if (uploadResult.IsFailed)
