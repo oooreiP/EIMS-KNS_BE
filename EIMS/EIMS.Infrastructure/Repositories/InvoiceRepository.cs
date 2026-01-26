@@ -182,6 +182,7 @@ namespace EIMS.Infrastructure.Repositories
                     Month_Subtotal = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.SubtotalAmount),
                     Month_VAT = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.VATAmount),
                     Month_Paid = g.Where(i => i.IssuedDate >= startOfMonth).Sum(i => i.PaidAmount),
+                    Month_Remaining = g.Where( i => i.IssuedDate >= startOfMonth).Sum(i => i.RemainingAmount),
                     //Last Month
                     LastMonth_Total = g.Where(i => i.IssuedDate >= startOfLastMonth && i.IssuedDate < startOfMonth)
                                .Sum(i => i.TotalAmount),
@@ -277,6 +278,7 @@ namespace EIMS.Infrastructure.Repositories
                 result.CurrentMonthStats.NetProfit = stats.Month_Subtotal; // Real Profit (Pre-tax)
                 result.CurrentMonthStats.TaxLiability = stats.Month_VAT;
                 result.CurrentMonthStats.CollectedAmount = stats.Month_Paid;
+                result.CurrentMonthStats.OutstandingAmount = stats.Month_Remaining;
 
                 // Map All Time
                 result.AllTimeStats.TotalRevenue = stats.AllTime_Total;
