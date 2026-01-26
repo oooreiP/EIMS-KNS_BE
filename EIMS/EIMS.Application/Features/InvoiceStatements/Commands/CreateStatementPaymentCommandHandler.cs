@@ -162,7 +162,7 @@ namespace EIMS.Application.Features.InvoiceStatements.Commands
                     await _uow.StatementPaymentRepository.CreateAsync(statementPayment);
                     createdStatementPayments.Add(statementPayment);
 
-                    var currentPaid = invoice.Payments.Sum(p => p.AmountPaid);
+                    var currentPaid = invoice.PaidAmount;
                     invoice.PaidAmount = currentPaid + applyAmount;
                     invoice.RemainingAmount = Math.Max(0, invoice.TotalAmount - invoice.PaidAmount);
 
