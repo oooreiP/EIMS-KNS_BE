@@ -3,6 +3,7 @@ using EIMS.Application.Commons.Interfaces;
 using EIMS.Domain.Entities;
 using FluentResults;
 using MediatR;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,6 +51,7 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                 {
                     RequestPayload = signedXmlPayload,
                     ResponsePayload = taxResponse.RawResponse,
+                    MTDiep = taxResponse.MTDThamChieu,
                     MTDiepPhanHoi = taxResponse.MTDiep,
                     SoTBao = taxResponse.SoTBao,
                     MCCQT = taxResponse.MCCQT,
@@ -93,20 +95,12 @@ namespace EIMS.Application.Features.CQT.NotifyInvoiceError
                             if (invoice == null) continue; 
                             switch (detail.ErrorType)
                             {
-                                case 1: 
-                                    invoice.InvoiceStatusID = 3; 
+                                case 1:
+                                    invoice.InvoiceStatusID = 4;
                                     break;
-
                                 case 2:
-                                    invoice.InvoiceStatusID = 10; 
                                     break;
 
-                                case 3: 
-                                    invoice.InvoiceStatusID = 11; // Replacement_In_Progress
-                                    break;
-
-                                case 4: 
-                                    break;
                             }
                             await _uow.ErrorNotificationRepository.UpdateAsync(noti);
                             await _uow.InvoicesRepository.UpdateAsync(invoice);

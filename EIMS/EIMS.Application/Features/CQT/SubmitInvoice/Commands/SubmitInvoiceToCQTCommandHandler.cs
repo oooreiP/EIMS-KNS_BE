@@ -22,16 +22,20 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
     {
         private readonly IUnitOfWork _uow;
         private readonly IInvoiceXMLService _invoiceXMLService;
+        private readonly IPdfService _pdfService;
+        private readonly IFileStorageService _fileStorageService;
         private readonly ITaxApiClient _taxClient;
         private readonly ICurrentUserService _currentUser;
         private readonly HttpClient _httpClient;
-        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService, HttpClient httpClient, ICurrentUserService currentUser)
+        public SubmitInvoiceToCQTCommandHandler(IUnitOfWork uow, ITaxApiClient taxClient, IInvoiceXMLService invoiceXMLService, HttpClient httpClient, ICurrentUserService currentUser, IPdfService pdfService, IFileStorageService fileStorageService)
         {
             _uow = uow;
             _taxClient = taxClient;
             _invoiceXMLService = invoiceXMLService;
             _httpClient = httpClient;
             _currentUser = currentUser;
+            _pdfService = pdfService;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<Result<SubmitInvoiceToCQTResult>> Handle(
@@ -120,6 +124,27 @@ namespace EIMS.Application.Features.CQT.SubmitInvoice.Commands
                 invoice.InvoiceStatusID = 5; // Trạng thái: Signed (Đã ký)
                 await _uow.InvoicesRepository.UpdateAsync(invoice);
                 await _uow.SaveChanges();
+                try
+                {
+                    string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                    byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(invoice.InvoiceID, rootPath);
+                    using (var pdfStream = new MemoryStream(pdfBytes))
+                    {
+                        string fileName = $"Invoice_{invoice.InvoiceSymbol}_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                        var uploadResult = await _fileStorageService.UploadFileAsync(pdfStream, fileName, "invoices");
+
+                        if (uploadResult.IsSuccess)
+                        {
+                            invoice.FilePath = uploadResult.Value.Url;
+                            await _uow.InvoicesRepository.UpdateAsync(invoice);
+                            await _uow.SaveChanges();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"PDF Gen Error: {ex.Message}");
+                }
             }
             if (log.TaxApiStatusID == 30) 
             {
