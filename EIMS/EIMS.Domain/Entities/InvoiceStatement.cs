@@ -12,6 +12,7 @@ namespace EIMS.Domain.Entities
         [Key]
         public int StatementID { get; set; }
         public string? StatementCode { get; set; }
+        public string? FilePath { get; set; }
         public DateTime StatementDate { get; set; } = DateTime.Now;
         public DateTime DueDate { get; set; }
         // [ForeignKey("CreatedBy")]

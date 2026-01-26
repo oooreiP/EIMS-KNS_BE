@@ -46,23 +46,50 @@ namespace EIMS.Application.Features.InvoiceStatements.Queries
 
             try
             {
+                if (!string.IsNullOrEmpty(entity.FilePath))
+                {
+                    var pDFBytes = await _invoiceXMLService.DownloadBytesAsync(entity.FilePath);
+
+                    return Result.Ok(new FileAttachment
+                    {
+                        FileContent = pDFBytes,
+                        FileName = $"Bang_ke_{entity.StatementCode}.pdf"
+                    });
+                }
                 var certResult = await _invoiceXMLService.GetCertificateAsync(1);
                 if (certResult.IsFailed)
                     return Result.Fail(certResult.Errors);
+
                 var signingCert = certResult.Value;
+
                 var paymentDto = await _statementService.GetPaymentRequestXmlAsync(entity);
+
                 string unsignedXmlString = XmlHelpers.Serialize(paymentDto);
-                var signedResult = XmlHelpers.SignElectronicDocument(unsignedXmlString, signingCert, true);
-                string xmlString = XmlHelpers.Serialize(paymentDto);
+                var signedResult = XmlHelpers.SignElectronicDocument(
+                    unsignedXmlString,
+                    signingCert,
+                    true
+                );
+
                 string signedXmlContent = signedResult.SignedXml;
-                string fullPath = Path.Combine(request.RootPath, "Templates", "PaymentTemplate.xsl");
-                string htmlContent = _pdfService.TransformXmlToHtml(signedXmlContent, fullPath);
+
+                string xslPath = Path.Combine(
+                    request.RootPath,
+                    "Templates",
+                    "PaymentTemplate.xsl"
+                );
+
+                string htmlContent = _pdfService.TransformXmlToHtml(
+                    signedXmlContent,
+                    xslPath
+                );
+
                 byte[] pdfBytes = await _pdfService.ConvertHtmlToPdfAsync(htmlContent);
 
                 return Result.Ok(new FileAttachment
                 {
                     FileContent = pdfBytes,
-                    FileName = $"Bang_ke_{entity.StatementCode}.pdf",
+                    FileName = $"Bang_ke_{entity.StatementCode}.pdf"
                 });
             }
             catch (Exception ex)
