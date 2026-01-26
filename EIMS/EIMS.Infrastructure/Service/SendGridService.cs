@@ -213,7 +213,7 @@ namespace EIMS.Infrastructure.Service
             {
                 { "{{CustomerName}}", invoice.Customer?.CustomerName ?? (displayLang == "en" ? "Customer" : "Quý khách") },
                 { "{{Message}}", request.CustomMessage ?? template.Name ?? "" },
-                { "{{InvoiceNumber}}", (invoice.InvoiceNumber ?? 0).ToString() }, // Handle nullable int safely
+                { "{{InvoiceNumber}}", $"{invoice.InvoiceSymbol ?? ""}_{invoice.InvoiceNumber ?? 0}".ToString() }, // Handle nullable int safely
                 { "{{IssuedDate}}", invoice.IssuedDate?.ToString("dd/MM/yyyy") ?? "N/A" },
                 { "{{CreatedAt}}", invoice.CreatedAt.ToString("dd/MM/yyyy") },
                 { "{{TotalAmount}}", invoice.TotalAmount.ToString("N0") },

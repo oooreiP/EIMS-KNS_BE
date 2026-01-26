@@ -72,7 +72,7 @@ namespace EIMS.Application.Features.Minutes.Commands
                 var replacements = new Dictionary<string, string>
             {
                 { "{{CustomerName}}", minute.Invoice.InvoiceCustomerName },
-                { "{{InvoiceNumber}}", minute.Invoice.InvoiceNumber.ToString() },
+                { "{{InvoiceNumber}}", $"{minute.Invoice.InvoiceSymbol}_{minute.Invoice.InvoiceNumber}" },
                 { "{{CreatedDate}}", DateTime.Now.ToString("dd/MM/yyyy") },
                 { "{{Reason}}", minute.Description },
                 { "{{AttachmentList}}", attachmentHtmlList },

@@ -69,7 +69,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
             var signedXmlDoc = new XmlDocument();
             signedXmlDoc.PreserveWhitespace = true;
             signedXmlDoc.LoadXml(signedXmlContent.SignedXml);
-            var newFileName = $"Invoice_{invoice.InvoiceNumber}_Signed.xml";
+            var newFileName = $"Invoice_{invoice.InvoiceSymbol}_{invoice.InvoiceNumber}_Signed.xml";
             var newUrl = await _invoiceXmlService.UploadXmlAsync(signedXmlDoc, newFileName);
             // BƯỚC 6: CẬP NHẬT DB          
             invoice.XMLPath = newUrl; // Cập nhật đường dẫn mới
@@ -84,7 +84,7 @@ namespace EIMS.Application.Features.Invoices.Commands.SignInvoice
                 double sizeInKB = pdfBytes.Length / 1024.0;
                 using (var pdfStream = new MemoryStream(pdfBytes))
                 {
-                    string fileName = $"Invoice_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                    string fileName = $"Invoice_{invoice.InvoiceSymbol}_{invoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
                     var uploadResult = await _fileStorageService.UploadFileAsync(pdfStream, fileName, "invoices");
 
                     if (uploadResult.IsSuccess)

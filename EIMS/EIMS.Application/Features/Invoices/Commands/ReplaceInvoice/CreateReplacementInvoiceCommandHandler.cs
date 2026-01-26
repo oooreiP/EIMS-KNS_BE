@@ -239,7 +239,7 @@ namespace EIMS.Application.Features.Invoices.Commands.ReplaceInvoice
                     byte[] pdfBytes = await _pdfService.ConvertXmlToPdfAsync(fullInvoice.InvoiceID, request.RootPath);
                     using (var pdfStream = new MemoryStream(pdfBytes))
                     {
-                        string filePdfName = $"Invoice_{fullInvoice.InvoiceNumber}_{Guid.NewGuid()}.pdf";
+                        string filePdfName = $"Invoice_{symbol.FullSymbol}_{Guid.NewGuid()}.pdf";
                         var uploadPdfResult = await _fileStorageService.UploadFileAsync(pdfStream, filePdfName, "invoices");
 
                         if (uploadPdfResult.IsSuccess)

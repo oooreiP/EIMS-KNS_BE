@@ -144,7 +144,7 @@ namespace EIMS.Application.Common.Mapping
                     : 0
                 ));
             CreateMap<InvoicePayment, InvoicePaymentDetailDTO>()
-             .ForMember(dest => dest.InvoiceCode, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber : null))
+             .ForMember(dest => dest.InvoiceCode, opt => opt.MapFrom(src => src.Invoice != null ? $"{src.Invoice.InvoiceNumber}_{src.Invoice.InvoiceNumber}" : null))
              .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Invoice != null && src.Invoice.Customer != null ? src.Invoice.Customer.CustomerName : "Khách lẻ"))
              .ForMember(dest => dest.TotalInvoiceAmount, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.TotalAmount : 0))
              .ForMember(dest => dest.TotalPaidAmount, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.PaidAmount : 0))
@@ -182,7 +182,7 @@ namespace EIMS.Application.Common.Mapping
             // Fix: Invoice Entity -> StatementInvoiceDto (For the invoices list)
             CreateMap<Invoice, StatementInvoiceDto>()
                   .ForMember(dest => dest.InvoiceID, opt => opt.MapFrom(src => src.InvoiceID))
-                  .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.InvoiceNumber))
+                  .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => $"{src.InvoiceSymbol}_{src.InvoiceNumber}"))
                   .ForMember(dest => dest.SignDate, opt => opt.MapFrom(src => src.SignDate))
                   .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
                   .ForMember(dest => dest.OwedAmount, opt => opt.MapFrom(src => src.RemainingAmount))
@@ -193,7 +193,7 @@ namespace EIMS.Application.Common.Mapping
             CreateMap<InvoicePayment, PaymentHistoryDto>()
                 .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentID))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.AmountPaid))
-                .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? src.Invoice.InvoiceNumber.ToString() : ""))
+                .ForMember(dest => dest.InvoiceNumber, opt => opt.MapFrom(src => src.Invoice != null ? $"{src.Invoice.InvoiceSymbol}_{src.Invoice.InvoiceNumber}" : ""))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CreatedBy));
             // Assuming you have a Creator navigation property to get the username
             // .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Creator != null ? src.Creator.FullName : "System"));

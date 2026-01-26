@@ -193,13 +193,13 @@ namespace EIMS.Application.Features.Emails.Commands
                     if (request.Type == MinutesType.Replacement)
                     {
                         minutesFileBytes = await minutesGenerator.GenerateReplacementMinutesAsync(original, request.Reason, contentBefore, contentAfter, adjustment.InvoiceNumber.ToString(), request.AgreementDate);
-                        minutesFileName = $"BienBan_ThayThe_Cua_{original.InvoiceNumber}.docx";
+                        minutesFileName = $"BienBan_ThayThe_Cua_{original.InvoiceSymbol}_{original.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_REPLACE";
                     }
                     else
                     {
                         minutesFileBytes = await minutesGenerator.GenerateAdjustmentMinutesAsync(original, request.Reason, contentBefore, contentAfter, adjustment.InvoiceNumber.ToString(), request.AgreementDate);
-                        minutesFileName = $"BienBan_DieuChinh_{original.InvoiceNumber}_to_{adjustment.InvoiceNumber}.docx";
+                        minutesFileName = $"BienBan_DieuChinh_{original.InvoiceSymbol}_{original.InvoiceNumber}_to_{adjustment.InvoiceSymbol}_{adjustment.InvoiceNumber}.docx";
                         defaultTemplateCode = "MINUTES_ADJUST";
                     }
                     var certResult = await xmlService.GetCertificateAsync(adjustment.CompanyId ?? 1);
